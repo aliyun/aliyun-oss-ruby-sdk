@@ -26,7 +26,7 @@ module Aliyun
       def list_bucket
         logger.info('begin list bucket')
 
-        body = send_request('GET', '/')
+        body = send_request('GET', '/', "")
         doc = Nokogiri::XML(body)
         buckets = doc.css("Buckets Bucket").map do |node|
           name = get_node_text(node, "Name")
@@ -42,14 +42,23 @@ module Aliyun
 
       private
       # 发送RESTful HTTP请求
-      def send_request(verb, path)
+      def send_request(verb, path, body)
         headers = {'Date' => Util.get_date}
         signature = Util.get_signature(@key, verb, headers, {})
         auth = "OSS #{@id}:#{signature}"
         headers.update({'Authorization' => auth})
-        response = RestClient.get @host, headers
 
-        response.body
+        logger.debug("Send HTTP request, verb: #{verb}, path: #{path}, headers: #{headers}")
+
+        r = RestClient::Request.execute(
+          :method => verb,
+          :url => @host + path,
+          :headers => headers,
+          :body => body)
+
+        logger.debug("Received HTTP response, code: #{r.code}, headers: #{r.headers}, body: #{r.body}")
+
+        r.body
       end
 
       # 获取节点下面的tag内容
