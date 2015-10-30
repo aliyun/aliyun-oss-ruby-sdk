@@ -17,7 +17,7 @@ module Aliyun
           t.sub("-0000", "GMT")
         end
 
-        def get_signature(key, verb, headers, body, resources)
+        def get_signature(key, verb, headers, resources)
           content_md5 = headers['Content-MD5'] || ""
           content_type = headers['Content-Type'] || ""
           date = headers['Date']
@@ -47,6 +47,7 @@ module Aliyun
         def get_content_md5(content)
           Base64.encode64(OpenSSL::Digest::MD5.digest(content))
         end
+
       end # self
     end # Util
   end # OSS

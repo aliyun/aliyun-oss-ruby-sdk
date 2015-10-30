@@ -13,7 +13,7 @@ module Aliyun
 
       def list_bucket
         headers = {'Date' => Util.get_date}
-        signature = Util.get_signature(@key, 'GET', headers, "", {})
+        signature = Util.get_signature(@key, 'GET', headers, {})
         auth = "OSS #{@id}:#{signature}"
         headers.update({'Authorization' => auth})
         RestClient.get @host, headers
