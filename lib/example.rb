@@ -8,4 +8,6 @@ cred = YAML.load(File.read(File.expand_path(cred_file)))
 
 oss = Aliyun::OSS::Client.new('oss.aliyuncs.com', cred["id"], cred["key"])
 
-puts oss.list_bucket
+oss.list_bucket.each do |bucket|
+  puts "Bucket: #{bucket.name}, location: #{bucket.location}"
+end

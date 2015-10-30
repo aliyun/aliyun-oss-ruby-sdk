@@ -1,6 +1,8 @@
 # -*- encoding: utf-8 -*-
 
 require 'rest-client'
+require 'nokogiri'
+require 'time'
 
 module Aliyun
   module OSS
@@ -24,18 +26,35 @@ module Aliyun
       def list_bucket
         logger.info('begin list bucket')
 
-        headers = {'Date' => Util.get_date}
-        signature = Util.get_signature(@key, 'GET', headers, {})
-        auth = "OSS #{@id}:#{signature}"
-        headers.update({'Authorization' => auth})
-        RestClient.get @host, headers
+        body = send_request('GET', '/')
+        doc = Nokogiri::XML(body)
+        buckets = doc.css("Buckets Bucket").map do |node|
+          name = get_node_text(node, "Name")
+          location = get_node_text(node, "Location")
+          creation_time = Time.parse(get_node_text(node, "CreationDate"))
+          Bucket.new(name, location, creation_time)
+        end
 
         logger.info('done list bucket')
+
+        buckets
       end
 
       private
       # 发送RESTful HTTP请求
-      def send_request
+      def send_request(verb, path)
+        headers = {'Date' => Util.get_date}
+        signature = Util.get_signature(@key, verb, headers, {})
+        auth = "OSS #{@id}:#{signature}"
+        headers.update({'Authorization' => auth})
+        response = RestClient.get @host, headers
+
+        response.body
+      end
+
+      # 获取节点下面的tag内容
+      def get_node_text(node, tag)
+        node.css(tag).first.children.first.text
       end
 
     end # Client
