@@ -7,16 +7,22 @@ require 'net/http'
 
 module Aliyun
   module OSS
+    ##
+    # SDK的一些辅助函数：按格式输出日期，计算签名等
+    #
     module Util
+      # OSS请求自定义的HTTP header的前缀
       HEADER_PREFIX = "x-oss-"
 
       class << self
 
+        # 获取当前时间，按Fri, 30 Oct 2015 07:21:00 GMT的格式
         def get_date
           t = Time.now.utc.rfc822
           t.sub("-0000", "GMT")
         end
 
+        # 计算请求签名
         def get_signature(key, verb, headers, resources)
           content_md5 = headers['Content-MD5'] || ""
           content_type = headers['Content-Type'] || ""
@@ -44,6 +50,7 @@ module Aliyun
             OpenSSL::HMAC.digest('sha1', key, string_to_sign))
         end
 
+        # 计算body的md5
         def get_content_md5(content)
           Base64.encode64(OpenSSL::Digest::MD5.digest(content))
         end
