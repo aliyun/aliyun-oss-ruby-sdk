@@ -10,6 +10,8 @@ module Aliyun
     #
     class Client
 
+      include Logging
+
       # 构造OSS client，参数：
       # [host] 服务的endpoint
       # [id] 服务的access key id
@@ -20,11 +22,15 @@ module Aliyun
 
       # 列出当前所有的bucket
       def list_bucket
+        logger.info('begin list bucket')
+
         headers = {'Date' => Util.get_date}
         signature = Util.get_signature(@key, 'GET', headers, {})
         auth = "OSS #{@id}:#{signature}"
         headers.update({'Authorization' => auth})
         RestClient.get @host, headers
+
+        logger.info('done list bucket')
       end
 
       private
