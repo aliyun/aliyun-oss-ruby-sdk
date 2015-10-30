@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 require 'time'
 require 'base64'
 require 'openssl'

@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 require_relative 'oss/util'
 require_relative 'oss/object'
 require_relative 'oss/bucket'
