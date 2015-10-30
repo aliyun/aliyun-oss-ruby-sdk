@@ -35,8 +35,10 @@ module Aliyun
       private
 
       def self.logger
-        @logger ||= Logger.new(@@log_file || DEFAULT_LOG_FILE)
-        @logger.level = Logger::INFO
+        unless @logger
+          @logger = Logger.new(@@log_file || DEFAULT_LOG_FILE)
+          @logger.level = Logger::INFO
+        end
         @logger
       end
 

@@ -14,3 +14,18 @@ puts "All buckets:"
 oss.list_bucket.each do |bucket|
   puts "Bucket: #{bucket.name}, location: #{bucket.location}"
 end
+
+object = "hello"
+oss.put_object('t-mail', object) do |content|
+  content << "hello world"
+end
+puts "Put object: #{object} success"
+
+object = "world"
+oss.put_object_from_file('t-mail', object, '/tmp/x')
+puts "Put object: #{object} success"
+
+puts "All objects:"
+oss.list_object('t-mail').each do |o|
+  puts "Object: #{o.key}, size: #{o.size}"
+end
