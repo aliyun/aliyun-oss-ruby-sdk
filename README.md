@@ -4,6 +4,14 @@
 
 ruby >= 1.9
 
+### Install ruby
+
+    sudo apt-get install ruby
+
+### Install bundler
+
+    sudo gem install bundler
+
 ## Getting Started
 
 1. Get source:
