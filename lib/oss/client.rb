@@ -40,6 +40,42 @@ module Aliyun
         buckets
       end
 
+      # 创建一个bucket
+      def create_bucket(attrs)
+        logger.info('Begin create bucket')
+
+        name = attrs[:name]
+        location = attrs[:location]
+        body = nil
+        if location
+          doc = Nokogiri::XML::Document.new
+          conf = doc.create_element('CreateBucketConfiguration')
+          doc.add_child(conf)
+          loc = doc.create_element('LocationConstraint', location)
+          conf.add_child(loc)
+          body = doc.to_xml
+        end
+
+        send_request(
+          'PUT',
+          { :bucket => name },
+          {},
+          body)
+
+        logger.info('Done create bucket')
+      end
+
+      # 删除一个bucket
+      def delete_bucket(bucket_name)
+        logger.info('Begin delete bucket')
+
+        send_request(
+          'DELETE',
+          { :bucket => bucket_name })
+
+        logger.info('Done delete bucket')
+      end
+
       # 向名为bucket_name的bucket中添加一个object，名字为object_name，
       # object的内容由block提供
       # [bucket_name] bucket名字
@@ -50,9 +86,33 @@ module Aliyun
 
         content = ""
         block.call(content)
-        send_request('PUT', bucket_name, object_name, content)
+        send_request(
+          'PUT',
+          { :bucket => bucket_name, :object => object_name },
+          {}, content)
 
         logger.info('Done put object')
+      end
+
+      # 向名为bucket_name的bucket中名字为object_name的object追加内容，
+      # object的内容由block提供，如果object不存在，则创建一个
+      # Appendable Object。
+      # [bucket_name] bucket名字
+      # [object_name] object名字
+      # [position] 追加的位置
+      # [block] 提供object的内容
+      def append_object(bucket_name, object_name, position, &block)
+        logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, position: #{position}")
+
+        content = ""
+        block.call(content)
+        params = {'append' => nil, 'position' => position}
+        send_request(
+          'POST',
+          { :bucket => bucket_name, :object => object_name, :params => params },
+          {}, content)
+
+        logger.info('Done append object')
       end
 
       # 向名为bucket_name的bucket中添加一个object，名字为object_name，
@@ -76,7 +136,10 @@ module Aliyun
       def list_object(bucket_name)
         logger.info("Begin list object, bucket: #{bucket_name}")
 
-        body = send_request('GET', bucket_name)
+        body = send_request(
+          'GET',
+          { :bucket => bucket_name })
+
         doc = Nokogiri::XML(body)
         objects = doc.css("Contents").map do |node|
           Object.new(
@@ -92,38 +155,118 @@ module Aliyun
         objects
       end
 
+      # 下载指定的bucket中的指定object
+      # [bucket_name] bucket的名字
+      # [object_name] object的名字
+      # [block] 处理object内容
+      def get_object(bucket_name, object_name, &block)
+        logger.info("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
+
+        body = send_request(
+          'GET',
+          { :bucket => bucket_name, :object => object_name })
+
+        block.call(body)
+
+        logger.info("Done get object")
+      end
+
+      # 下载指定的bucket中的指定object，将object内容写入到文件中
+      # [bucket_name] bucket的名字
+      # [object_name] object的名字
+      # [file_path] 写入object内容的文件名
+      def get_object_to_file(bucket_name, object_name, file_path)
+        logger.info("Begin get object to file, bucket: #{bucket_name}, object: #{object_name}, file: #{file_path}")
+
+        get_object(bucket_name, object_name) do |content|
+          File.open(file_path, 'w') do |f|
+            f.write(content)
+          end
+        end
+
+        logger.info("Done get object to file")
+      end
+
+      # 在一个bucket中拷贝一个object
+      # [bucket_name] bucket的名字
+      # [src_object_name] 源object的名字
+      # [dst_object_name] 目标object的名字
+      def copy_object(bucket_name, src_object_name, dst_object_name)
+        logger.info("Begin copy object, bucket: #{bucket_name}, source object: #{src_object_name}, dest object: #{dst_object_name}")
+
+        headers = {
+          'x-oss-copy-source' => get_resource_path(bucket_name, src_object_name)
+        }
+        send_request(
+          'PUT',
+          { :bucket => bucket_name, :object => dst_object_name },
+          headers)
+
+        logger.info("Done copy object")
+      end
+
+      # 删除指定的bucket中的指定object
+      # [bucket_name] bucket的名字
+      # [object_name] object的名字
+      def delete_object(bucket_name, object_name)
+        logger.info("Begin delete object, bucket: #{bucket_name}, object: #{object_name}")
+
+        send_request(
+          'DELETE',
+          { :bucket => bucket_name, :object => object_name })
+
+        logger.info("Done delete object")
+      end
+
       private
 
       # 获取请求的URL，根据操作是否指定bucket和object，URL可能不同
-      def get_request_url(bucket, object)
+      def get_request_url(bucket, object, params)
         url = ""
         url += "#{bucket}." if bucket
         url += @host
         url += "/#{object}" if object
+        if params
+          p = params.sort.map do |k,v|
+            v ? [k, v].join("=") : k
+          end.join('&')
+          url += "?#{p}"
+        end
+
         url
       end
 
-      # 发送RESTful HTTP请求
-      def send_request(verb, bucket = nil, object = nil, body = nil)
-        headers = {'Date' => Util.get_date}
-        headers['Content-Type'] = 'application/octet-stream' if body
-
-        resources = {}
+      # 获取请求的资源路径
+      def get_resource_path(bucket, object)
         if bucket
           res = "/#{bucket}/"
           res += "#{object}" if object
-          resources[:res] = res
+          res
         end
+      end
 
-        signature = Util.get_signature(@key, verb, headers, resources)
+      # 发送RESTful HTTP请求
+      def send_request(verb, resources = {}, headers = {}, body = nil)
+        bucket = resources[:bucket]
+        object = resources[:object]
+        params = resources[:params]
+
+        headers['Date'] = Util.get_date
+        headers['Content-Type'] = 'application/octet-stream'
+
+        res = {
+          :path => get_resource_path(bucket, object),
+          :params => params,
+        }
+        signature = Util.get_signature(@key, verb, headers, res)
         auth = "OSS #{@id}:#{signature}"
         headers['Authorization']  = auth
 
-        logger.debug("Send HTTP request, verb: #{verb}, bucket: #{bucket}, object: #{object}, headers: #{headers}")
+        logger.debug("Send HTTP request, verb: #{verb}, resources: #{resources}, headers: #{headers}, body: #{body}")
 
         r = RestClient::Request.execute(
           :method => verb,
-          :url => get_request_url(bucket, object),
+          :url => get_request_url(bucket, object, params),
           :headers => headers,
           :payload => body)
 

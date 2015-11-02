@@ -40,12 +40,13 @@ module Aliyun
           end.sort.map do |k, v|
             [k, v].join(":")
           end.join("\n")
+          cano_headers += "\n" unless cano_headers.empty?
 
-          cano_res = resources[:res] || "/"
-          sub_res = (resources[:sub] || {}).sort.map do |k, v|
+          cano_res = resources[:path] || "/"
+          params = (resources[:params] || {}).sort.map do |k, v|
             v ? [k, v].join("=") : k
           end.join("&")
-          cano_res += "?#{sub_res}" unless sub_res.empty?
+          cano_res += "?#{params}" unless params.empty?
 
           string_to_sign =
             "#{verb}\n#{content_md5}\n#{content_type}\n#{date}\n" +
