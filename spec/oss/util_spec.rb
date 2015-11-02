@@ -19,7 +19,7 @@ module Aliyun
 
         expect(m).not_to eq(nil)
 
-        expect(%w(Sun Mon Tue Wen Thu Fri Sat)).to include(m[1])
+        expect(%w(Sun Mon Tue Wed Thu Fri Sat)).to include(m[1])
         expect((1..31)).to cover(m[2].to_i)
         expect(%w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)).to include(m[3])
         expect((0..23)).to cover(m[5].to_i)
