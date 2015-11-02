@@ -69,5 +69,5 @@ oss.get_object_to_file(bucket, object, '/tmp/x')
 msg "Get object: #{object} success"
 
 # delete the bucket
-# oss.delete_bucket(bucket)
-# msg "Delete bucket: #{bucket} success"
+oss.delete_bucket(bucket)
+msg "Delete bucket: #{bucket} success"

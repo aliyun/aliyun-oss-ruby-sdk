@@ -268,7 +268,16 @@ module Aliyun
           :method => verb,
           :url => get_request_url(bucket, object, params),
           :headers => headers,
-          :payload => body)
+          :payload => body) do |response, request, result, &block|
+
+          if response.code >= 400
+            e = Exception.new(response.code, response.body)
+            logger.error(e.to_s)
+            raise e
+          else
+            response.return!(request, result, &block)
+          end
+        end
 
         logger.debug("Received HTTP response, code: #{r.code}, headers: #{r.headers}, body: #{r.body}")
 
