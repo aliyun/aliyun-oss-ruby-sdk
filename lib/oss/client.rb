@@ -23,10 +23,16 @@ module Aliyun
       end
 
       # 列出当前所有的bucket
-      def list_bucket
+      def list_bucket(opts = {})
         logger.info('Begin list bucket')
 
-        body = send_request('GET')
+        params = {
+          'prefix' => opts[:prefix],
+          'marker' => opts[:marker],
+          'max-keys' => opts[:limit]
+        }.select {|k, v| v}
+
+        body = send_request('GET', {:params => params}, {}, nil)
         doc = Nokogiri::XML(body) do |config|
           config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
         end
@@ -38,9 +44,22 @@ module Aliyun
           Bucket.new(name, location, creation_time)
         end
 
+        more = Hash[{
+          :prefix => 'Prefix',
+          :limit => 'MaxKeys',
+          :marker => 'Marker',
+          :next_marker => 'NextMarker',
+          :truncated => 'IsTruncated'
+        }.map do |k, v|
+          [k, get_node_text(doc.root, v)]
+        end].select {|k, v| v}
+
+        more[:limit] = more[:limit].to_i if more[:limit]
+        more[:truncated] = more[:truncated].to_bool if more[:truncated]
+
         logger.info('Done list bucket')
 
-        buckets
+        [buckets, more]
       end
 
       # 创建一个bucket
@@ -292,7 +311,8 @@ module Aliyun
 
       # 获取节点下面的tag内容
       def get_node_text(node, tag)
-        node.css(tag).first.children.first.text
+        n = node.css(tag) if node
+        n.first.text if n and n.first
       end
 
     end # Client

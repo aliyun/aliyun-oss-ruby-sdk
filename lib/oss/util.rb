@@ -5,6 +5,13 @@ require 'base64'
 require 'openssl'
 require 'net/http'
 
+class String
+  def to_bool
+    return true if self =~ /^true$/i
+    false
+  end
+end
+
 module Aliyun
   module OSS
     ##
