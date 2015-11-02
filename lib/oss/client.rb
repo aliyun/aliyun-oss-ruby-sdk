@@ -27,7 +27,10 @@ module Aliyun
         logger.info('Begin list bucket')
 
         body = send_request('GET')
-        doc = Nokogiri::XML(body)
+        doc = Nokogiri::XML(body) do |config|
+          config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
+        end
+
         buckets = doc.css("Buckets Bucket").map do |node|
           name = get_node_text(node, "Name")
           location = get_node_text(node, "Location")
@@ -140,7 +143,10 @@ module Aliyun
           'GET',
           { :bucket => bucket_name })
 
-        doc = Nokogiri::XML(body)
+        doc = Nokogiri::XML(body) do |config|
+          config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
+        end
+
         objects = doc.css("Contents").map do |node|
           Object.new(
             :key => get_node_text(node, "Key"),

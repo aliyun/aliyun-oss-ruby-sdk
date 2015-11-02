@@ -9,31 +9,33 @@ module Aliyun
 
       include Logging
 
-      attr_reader :http_code, :code, :message, :bucket_name, :request_id, :host_id
+      attr_reader :http_code, :attrs
 
       def initialize(http_code, content)
         logger.debug("Exception HTTP code: #{http_code}, content: #{content}")
 
         @http_code = http_code
-        @code = "Unknown Error"
+        @attrs = {}
 
-        begin
-          doc = Nokogiri::XML(content)
-          error = doc.css('Error').first
+        doc = Nokogiri::XML(content) do |config|
+          config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
+        end rescue nil
 
-          @code = get_node_text(error, 'Code')
-          @message = get_node_text(error, 'Message')
-          @bucket_name = get_node_text(error, 'BucketName')
-          @request_id = get_node_text(error, 'RequestId')
-          @host_id = get_node_text(error, 'HostId')
-        rescue ::Exception => e
-          @message = e.message
+        if doc
+          doc.root.children.each do |n|
+            @attrs[n.name] = n.text
+          end
         end
       end
 
+      def message
+        @attrs['Message'] || "InternalError"
+      end
+
       def to_s
-        "Code: #{code}, Message: #{message}, RequestID: #{request_id}.\n" +
-          "HTTP code: #{http_code}, Bucket: #{bucket_name}, Host: #{host_id}"
+        @attrs.merge({'HTTPCode' => @http_code}).map do |k, v|
+          [k, v].join(": ")
+        end.join(", ")
       end
 
       private
