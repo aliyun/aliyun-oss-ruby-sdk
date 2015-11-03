@@ -258,7 +258,7 @@ module Aliyun
             :status => 404, :body => mock_error(code, message))
 
           expect {
-            @oss.get_object(@bucket, object_name) {|c| content << c}
+            @oss.get_object(@bucket, object_name) {|c| true}
           }.to raise_error(Exception, message)
 
           expect(WebMock).to have_requested(:get, url)

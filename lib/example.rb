@@ -97,7 +97,6 @@ end
   msg "Prefix: #{p}"
 end
 
-
 # get object 'rails' to file: /tmp/x
 object = 'rails'
 oss.get_object_to_file(bucket, object, '/tmp/x')

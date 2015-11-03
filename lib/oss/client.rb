@@ -105,6 +105,40 @@ module Aliyun
         logger.info('Done delete bucket')
       end
 
+      class StreamReader
+        def initialize(block)
+          @block = block
+          @done = false
+          @chunks = []
+        end
+
+        def read(size)
+          return @chunks.shift unless @chunks.empty?
+          return nil if @done
+
+          @block.call(self) if @chunks.empty?
+          @chunks.shift
+        end
+
+        def write(chunk)
+          @chunks << chunk
+        end
+
+        alias << write
+
+        def closed?
+          @done
+        end
+
+        def close
+          @done = true
+        end
+
+        def close!
+          close
+        end
+      end
+
       # 向名为bucket_name的bucket中添加一个object，名字为object_name，
       # object的内容由block提供
       # [bucket_name] bucket名字
@@ -113,12 +147,12 @@ module Aliyun
       def put_object(bucket_name, object_name, &block)
         logger.info("Begin put object, bucket: #{bucket_name}, object:#{object_name}")
 
-        content = ""
-        block.call(content)
+        sr = StreamReader.new(block)
+
         send_request(
           'PUT',
           {:bucket => bucket_name, :object => object_name},
-          {:body => content})
+          {:body => sr})
 
         logger.info('Done put object')
       end
@@ -149,13 +183,12 @@ module Aliyun
       def append_object(bucket_name, object_name, position, &block)
         logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, position: #{position}")
 
-        content = ""
-        block.call(content)
+        sr = StreamReader.new(block)
         sub_res = {'append' => nil, 'position' => position}
         send_request(
           'POST',
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-          {:body => content})
+          {:body => sr})
 
         logger.info('Done append object')
       end
@@ -261,10 +294,14 @@ module Aliyun
       def get_object(bucket_name, object_name, &block)
         logger.info("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
 
-        body = send_request(
-          'GET', {:bucket => bucket_name, :object => object_name})
-
-        block.call(body)
+        send_request(
+          'GET', {
+            :bucket => bucket_name,
+            :object => object_name}) do |response|
+          response.read_body do |chunk|
+            block.call(chunk)
+          end
+        end
 
         logger.info("Done get object")
       end
@@ -276,9 +313,9 @@ module Aliyun
       def get_object_to_file(bucket_name, object_name, file_path)
         logger.info("Begin get object to file, bucket: #{bucket_name}, object: #{object_name}, file: #{file_path}")
 
-        get_object(bucket_name, object_name) do |content|
+        get_object(bucket_name, object_name) do |chunk|
           File.open(file_path, 'w') do |f|
-            f.write(content)
+            f.write(chunk)
           end
         end
 
@@ -356,7 +393,7 @@ module Aliyun
       #     [:headers] HTTP头
       #     [:body] HTTP body
       #     [:query] HTTP url参数
-      def send_request(verb, resources = {}, http_options = {})
+      def send_request(verb, resources = {}, http_options = {}, &block)
         bucket = resources[:bucket]
         object = resources[:object]
         sub_res = resources[:sub_res]
@@ -385,15 +422,22 @@ module Aliyun
           :method => verb,
           :url => get_request_url(bucket, object),
           :headers => headers,
-          :payload => http_options[:body]) do |response, request, result, &block|
+          :payload => http_options[:body],
+          :block_response => block) do
+          |response, request, result, &blk|
 
           if response.code >= 400
             e = Exception.new(response.code, response.body)
             logger.error(e.to_s)
             raise e
           else
-            response.return!(request, result, &block)
+            response.return!(request, result, &blk)
           end
+        end
+
+        unless r.is_a?(RestClient::Response)
+          r = RestClient::Response.create(nil, r, nil, nil)
+          r.return!
         end
 
         logger.debug("Received HTTP response, code: #{r.code}, headers: #{r.headers}, body: #{r.body}")
