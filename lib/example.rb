@@ -16,7 +16,8 @@ oss = Aliyun::OSS::Client.new('oss.aliyuncs.com', cred["id"], cred["key"])
 
 # list all buckets
 msg "All buckets:"
-oss.list_bucket.each do |bucket|
+buckets, _ = oss.list_bucket
+buckets.each do |bucket|
   msg "Bucket: #{bucket.name}, location: #{bucket.location}"
 end
 

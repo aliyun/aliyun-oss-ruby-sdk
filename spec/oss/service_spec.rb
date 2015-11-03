@@ -25,47 +25,33 @@ module Aliyun
 
       # 生成list_bucket返回的响应，包含bucket列表和more信息
       def mock_response(buckets, more)
-        doc = Nokogiri::XML::Document.new
-        root = doc.create_element('ListAllMyBucketsResult')
-        doc.add_child(root)
+        builder = Nokogiri::XML::Builder.new do |xml|
+          xml.ListAllMyBucketsResult {
+            xml.Owner {
+              xml.ID 'owner_id'
+              xml.DisplayName 'owner_name'
+            }
+            xml.Buckets {
+              buckets.each do |b|
+                xml.Bucket {
+                  xml.Location b.location
+                  xml.Name b.name
+                  xml.CreationDate b.creation_time.to_s
+                }
+              end
+            }
 
-        owner = doc.create_element('Owner')
-        owner_id = doc.create_element('ID', 'owner_id')
-        owner_name = doc.create_element('DisplayName', 'owner_name')
-        owner.add_child(owner_id)
-        owner.add_child(owner_name)
-        root.add_child(owner)
-
-        buckets_container = doc.create_element('Buckets')
-        root.add_child(buckets_container)
-
-        buckets.each do |b|
-          bucket_container = doc.create_element('Bucket')
-          buckets_container.add_child(bucket_container)
-
-          location = doc.create_element('Location', b.location)
-          name = doc.create_element('Name', b.name)
-          creation_date = doc.create_element('CreationDate', b.creation_time.to_s)
-          bucket_container.add_child(location)
-          bucket_container.add_child(name)
-          bucket_container.add_child(creation_date)
+            unless more.empty?
+              xml.Prefix more[:prefix]
+              xml.Marker more[:marker]
+              xml.MaxKeys more[:limit].to_s
+              xml.NextMarker more[:next_marker]
+              xml.IsTruncated more[:truncated]
+            end
+          }
         end
 
-        unless more.empty?
-          prefix_node = doc.create_element('Prefix', more[:prefix])
-          marker_node = doc.create_element('Marker', more[:marker])
-          limit_node = doc.create_element('MaxKeys', more[:limit])
-          truncated_node = doc.create_element('IsTruncated', more[:truncated])
-          next_marker_node = doc.create_element('NextMarker', more[:next_marker])
-
-          root.add_child(prefix_node)
-          root.add_child(marker_node)
-          root.add_child(limit_node)
-          root.add_child(truncated_node)
-          root.add_child(next_marker_node)
-        end
-
-        doc.to_xml
+        builder.to_xml
       end
 
       context "List all buckets" do

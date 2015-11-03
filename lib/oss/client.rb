@@ -33,9 +33,7 @@ module Aliyun
         }.select {|k, v| v}
 
         body = send_request('GET', {:params => params}, {}, nil)
-        doc = Nokogiri::XML(body) do |config|
-          config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
-        end
+        doc = parse_xml(body)
 
         buckets = doc.css("Buckets Bucket").map do |node|
           name = get_node_text(node, "Name")
@@ -70,12 +68,12 @@ module Aliyun
         location = attrs[:location]
         body = nil
         if location
-          doc = Nokogiri::XML::Document.new
-          conf = doc.create_element('CreateBucketConfiguration')
-          doc.add_child(conf)
-          loc = doc.create_element('LocationConstraint', location)
-          conf.add_child(loc)
-          body = doc.to_xml
+          builder = Nokogiri::XML::Builder.new do |xml|
+            xml.CreateBucketConfiguration {
+              xml.LocationConstraint location
+            }
+          end
+          body = builder.to_xml
         end
 
         send_request(
@@ -162,10 +160,7 @@ module Aliyun
           'GET',
           { :bucket => bucket_name })
 
-        doc = Nokogiri::XML(body) do |config|
-          config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
-        end
-
+        doc = parse_xml(body)
         objects = doc.css("Contents").map do |node|
           Object.new(
             :key => get_node_text(node, "Key"),
@@ -309,10 +304,19 @@ module Aliyun
         r.body
       end
 
+      # 将content解析成xml doc对象
+      def parse_xml(content)
+        doc = Nokogiri::XML(content) do |config|
+          config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
+        end
+
+        doc
+      end
+
       # 获取节点下面的tag内容
       def get_node_text(node, tag)
-        n = node.css(tag) if node
-        n.first.text if n and n.first
+        n = node.at_css(tag) if node
+        n.text if n
       end
 
     end # Client
