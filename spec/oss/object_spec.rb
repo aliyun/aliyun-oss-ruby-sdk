@@ -214,6 +214,59 @@ module Aliyun
         end
       end # copy object
 
+      context "Get object" do
+
+        it "should GET to get object" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          return_content = "hello world"
+          stub_request(:get, url).to_return(:body => return_content)
+
+          content = ""
+          @oss.get_object(@bucket, object_name) {|c| content << c}
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {})
+
+          expect(content).to eq(return_content)
+        end
+
+        it "should get object to file" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          return_content = "hello world"
+          stub_request(:get, url).to_return(:body => return_content)
+
+          file = '/tmp/x'
+          @oss.get_object_to_file(@bucket, object_name, file)
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {})
+
+          expect(File.read(file)).to eq(return_content)
+        end
+
+        it "should raise Exception on error" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          code = 'NoSuchKey'
+          message = 'The object does not exist'
+          stub_request(:get, url).to_return(
+            :status => 404, :body => mock_error(code, message))
+
+          expect {
+            @oss.get_object(@bucket, object_name) {|c| content << c}
+          }.to raise_error(Exception, message)
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {})
+        end
+
+      end # Get object
+
       context "Delete object" do
 
         it "should DELETE to delete object" do
