@@ -74,12 +74,12 @@ module Aliyun
 
       # 创建一个bucket
       # [name] bucket的名字
-      # [attrs] 可选的参数：
+      # [opts] 可选的参数：
       #     [:location] bucket所在的region，例如oss-cn-hangzhou
-      def create_bucket(name, attrs)
+      def create_bucket(name, opts = {})
         logger.info('Begin create bucket')
 
-        location = attrs[:location]
+        location = opts[:location]
         body = nil
         if location
           builder = Nokogiri::XML::Builder.new do |xml|
@@ -215,7 +215,8 @@ module Aliyun
           :limit => 'MaxKeys',
           :marker => 'Marker',
           :next_marker => 'NextMarker',
-          :truncated => 'IsTruncated'
+          :truncated => 'IsTruncated',
+          :encoding => 'encoding-type'
         }.map do |k, v|
           [k, get_node_text(doc.root, v)]
         end].select {|k, v| v}
