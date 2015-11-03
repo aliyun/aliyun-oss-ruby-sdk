@@ -123,6 +123,21 @@ module Aliyun
         logger.info('Done put object')
       end
 
+      # 向名为bucket_name的bucket中添加一个object，名字为object_name，
+      # object的内容从路径为file_path的文件读取
+      # [bucket_name] bucket名字
+      # [object_name] object名字
+      # [file_path] 要读取的文件
+      def put_object_from_file(bucket_name, object_name, file_path)
+        logger.info("Begin put object from file: #{file_path}")
+
+        put_object(bucket_name, object_name) do |content|
+          content << File.read(file_path)
+        end
+
+        logger.info('Done put object from file')
+      end
+
       # 向名为bucket_name的bucket中名字为object_name的object追加内容，
       # object的内容由block提供，如果object不存在，则创建一个
       # Appendable Object。
@@ -145,19 +160,22 @@ module Aliyun
         logger.info('Done append object')
       end
 
-      # 向名为bucket_name的bucket中添加一个object，名字为object_name，
-      # object的内容从路径为file_path的文件读取
+      # 向名为bucket_name的bucket中名字为object_name的object追加内容，
+      # object的内容从文件中读取，如果object不存在，则创建一个
+      # Appendable Object。
       # [bucket_name] bucket名字
       # [object_name] object名字
+      # [position] 追加的位置
       # [file_path] 要读取的文件
-      def put_object_from_file(bucket_name, object_name, file_path)
-        logger.info("Begin put object from file: #{file_path}")
+      # *注意：不能向Normal object追加内容*
+      def append_object_from_file(bucket_name, object_name, position, file_path, &block)
+        logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, position: #{position}, file: #{file_path}")
 
-        put_object(bucket_name, object_name) do |content|
+        append_object(bucket_name, object_name, position) do |content|
           content << File.read(file_path)
         end
 
-        logger.info('Done put object from file')
+        logger.info('Done append object')
       end
 
       # 列出指定的bucket中的所有object
@@ -206,7 +224,8 @@ module Aliyun
             :type => get_node_text(node, "Type"),
             :size => get_node_text(node, "Size").to_i,
             :etag => get_node_text(node, "ETag"),
-            :last_modified => Time.parse(get_node_text(node, "LastModified")))
+            :last_modified =>
+              get_node_text(node, "LastModified") {|x| Time.parse(x)})
         end
 
         more = Hash[{
@@ -276,12 +295,22 @@ module Aliyun
         headers = {
           'x-oss-copy-source' => get_resource_path(bucket_name, src_object_name)
         }
-        send_request(
+
+        body = send_request(
           'PUT',
           {:bucket => bucket_name, :object => dst_object_name},
           {:headers => headers})
 
+        doc = parse_xml(body)
+        result = {
+          :last_modified => get_node_text(
+            doc.root, 'LastModified') {|x| Time.parse(x)},
+          :etag => get_node_text(doc.root, 'ETag')
+        }.select {|k, v| v}
+
         logger.info("Done copy object")
+
+        result
       end
 
       # 删除指定的bucket中的指定object
@@ -382,9 +411,12 @@ module Aliyun
       end
 
       # 获取节点下面的tag内容
-      def get_node_text(node, tag)
+      def get_node_text(node, tag, &block)
         n = node.at_css(tag) if node
-        n.text if n
+        value = n.text if n
+        value = block.call(value) if block and value
+
+        value
       end
 
     end # Client
