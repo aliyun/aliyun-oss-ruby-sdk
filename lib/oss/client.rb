@@ -162,11 +162,42 @@ module Aliyun
 
       # 列出指定的bucket中的所有object
       # [bucket_name] bucket的名字
-      # [return] Object数组
-      def list_object(bucket_name)
+      # [opts] 可选的参数，可能的值有：
+      #    [:prefix] 返回的object key的前缀
+      #    [:marker] 如果设置，则从marker之后开始返回object，*注意：不包含marker*
+      #    [:limit] 最多返回的object的个数
+      #    [:delimiter] 如果指定，则结果中包含一个common prefix数组，
+      # 表示所有object的公共前缀。例如有以下objects：
+      #     /foo/bar/obj1
+      #     /foo/bar/obj2
+      #     ...
+      #     /foo/bar/obj9999999
+      #     /foo/xx/
+      # 指定foo/为prefix，/为delimiter，则返回的common prefix为
+      # /foo/bar/, /foo/xxx/
+      #    [:encoding] 返回的object key的编码方式
+      # [return] [objects, more] 前者是返回的object数组，后者是一个
+      # Hash，可能包含：
+      #    [:common_prefixes] common prefix数组
+      #    [:prefix] 所使用的prefix
+      #    [:delimiter] 所使用的delimiter
+      #    [:limit] 所使用的limit
+      #    [:marker] 所使用的marker
+      #    [:next_marker] 下次查询的marker
+      #    [:truncated] 本次查询是否被截断（还有更多的object待返回）
+      #    [:encoding] 返回结果中object key和prefix等的编码方式
+      def list_object(bucket_name, opts = {})
         logger.info("Begin list object, bucket: #{bucket_name}")
 
-        body = send_request('GET', {:bucket => bucket_name})
+        params = {
+          'prefix' => opts[:prefix],
+          'delimiter' => opts[:delimiter],
+          'marker' => opts[:marker],
+          'max-keys' => opts[:limit],
+          'encoding-type' => opts[:encoding]
+        }.select {|k, v| v}
+
+        body = send_request('GET', {:bucket => bucket_name}, {:query => params})
 
         doc = parse_xml(body)
         objects = doc.css("Contents").map do |node|
@@ -178,9 +209,29 @@ module Aliyun
             :last_modified => Time.parse(get_node_text(node, "LastModified")))
         end
 
+        more = Hash[{
+          :prefix => 'Prefix',
+          :delimiter => 'Delimiter',
+          :limit => 'MaxKeys',
+          :marker => 'Marker',
+          :next_marker => 'NextMarker',
+          :truncated => 'IsTruncated'
+        }.map do |k, v|
+          [k, get_node_text(doc.root, v)]
+        end].select {|k, v| v}
+
+        more[:limit] = more[:limit].to_i if more[:limit]
+        more[:truncated] = more[:truncated].to_bool if more[:truncated]
+
+        common_prefixes = []
+        doc.css("CommonPrefixes Prefix").map do |node|
+          common_prefixes << node.text
+        end
+        more[:common_prefixes] = common_prefixes unless common_prefixes.empty?
+
         logger.info("Done list object")
 
-        objects
+        [objects, more]
       end
 
       # 下载指定的bucket中的指定object

@@ -59,7 +59,8 @@ msg "Delete object: #{object} success"
 # append an object: rails
 object = "rails"
 object_size = 0
-oss.list_object(bucket).each {|o| object_size = o.size if o.key == object}
+objects, _ = oss.list_object(bucket)
+objects.each {|o| object_size = o.size if o.key == object}
 oss.append_object(bucket, object, object_size) do |content|
   content << "hello, rails.\n"
 end
@@ -67,9 +68,35 @@ msg "Append object: #{object} success"
 
 # list all objects
 msg "All objects:"
-oss.list_object(bucket).each do |o|
+objects, _ = oss.list_object(bucket)
+objects.each do |o|
   msg "Object: #{o.key}, type: #{o.type}, size: #{o.size}"
 end
+
+# list objects with prefix and delimiter
+# put objects: foo/bar/obj1, foo/bar/obj2, foo/xxx/obj1
+oss.put_object(bucket, 'foo/bar/obj1') do |content|
+  content << "foo/bar/obj1"
+end
+
+oss.put_object(bucket, 'foo/bar/obj2') do |content|
+  content << "foo/bar/obj2"
+end
+
+oss.put_object(bucket, 'foo/xxx/obj1') do |content|
+  content << "foo/xxx/obj1"
+end
+
+msg "List objects with prefix 'foo/' and delimiter '/' "
+objects, more = oss.list_object(bucket, :prefix => 'foo/', :delimiter => '/')
+objects.each do |o|
+  msg "Object: #{o.key}, type: #{o.type}, size: #{o.size}"
+end
+
+(more[:common_prefixes] || []).each do |p|
+  msg "Prefix: #{p}"
+end
+
 
 # get object 'rails' to file: /tmp/x
 object = 'rails'
