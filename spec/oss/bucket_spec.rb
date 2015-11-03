@@ -73,6 +73,18 @@ module Aliyun
         builder.to_xml
       end
 
+      def mock_error(code, message)
+        builder = Nokogiri::XML::Builder.new do |xml|
+          xml.Error {
+            xml.Code code
+            xml.Message message
+            xml.RequestId '0000'
+          }
+        end
+
+        builder.to_xml
+      end
+
       context "Create bucket" do
 
         it "should PUT to create bucket" do
@@ -198,6 +210,33 @@ module Aliyun
       end # list objects
 
       context "Delete bucket" do
+
+        it "should send DELETE reqeust" do
+          bucket_name = 'rubysdk-bucket'
+          url = get_request_path(bucket_name)
+
+          stub_request(:delete, url)
+
+          @oss.delete_bucket(bucket_name)
+
+          expect(WebMock).to have_requested(:delete, url)
+            .with(:body => nil, :query => {})
+        end
+
+        it "should raise Exception on error" do
+          bucket_name = 'rubysdk-bucket'
+          url = get_request_path(bucket_name)
+
+          code = "NoSuchBucket"
+          message = "The bucket to delete does not exist."
+
+          stub_request(:delete, url).to_return(
+            :status => 404, :body => mock_error(code, message))
+
+          expect {
+            @oss.delete_bucket(bucket_name)
+          }.to raise_error(Exception, message)
+        end
       end
 
     end # Bucket
