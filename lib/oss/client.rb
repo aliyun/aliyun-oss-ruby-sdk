@@ -23,6 +23,18 @@ module Aliyun
       end
 
       # 列出当前所有的bucket
+      # [opts] 可能的选项
+      #     [:prefix] 如果设置，则只返回以它为前缀的bucket
+      #     [:marker] 如果设置，则从从marker后开始返回bucket，*不包含marker*
+      #     [:limit] 如果设置，则最多返回limit个bucket
+      # [return] [buckets, more]，其中buckets是bucket数组，more是一个Hash，可能
+      # 包含的值是：
+      #     [:prefix] 此次查询的前缀
+      #     [:marker] 此次查询的marker
+      #     [:limit] 此次查询的limit
+      #     [:next_marker] 下次查询的marker
+      #     [:truncated] 这次查询是否被截断（还有更多的bucket没有返回）
+      # *注意：如果所有的bucket都已经返回，more将是空的*
       def list_bucket(opts = {})
         logger.info('Begin list bucket')
 
@@ -32,7 +44,7 @@ module Aliyun
           'max-keys' => opts[:limit]
         }.select {|k, v| v}
 
-        body = send_request('GET', {:params => params}, {}, nil)
+        body = send_request('GET', {}, {:query => params})
         doc = parse_xml(body)
 
         buckets = doc.css("Buckets Bucket").map do |node|
@@ -61,10 +73,12 @@ module Aliyun
       end
 
       # 创建一个bucket
-      def create_bucket(attrs)
+      # [name] bucket的名字
+      # [attrs] 可选的参数：
+      #     [:location] bucket所在的region，例如oss-cn-hangzhou
+      def create_bucket(name, attrs)
         logger.info('Begin create bucket')
 
-        name = attrs[:name]
         location = attrs[:location]
         body = nil
         if location
@@ -76,22 +90,17 @@ module Aliyun
           body = builder.to_xml
         end
 
-        send_request(
-          'PUT',
-          { :bucket => name },
-          {},
-          body)
+        send_request('PUT', {:bucket => name}, {:body => body})
 
         logger.info('Done create bucket')
       end
 
       # 删除一个bucket
-      def delete_bucket(bucket_name)
-        logger.info('Begin delete bucket')
+      # [name] bucket的名字
+      def delete_bucket(name)
+        logger.info('Begin delete bucket: #{name}')
 
-        send_request(
-          'DELETE',
-          { :bucket => bucket_name })
+        send_request('DELETE', {:bucket => name})
 
         logger.info('Done delete bucket')
       end
@@ -108,8 +117,8 @@ module Aliyun
         block.call(content)
         send_request(
           'PUT',
-          { :bucket => bucket_name, :object => object_name },
-          {}, content)
+          {:bucket => bucket_name, :object => object_name},
+          {:body => content})
 
         logger.info('Done put object')
       end
@@ -121,16 +130,17 @@ module Aliyun
       # [object_name] object名字
       # [position] 追加的位置
       # [block] 提供object的内容
+      # *注意：不能向Normal object追加内容*
       def append_object(bucket_name, object_name, position, &block)
         logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, position: #{position}")
 
         content = ""
         block.call(content)
-        params = {'append' => nil, 'position' => position}
+        sub_res = {'append' => nil, 'position' => position}
         send_request(
           'POST',
-          { :bucket => bucket_name, :object => object_name, :params => params },
-          {}, content)
+          {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+          {:body => content})
 
         logger.info('Done append object')
       end
@@ -156,9 +166,7 @@ module Aliyun
       def list_object(bucket_name)
         logger.info("Begin list object, bucket: #{bucket_name}")
 
-        body = send_request(
-          'GET',
-          { :bucket => bucket_name })
+        body = send_request('GET', {:bucket => bucket_name})
 
         doc = parse_xml(body)
         objects = doc.css("Contents").map do |node|
@@ -183,8 +191,7 @@ module Aliyun
         logger.info("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
 
         body = send_request(
-          'GET',
-          { :bucket => bucket_name, :object => object_name })
+          'GET', {:bucket => bucket_name, :object => object_name})
 
         block.call(body)
 
@@ -219,8 +226,8 @@ module Aliyun
         }
         send_request(
           'PUT',
-          { :bucket => bucket_name, :object => dst_object_name },
-          headers)
+          {:bucket => bucket_name, :object => dst_object_name},
+          {:headers => headers})
 
         logger.info("Done copy object")
       end
@@ -232,8 +239,7 @@ module Aliyun
         logger.info("Begin delete object, bucket: #{bucket_name}, object: #{object_name}")
 
         send_request(
-          'DELETE',
-          { :bucket => bucket_name, :object => object_name })
+          'DELETE', {:bucket => bucket_name, :object => object_name})
 
         logger.info("Done delete object")
       end
@@ -241,17 +247,11 @@ module Aliyun
       private
 
       # 获取请求的URL，根据操作是否指定bucket和object，URL可能不同
-      def get_request_url(bucket, object, params)
+      def get_request_url(bucket, object)
         url = ""
         url += "#{bucket}." if bucket
         url += @host
         url += "/#{object}" if object
-        if params
-          p = params.sort.map do |k,v|
-            v ? [k, v].join("=") : k
-          end.join('&')
-          url += "?#{p}"
-        end
 
         url
       end
@@ -266,29 +266,45 @@ module Aliyun
       end
 
       # 发送RESTful HTTP请求
-      def send_request(verb, resources = {}, headers = {}, body = nil)
+      # [verb] HTTP动作: GET/PUT/POST/DELETE/HEAD
+      # [resources] OSS相关的资源:
+      #     [:bucket] bucket名字
+      #     [:object] object名字
+      #     [:sub_res] 子资源
+      # [http_options] HTTP相关资源：
+      #     [:headers] HTTP头
+      #     [:body] HTTP body
+      #     [:query] HTTP url参数
+      def send_request(verb, resources = {}, http_options = {})
         bucket = resources[:bucket]
         object = resources[:object]
-        params = resources[:params]
+        sub_res = resources[:sub_res]
 
+        headers = http_options[:headers] || {}
         headers['Date'] = Util.get_date
         headers['Content-Type'] = 'application/octet-stream'
 
         res = {
           :path => get_resource_path(bucket, object),
-          :params => params,
+          :sub_res => sub_res,
         }
         signature = Util.get_signature(@key, verb, headers, res)
         auth = "OSS #{@id}:#{signature}"
         headers['Authorization']  = auth
 
-        logger.debug("Send HTTP request, verb: #{verb}, resources: #{resources}, headers: #{headers}, body: #{body}")
+        logger.debug("Send HTTP request, verb: #{verb}, resources: #{resources}, http options: #{http_options}")
+
+        # from rest-client:
+        # "Due to unfortunate choices in the original API, the params
+        # used to populate the query string are actually taken out of
+        # the headers hash."
+        headers[:params] = (sub_res || {}).merge(http_options[:query] || {})
 
         r = RestClient::Request.execute(
           :method => verb,
-          :url => get_request_url(bucket, object, params),
+          :url => get_request_url(bucket, object),
           :headers => headers,
-          :payload => body) do |response, request, result, &block|
+          :payload => http_options[:body]) do |response, request, result, &block|
 
           if response.code >= 400
             e = Exception.new(response.code, response.body)

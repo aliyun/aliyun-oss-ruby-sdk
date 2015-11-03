@@ -105,14 +105,17 @@ module Aliyun
           prefix = 'rubysdk-bucket-00'
           marker = 'rubysdk-bucket-002'
           limit = 5
+          # returns ['rubysdk-bucket-003', ..., 'rubysdk-bucket-007']
+          return_buckets = @all_buckets[2, 5]
           next_marker = 'rubysdk-bucket-007'
+
           more = {:prefix => prefix, :marker => marker, :limit => limit,
                   :next_marker => next_marker, :truncated => true}
 
           stub_request(:get, @host).with(
             :query => {'prefix' => prefix, 'marker' => marker, 'max-keys' => limit}
           ).to_return(
-            {:body => mock_response(@all_buckets[1, 5], more)})
+            {:body => mock_response(return_buckets, more)})
 
           buckets, more = @oss.list_bucket(
                      :prefix => prefix,
@@ -120,7 +123,7 @@ module Aliyun
                      :marker => marker)
 
           bucket_names = buckets.map {|b| b.name}
-          return_bucket_names = @all_buckets[1, 5].map {|b| b.name}
+          return_bucket_names = return_buckets.map {|b| b.name}
           expect(bucket_names).to match_array(return_bucket_names)
 
           expect(more).to eq({

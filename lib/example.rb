@@ -21,9 +21,16 @@ buckets.each do |bucket|
   msg "Bucket: #{bucket.name}, location: #{bucket.location}"
 end
 
+# list all buckets
+msg "List buckets prefixed with 't-':"
+buckets, _ = oss.list_bucket(:prefix => 't-', :limit => 5)
+buckets.each do |bucket|
+  msg "Bucket: #{bucket.name}, location: #{bucket.location}"
+end
+
 # create a bucket: t-hello-world
 bucket = 't-hello-world'
-oss.create_bucket(:name => bucket, :location => 'oss-cn-hangzhou')
+oss.create_bucket(bucket, :location => 'oss-cn-hangzhou')
 msg "Create bucket: #{bucket} success"
 
 # put an object: hello

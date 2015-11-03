@@ -62,7 +62,7 @@ module Aliyun
           key, 'PUT',
           {'Date' => date},
           {:path => '/bucket/object-new',
-           :params => {'append' => nil, 'position' => 0}})
+           :sub_res => {'append' => nil, 'position' => 0}})
         expect(signature).to eq("7Oh2wobzeg6dw/cWYbF/2m6s6qc=\n")
       end
 
