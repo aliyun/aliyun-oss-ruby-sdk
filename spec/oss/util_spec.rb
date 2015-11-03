@@ -6,6 +6,7 @@ module Aliyun
   module OSS
 
     describe Util do
+      # 测试生成的日期格式是否正确
       it "should get GMT date" do
         date = Util.get_date
         pattern = ""
@@ -27,6 +28,7 @@ module Aliyun
         expect((0..59)).to cover(m[7].to_i)
       end
 
+      # 测试对body content的md5编码是否正确
       it "should get correct content md5" do
         content = ""
 
@@ -38,6 +40,7 @@ module Aliyun
         expect(md5).to eq("XrY7u+Ae7tCTyyK7j1rNww==\n")
       end
 
+      # 测试签名是否正确
       it "should get correct signature" do
         key = 'helloworld'
         date = 'Fri, 30 Oct 2015 07:21:00 GMT'

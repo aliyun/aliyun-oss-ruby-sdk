@@ -23,6 +23,7 @@ module Aliyun
         end
       end
 
+      # 生成list_bucket返回的响应，包含bucket列表和more信息
       def mock_response(buckets, more)
         doc = Nokogiri::XML::Document.new
         root = doc.create_element('ListAllMyBucketsResult')
@@ -68,6 +69,7 @@ module Aliyun
       end
 
       context "List all buckets" do
+        # 测试list_bucket正确地发送了HTTP请求
         it "should send correct request" do
           stub_request(:get, @host)
 
@@ -77,19 +79,23 @@ module Aliyun
                               with(:body => nil, :query => {})
         end
 
+        # 测试list_bucket正确地解析了list_bucket的返回
         it "should correctly parse response" do
           stub_request(:get, @host).to_return(
             {:body => mock_response(@all_buckets, {})})
 
-          buckets, _ = @oss.list_bucket
+          buckets, more = @oss.list_bucket
           bucket_names = buckets.map {|b| b.name}
 
           all_bucket_names = @all_buckets.map {|b| b.name}
           expect(bucket_names).to match_array(all_bucket_names)
+
+          expect(more).to be_empty
         end
       end
 
       context "Paging buckets" do
+        # 测试list_bucket的请求中包含prefix/marker/maxkeys等信息
         it "should set prefix/max-keys param" do
           prefix = 'rubysdk-bucket-00'
           marker = 'rubysdk-bucket-002'
@@ -108,6 +114,7 @@ module Aliyun
                             'max-keys' => limit})
         end
 
+        # 测试list_bucket正确地解析了HTTP响应，包含more信息
         it "should parse next marker" do
           prefix = 'rubysdk-bucket-00'
           marker = 'rubysdk-bucket-002'
