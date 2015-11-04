@@ -136,8 +136,10 @@ module Aliyun
           headers = http_options[:headers] || {}
           headers['Date'] = Util.get_date
           headers['Content-Type'] = 'application/octet-stream'
-          headers['Transfer-Encoding'] = 'chunked' if
-            http_options[:body] and http_options[:body].respond_to?(:read)
+
+          if body = http_options[:body] and body.respond_to?(:read)
+            headers['Transfer-Encoding'] = 'chunked'
+          end
 
           res = {
             :path => get_resource_path(bucket, object),
@@ -199,3 +201,16 @@ module Aliyun
 
   end # OSS
 end # Aliyun
+
+# Monkey patch rest-client to exclude the 'Content-Length' header when
+# 'Transfer-Encoding' is set to 'chuncked'. This may be a problem for
+# some http servers like tengine.
+module RestClient
+  module Payload
+    class Base
+      def headers
+        ({'Content-Length' => size.to_s} if size) || {}
+      end
+    end
+  end
+end

@@ -13,6 +13,8 @@ module Aliyun
     #
     class Protocol
 
+      STREAM_CHUNK_SIZE = 16 * 1024
+
       class << self
 
         include Logging
@@ -128,7 +130,7 @@ module Aliyun
 
           file = File.open(File.expand_path(file_path))
           put_object(bucket_name, object_name) do |content|
-            content << file.read(4096) unless file.eof?
+            content << file.read(STREAM_CHUNK_SIZE) unless file.eof?
           end
 
           logger.info('Done put object from file')
@@ -169,7 +171,7 @@ module Aliyun
 
           file = File.open(File.expand_path(file_path))
           append_object(bucket_name, object_name, position) do |content|
-            content << file.read(4096) unless file.eof?
+            content << file.read(STREAM_CHUNK_SIZE) unless file.eof?
           end
 
           logger.info('Done append object')
@@ -274,7 +276,7 @@ module Aliyun
           logger.info("Begin get object to file, bucket: #{bucket_name}, object: #{object_name}, file: #{file_path}")
 
           get_object(bucket_name, object_name) do |chunk|
-            File.open(file_path, 'w') do |f|
+            File.open(File.expand_path(file_path), 'w') do |f|
               f.write(chunk)
             end
           end
