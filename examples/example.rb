@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 require 'yaml'
-require_relative 'oss'
+require_relative '../lib/oss'
 
 def msg(s)
   puts "MESSAGE: #{s}"
