@@ -87,7 +87,7 @@ module Aliyun
 
       context "Create bucket" do
 
-        it "should PUT to create bucket" do
+        it "should PUT to create bucket", :focus => true do
           bucket_name = 'rubysdk-bucket'
           url = get_request_path(bucket_name)
           stub_request(:put, url)

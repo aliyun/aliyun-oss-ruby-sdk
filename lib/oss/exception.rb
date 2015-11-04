@@ -5,8 +5,11 @@ require 'nokogiri'
 module Aliyun
   module OSS
 
+    # Base class for oss-sdk
     class Exception < RuntimeError
+    end
 
+    class ServerError < Exception
       include Logging
 
       attr_reader :http_code, :attrs
@@ -45,5 +48,14 @@ module Aliyun
       end
 
     end # Exception
+
+    class ClientError < Exception
+      attr_reader :message
+
+      def initialize(message)
+        @message = message
+      end
+    end # SDKException
+
   end # OSS
 end # Aliyun
