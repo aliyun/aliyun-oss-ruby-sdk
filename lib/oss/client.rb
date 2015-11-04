@@ -298,8 +298,12 @@ module Aliyun
           'GET', {
             :bucket => bucket_name,
             :object => object_name}) do |response|
-          response.read_body do |chunk|
-            block.call(chunk)
+          if response.code.to_i >= 300
+            response.read_body
+          else
+            response.read_body do |chunk|
+              block.call(chunk)
+            end
           end
         end
 
@@ -436,6 +440,13 @@ module Aliyun
         end
 
         unless r.is_a?(RestClient::Response)
+          if r.code.to_i >= 400
+            r = RestClient::Response.create(
+              RestClient::Request.decode(r['content-encoding'], r.body), r, nil, nil)
+            e = Exception.new(r.code, r.body)
+            logger.error(e.to_s)
+            raise e
+          end
           r = RestClient::Response.create(nil, r, nil, nil)
           r.return!
         end
