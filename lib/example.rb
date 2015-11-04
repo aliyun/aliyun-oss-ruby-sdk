@@ -36,7 +36,7 @@ msg "Create bucket: #{bucket} success"
 # put an object: hello
 object = "hello"
 oss.put_object(bucket, object) do |content|
-  content << "hello world"
+  content.write_and_finish "hello world"
 end
 msg "Put object: #{object} success"
 
@@ -62,7 +62,7 @@ object_size = 0
 objects, _ = oss.list_object(bucket)
 objects.each {|o| object_size = o.size if o.key == object}
 oss.append_object(bucket, object, object_size) do |content|
-  content << "hello, rails.\n"
+  content.write_and_finish "hello, rails.\n"
 end
 msg "Append object: #{object} success"
 
@@ -76,15 +76,15 @@ end
 # list objects with prefix and delimiter
 # put objects: foo/bar/obj1, foo/bar/obj2, foo/xxx/obj1
 oss.put_object(bucket, 'foo/bar/obj1') do |content|
-  content << "foo/bar/obj1"
+  content.write_and_finish "foo/bar/obj1"
 end
 
 oss.put_object(bucket, 'foo/bar/obj2') do |content|
-  content << "foo/bar/obj2"
+  content.write_and_finish "foo/bar/obj2"
 end
 
 oss.put_object(bucket, 'foo/xxx/obj1') do |content|
-  content << "foo/xxx/obj1"
+  content.write_and_finish "foo/xxx/obj1"
 end
 
 msg "List objects with prefix 'foo/' and delimiter '/' "

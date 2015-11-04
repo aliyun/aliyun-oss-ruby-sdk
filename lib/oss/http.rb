@@ -8,26 +8,34 @@ module Aliyun
     ##
     # 封装了基本的HTTP请求功能：GET/PUT/POST/DELETE/HEAD
     # 也包含了streaming PUT/GET等高级特性
-    # * Set :body to HTTP::StreamReader.new(block) to streaming
+    # * Set :body to HTTP::StreamPayload.new(block) to streaming
     # request body
     # * Pass block(chunk) to do_request to streaming response body
     #
     class HTTP
 
       ##
-      # 实现了:read方法的一个stream实现，用于对HTTP请求的body进行streaming
+      # 实现了:read(bytes, outbuf)方法的一个stream实现，用于对HTTP请求
+      # 的body进行streaming
       #
       class StreamReader
         def initialize(block)
           @block = block
           @chunks = []
+          @done = false
         end
 
-        def read(size)
-          return @chunks.shift unless @chunks.empty?
+        def read(bytes = nil, outbuf = nil)
+          # WARNING: Using outbuf = '' here DOES NOT work!
+          outbuf.clear if outbuf
 
-          @block.call(self) if @chunks.empty?
-          @chunks.shift
+          @block.call(self) if @chunks.empty? and not @done
+          return nil if @chunks.empty?
+
+          chunk = @chunks.shift
+          outbuf << chunk if outbuf and chunk
+
+          chunk
         end
 
         def write(chunk)
@@ -36,17 +44,40 @@ module Aliyun
 
         alias << write
 
+        def write_and_finish(chunk)
+          write(chunk)
+          finish!
+        end
+
+        def finish!
+          @done = true
+        end
+      end
+
+      class StreamPayload
+        def initialize(block)
+          @stream = StreamReader.new(block)
+        end
+
+        # NOTE: We are not doing the real read here, just return a
+        # readable stream for RestClient playload.rb treats it as:
+        #     def read(bytes=nil)
+        #       @stream.read(bytes)
+        #     end
+        #     alias :to_s :read
+        #     net_http_do_request(http, req, payload ? payload.to_s : nil,
+        #                     &@block_response)
+        def read(bytes = nil)
+          @stream
+        end
+
+        def close
+        end
+
         def closed?
           false
         end
 
-        def close
-          true
-        end
-
-        def close!
-          close
-        end
       end
 
       class << self
@@ -105,6 +136,8 @@ module Aliyun
           headers = http_options[:headers] || {}
           headers['Date'] = Util.get_date
           headers['Content-Type'] = 'application/octet-stream'
+          headers['Transfer-Encoding'] = 'chunked' if
+            http_options[:body] and http_options[:body].respond_to?(:read)
 
           res = {
             :path => get_resource_path(bucket, object),

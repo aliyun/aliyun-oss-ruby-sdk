@@ -113,7 +113,7 @@ module Aliyun
           HTTP.do_request(
             'PUT',
             {:bucket => bucket_name, :object => object_name},
-            {:body => HTTP::StreamReader.new(block)})
+            {:body => HTTP::StreamPayload.new(block)})
 
           logger.info('Done put object')
         end
@@ -126,8 +126,9 @@ module Aliyun
         def put_object_from_file(bucket_name, object_name, file_path)
           logger.info("Begin put object from file: #{file_path}")
 
+          file = File.open(File.expand_path(file_path))
           put_object(bucket_name, object_name) do |content|
-            content << File.read(file_path)
+            content << file.read(4096) unless file.eof?
           end
 
           logger.info('Done put object from file')
@@ -150,7 +151,7 @@ module Aliyun
           HTTP.do_request(
             'POST',
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-            {:body => HTTP::StreamReader.new(block)})
+            {:body => HTTP::StreamPayload.new(block)})
 
           logger.info('Done append object')
         end
@@ -166,8 +167,9 @@ module Aliyun
         def append_object_from_file(bucket_name, object_name, position, file_path, &block)
           logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, position: #{position}, file: #{file_path}")
 
+          file = File.open(File.expand_path(file_path))
           append_object(bucket_name, object_name, position) do |content|
-            content << File.read(file_path)
+            content << file.read(4096) unless file.eof?
           end
 
           logger.info('Done append object')
