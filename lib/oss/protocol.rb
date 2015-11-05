@@ -452,7 +452,7 @@ module Aliyun
         #    [:delimiter] if set return common prefixes
         # [return] [transactions, more]
         def list_multipart_transactions(bucket_name, opts = {})
-          logger.debug("Begin list_multipart_transactions, opts: #{opts}")
+          logger.debug("Begin list_multipart_transactions, bucket: #{bucket_name}, opts: #{opts}")
 
           sub_res = {'uploads' => nil}
           params = {

@@ -125,6 +125,23 @@ module Aliyun
             .with(:body => nil, :query => query)
           expect(txn_id).to eq(return_txn_id)
         end
+
+        it "should raise Exception on error" do
+          query = {'uploads' => ''}
+
+          code = 'InvalidArgument'
+          message = 'Invalid argument.'
+          stub_request(:post, request_path)
+            .with(:query => query)
+            .to_return(:status => 400, :body => mock_error(code, message))
+
+          expect {
+            @oss.begin_multipart(@bucket, @object)
+          }.to raise_error(Exception, message)
+
+          expect(WebMock).to have_requested(:post, request_path)
+            .with(:body => nil, :query => query)
+        end
       end # initiate multipart
 
       context "Upload part" do
@@ -162,6 +179,27 @@ module Aliyun
           expect(p.number).to eq(part_no)
           expect(p.etag).to eq(return_etag)
         end
+
+        it "should raise Exception on error" do
+          txn_id = 'xxxyyyzzz'
+          part_no = 1
+          query = {'partNumber' => part_no, 'uploadId' => txn_id}
+
+          code = 'InvalidArgument'
+          message = 'Invalid argument.'
+
+          stub_request(:put, request_path)
+            .with(:query => query)
+            .to_return(:status => 400, :body => mock_error(code, message))
+
+          expect {
+            @oss.upload_part(@bucket, @object, txn_id, part_no) {}
+          }.to raise_error(Exception, message)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:body => nil, :query => query)
+        end
+
       end # upload part
 
       context "Upload part by copy object" do
@@ -203,6 +241,28 @@ module Aliyun
           expect(p.number).to eq(part_no)
           expect(p.etag).to eq(return_etag)
         end
+
+        it "should raise Exception on error" do
+          txn_id = 'xxxyyyzzz'
+          part_no = 1
+          copy_source = "/#{@bucket}/src_obj"
+
+          query = {'partNumber' => part_no, 'uploadId' => txn_id}
+          headers = {'x-oss-copy-source' => copy_source}
+
+          code = 'PreconditionFailed'
+          message = 'Precondition check failed.'
+          stub_request(:put, request_path)
+            .with(:query => query, :headers => headers)
+            .to_return(:status => 412, :body => mock_error(code, message))
+
+          expect {
+            @oss.upload_part_from_object(@bucket, @object, txn_id, part_no, 'src_obj')
+          }.to raise_error(Exception, message)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:body => nil, :query => query, :headers => headers)
+        end
       end # upload part by copy object
 
       context "Commit multipart" do
@@ -233,6 +293,25 @@ module Aliyun
           expect(WebMock).to have_requested(:post, request_path)
             .with(:body => parts_body, :query => query)
         end
+
+        it "should raise Exception on error" do
+          txn_id = 'xxxyyyzzz'
+          query = {'uploadId' => txn_id}
+
+          code = 'InvalidDigest'
+          message = 'Content md5 does not match.'
+
+          stub_request(:post, request_path)
+            .with(:query => query)
+            .to_return(:status => 400, :body => mock_error(code, message))
+
+          expect {
+            @oss.commit_multipart(@bucket, @object, txn_id, [])
+          }.to raise_error(Exception, message)
+
+          expect(WebMock).to have_requested(:post, request_path)
+            .with(:query => query)
+        end
       end # commit multipart
 
       context "Abort multipart" do
@@ -245,6 +324,25 @@ module Aliyun
           stub_request(:delete, request_path).with(:query => query)
 
           @oss.abort_multipart(@bucket, @object, txn_id)
+
+          expect(WebMock).to have_requested(:delete, request_path)
+            .with(:body => nil, :query => query)
+        end
+
+        it "should raise Exception on error" do
+          txn_id = 'xxxyyyzzz'
+          query = {'uploadId' => txn_id}
+
+          code = 'NoSuchUpload'
+          message = 'The multipart transaction does not exist.'
+
+          stub_request(:delete, request_path)
+            .with(:query => query)
+            .to_return(:status => 404, :body => mock_error(code, message))
+
+          expect {
+            @oss.abort_multipart(@bucket, @object, txn_id)
+          }.to raise_error(Exception, message)
 
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:body => nil, :query => query)
@@ -341,6 +439,24 @@ module Aliyun
           expect(txns.map {|x| x.id}).to match_array(txn_ids)
           expect(more).to eq(return_more)
         end
+
+        it "should raise Exception on error" do
+          request_path = "#{@bucket}.#{@endpoint}/"
+          query = {'uploads' => ''}
+
+          code = 'InvalidArgument'
+          message = 'Invalid argument.'
+          stub_request(:get, request_path)
+            .with(:query => query)
+            .to_return(:status => 400, :body => mock_error(code, message))
+
+          expect {
+            @oss.list_multipart_transactions(@bucket)
+          }.to raise_error(Exception, message)
+
+          expect(WebMock).to have_requested(:get, request_path)
+            .with(:body => nil, :query => query)
+        end
       end # list multiparts
 
       context "List parts" do
@@ -415,6 +531,25 @@ module Aliyun
           part_numbers = return_parts.map {|x| x.number}
           expect(parts.map {|x| x.number}).to match_array(part_numbers)
           expect(more).to eq(return_more)
+        end
+
+        it "should raise Exception on error" do
+          txn_id = 'yyyxxxzzz'
+          query = {'uploadId' => txn_id}
+
+          code = 'InvalidArgument'
+          message = 'Invalid argument.'
+
+          stub_request(:get, request_path)
+            .with(:query => query)
+            .to_return(:status => 400, :body => mock_error(code, message))
+
+          expect {
+            @oss.list_parts(@bucket, @object, txn_id)
+          }.to raise_error(Exception, message)
+
+          expect(WebMock).to have_requested(:get, request_path)
+            .with(:body => nil, :query => query)
         end
       end # list parts
 
