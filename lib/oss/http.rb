@@ -14,12 +14,17 @@ module Aliyun
     #
     class HTTP
 
+      # mark an stream end
+      class StreamEnd; end
+
+      ENDS = StreamEnd.new
+
       ##
       # 实现了:read(bytes, outbuf)方法的一个stream实现，用于对HTTP请求
       # 的body进行streaming
       #
       class StreamReader
-        def initialize(block)
+        def initialize(block = nil)
           @block = block
           @chunks = []
           @done = false
@@ -29,7 +34,7 @@ module Aliyun
           # WARNING: Using outbuf = '' here DOES NOT work!
           outbuf.clear if outbuf
 
-          @block.call(self) if @chunks.empty? and not @done
+          @block.call(self) if @chunks.empty? and @block and not closed?
           return nil if @chunks.empty?
 
           chunk = @chunks.shift
@@ -39,18 +44,30 @@ module Aliyun
         end
 
         def write(chunk)
+          raise ClientError.new("Cannot write a closed stream reader") if closed?
+
+          if chunk.is_a?(StreamEnd)
+            @done = true
+            return self
+          end
+
           @chunks << chunk
+          self
         end
 
         alias << write
 
         def write_and_finish(chunk)
           write(chunk)
-          finish!
+          close!
         end
 
-        def finish!
+        def close!
           @done = true
+        end
+
+        def closed?
+          @done
         end
       end
 
@@ -118,6 +135,30 @@ module Aliyun
           end
         end
 
+        ##
+        # helper methods
+        #
+        def get(resources = {}, http_options = {}, &block)
+          do_request('GET', resources, http_options, &block)
+        end
+
+        def put(resources = {}, http_options = {}, &block)
+          do_request('PUT', resources, http_options, &block)
+        end
+
+        def post(resources = {}, http_options = {}, &block)
+          do_request('POST', resources, http_options, &block)
+        end
+
+        def delete(resources = {}, http_options = {}, &block)
+          do_request('DELETE', resources, http_options, &block)
+        end
+
+        def head(resources = {}, http_options = {}, &block)
+          do_request('HEAD', resources, http_options, &block)
+        end
+
+        private
         # 进行RESTful HTTP请求
         # [verb] HTTP动作: GET/PUT/POST/DELETE/HEAD
         # [resources] OSS相关的资源:
@@ -193,29 +234,6 @@ module Aliyun
           logger.debug("Received HTTP response, code: #{r.code}, headers: #{r.headers}, body: #{r.body}")
 
           [r.headers, r.body]
-        end
-
-        ##
-        # helper methods
-        #
-        def get(resources = {}, http_options = {}, &block)
-          do_request('GET', resources, http_options, &block)
-        end
-
-        def put(resources = {}, http_options = {}, &block)
-          do_request('PUT', resources, http_options, &block)
-        end
-
-        def post(resources = {}, http_options = {}, &block)
-          do_request('POST', resources, http_options, &block)
-        end
-
-        def delete(resources = {}, http_options = {}, &block)
-          do_request('DELETE', resources, http_options, &block)
-        end
-
-        def head(resources = {}, http_options = {}, &block)
-          do_request('HEAD', resources, http_options, &block)
         end
 
       end # self
