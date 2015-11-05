@@ -36,7 +36,26 @@ oss.create_bucket('t-hello-world')
 
 # 开启一个multipart事务
 txn_id = oss.begin_multipart('t-hello-world', 'multipart.file')
-puts "开启一个multipart事务：#{txn_id}"
+puts "Started a multipart transaction: #{txn_id}"
+puts
+
+# 再开启一个multipart事务
+txn_to_abort = oss.begin_multipart('t-hello-world', 'multipart.file')
+puts "Started a multipart transaction: #{txn_to_abort}"
+puts
+
+# 查看当前正在进行的multipart事务
+txns, _ = oss.list_multipart_transactions('t-hello-world')
+puts "All on-going multipart transactions:"
+txns.each do |t|
+  puts "Upload id: #{t.id}, object: #{t.object_key}"
+end
+puts
+
+# 中止一个multipart事务
+oss.abort_multipart('t-hello-world', 'multipart.file', txn_to_abort)
+puts "Aborted a multipart transaction: #{txn_to_abort}"
+puts
 
 # 上传5个part
 parts = []
@@ -46,8 +65,17 @@ parts = []
     content.write_and_finish 'multipart\n' * (11 * 1024)
   end
   parts << p
-  puts "成功上传一个part: #{p.number}"
+  puts "Uploaded a part: #{p.number}"
 end
+puts
+
+# 查看已经上传成功的part
+parts, _ = oss.list_parts('t-hello-world', 'multipart.file', txn_id)
+puts "Uploaded parts:"
+parts.each do |p|
+  puts "Part #{p.number}, size: #{p.size}"
+end
+puts
 
 # 提交multipart事务
 oss.commit_multipart('t-hello-world', 'multipart.file', txn_id, parts)
