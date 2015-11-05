@@ -209,7 +209,7 @@ module Aliyun
           ) do |response, request, result, &blk|
 
             if response.code >= 400
-              e = ServerError.new(response.code, response.body)
+              e = ServerError.new(response)
               logger.error(e.to_s)
               raise e
             else
@@ -224,7 +224,7 @@ module Aliyun
               r = RestClient::Response.create(
                 RestClient::Request.decode(r['content-encoding'], r.body),
                 r, nil, nil)
-              e = ServerError.new(r.code, r.body)
+              e = ServerError.new(r)
               logger.error(e.to_s)
               raise e
             end
@@ -239,6 +239,10 @@ module Aliyun
 
         def get_user_agent
           "aliyun-sdk-ruby/#{VERSION}"
+        end
+
+        def get_request_id(response)
+          response.headers[:x_oss_request_id]
         end
 
       end # self

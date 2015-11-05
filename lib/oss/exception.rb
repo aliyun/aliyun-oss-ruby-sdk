@@ -14,13 +14,11 @@ module Aliyun
 
       attr_reader :http_code, :attrs
 
-      def initialize(http_code, content)
-        logger.debug("Exception HTTP code: #{http_code}, content: #{content}")
+      def initialize(response)
+        @http_code = response.code
+        @attrs = {'RequestId' => get_request_id(response)}
 
-        @http_code = http_code
-        @attrs = {}
-
-        doc = Nokogiri::XML(content) do |config|
+        doc = Nokogiri::XML(response.body) do |config|
           config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
         end rescue nil
 
@@ -44,7 +42,14 @@ module Aliyun
       private
       # 获取节点下面的tag内容
       def get_node_text(node, tag)
-        node.css(tag).first.children.first.text
+        n = node.at_css(tag) if node
+        value = n.text if n
+        value
+      end
+
+      def get_request_id(response)
+        r = response.headers[:x_oss_request_id] if response.headers
+        r.to_s
       end
 
     end # Exception
