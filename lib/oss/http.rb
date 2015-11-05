@@ -175,6 +175,7 @@ module Aliyun
           sub_res = resources[:sub_res]
 
           headers = http_options[:headers] || {}
+          headers['User-Agent'] = get_user_agent
           headers['Date'] = Util.get_date
           headers['Content-Type'] = 'application/octet-stream'
 
@@ -234,6 +235,10 @@ module Aliyun
           logger.debug("Received HTTP response, code: #{r.code}, headers: #{r.headers}, body: #{r.body}")
 
           [r.headers, r.body]
+        end
+
+        def get_user_agent
+          "aliyun-sdk-ruby/#{VERSION}"
         end
 
       end # self
