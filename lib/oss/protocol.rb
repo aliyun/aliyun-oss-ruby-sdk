@@ -41,7 +41,7 @@ module Aliyun
             'max-keys' => opts[:limit]
           }.select {|k, v| v}
 
-          body = HTTP.do_request('GET', {}, {:query => params})
+          _, body = HTTP.get( {}, {:query => params})
           doc = parse_xml(body)
 
           buckets = doc.css("Buckets Bucket").map do |node|
@@ -87,7 +87,7 @@ module Aliyun
             body = builder.to_xml
           end
 
-          HTTP.do_request('PUT', {:bucket => name}, {:body => body})
+          HTTP.put({:bucket => name}, {:body => body})
 
           logger.info("Done create bucket")
         end
@@ -97,7 +97,7 @@ module Aliyun
         def delete_bucket(name)
           logger.info("Begin delete bucket: #{name}")
 
-          HTTP.do_request('DELETE', {:bucket => name})
+          HTTP.delete({:bucket => name})
 
           logger.info("Done delete bucket")
         end
@@ -112,8 +112,7 @@ module Aliyun
 
           logger.info("Begin put object, bucket: #{bucket_name}, object:#{object_name}")
 
-          HTTP.do_request(
-            'PUT',
+          HTTP.put(
             {:bucket => bucket_name, :object => object_name},
             {:body => HTTP::StreamPayload.new(block)})
 
@@ -150,8 +149,7 @@ module Aliyun
           logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, position: #{position}")
 
           sub_res = {'append' => nil, 'position' => position}
-          HTTP.do_request(
-            'POST',
+          HTTP.post(
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
             {:body => HTTP::StreamPayload.new(block)})
 
@@ -214,7 +212,7 @@ module Aliyun
             'encoding-type' => opts[:encoding]
           }.select {|k, v| v}
 
-          body = HTTP.do_request('GET', {:bucket => bucket_name}, {:query => params})
+          _, body = HTTP.get({:bucket => bucket_name}, {:query => params})
 
           doc = parse_xml(body)
           objects = doc.css("Contents").map do |node|
@@ -260,10 +258,9 @@ module Aliyun
         def get_object(bucket_name, object_name, &block)
           logger.info("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
 
-          HTTP.do_request(
-            'GET', {
-              :bucket => bucket_name,
-              :object => object_name}) {|chunk| block.call(chunk)}
+          HTTP.get({:bucket => bucket_name, :object => object_name}) do |chunk|
+            block.call(chunk)
+          end
 
           logger.info("Done get object")
         end
@@ -296,8 +293,7 @@ module Aliyun
               HTTP.get_resource_path(bucket_name, src_object_name)
           }
 
-          body = HTTP.do_request(
-            'PUT',
+          _, body = HTTP.put(
             {:bucket => bucket_name, :object => dst_object_name},
             {:headers => headers})
 
@@ -319,10 +315,233 @@ module Aliyun
         def delete_object(bucket_name, object_name)
           logger.info("Begin delete object, bucket: #{bucket_name}, object: #{object_name}")
 
-          HTTP.do_request(
-            'DELETE', {:bucket => bucket_name, :object => object_name})
+          HTTP.delete({:bucket => bucket_name, :object => object_name})
 
           logger.info("Done delete object")
+        end
+
+        ##
+        # Multipart uploading
+        #
+
+        # Begin a a multipart uploading transaction
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [opts] options
+        # [return] the txn id
+        def begin_multipart(bucket_name, object_name, opts = {})
+          logger.debug("Begin begin_multipart, bucket: #{bucket_name}, object: #{object_name}, options: #{opts}")
+
+          sub_res = {'uploads' => nil}
+          _, body = HTTP.post(
+            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res})
+
+          doc = parse_xml(body)
+          txn_id = get_node_text(doc.root, 'UploadId')
+
+          logger.debug("Done begin_multipart")
+
+          txn_id
+        end
+
+        # Upload a part in a multipart uploading transaction.
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [txn_id] the txn id
+        # [part_no] the part number
+        # [block] provide the part content
+        def upload_part(bucket_name, object_name, txn_id, part_no, &block)
+          raise ClientError.new('Missing block in upload_part') unless block
+
+          logger.debug("Begin upload part, bucket: #{bucket_name}, object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}")
+
+          sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
+          headers, _ = HTTP.put(
+            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+            {:body => HTTP::StreamPayload.new(block)})
+
+          logger.debug("Done upload part")
+
+          Multipart::Part.new(:number => part_no, :etag => headers[:etag])
+        end
+
+        # Upload a part in a multipart uploading transaction by copying
+        # from an existent object as the part's content
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [txn_id] the txn id
+        # [part_no] the part number
+        # [source_object] the source object to copy from
+        def upload_part_from_object(bucket_name, object_name, txn_id, part_no, source_object)
+          logger.debug("Begin upload part from object, bucket: #{bucket_name}, object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}, source object: #{source_object}")
+
+          headers = {
+            'x-oss-copy-source' =>
+              HTTP.get_resource_path(bucket_name, source_object)
+          }
+          sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
+
+          HTTP.put(
+            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+            {:headers => headers})
+
+          logger.debug("Done upload_part_from_object")
+        end
+
+        # Commit a multipart uploading transaction
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [txn_id] the txn id
+        # [parts] all the parts in this transaction
+        def commit_multipart(bucket_name, object_name, txn_id, parts)
+          logger.debug("Begin commit_multipart, txn id: #{txn_id}, parts: #{parts}")
+
+          sub_res = {'uploadId' => txn_id}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.CompleteMultipartUpload {
+              parts.each do |p|
+                xml.Part {
+                  xml.PartNumber p.number
+                  xml.ETag p.etag
+                }
+              end
+            }
+          end.to_xml
+
+          HTTP.post(
+            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+            {:body => body})
+
+          logger.debug("Done commit_multipart")
+        end
+
+        # Abort a multipart uploading transaction
+        # All the parts are discarded after abort. For some parts
+        # being uploaded while the abort happens, they may not be
+        # discarded. Call abort_multipart several times for this
+        # situation.
+        # [txn_id] the txn id
+        def abort_multipart(txn_id)
+          logger.debug("Begin abort_multipart, txn id: #{txn_id}")
+
+          sub_res = {'uploadId' => txn_id}
+
+          HTTP.delete(
+            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res})
+
+          logger.debug("Done abort_multipart")
+        end
+
+        # Get a list of all the on-going multipart uploading
+        # transactions.That is: thoses started and not aborted.
+        # [opts] options:
+        #    [:id_marker] if set return only thoese transactions with
+        # txn id after :id_marker
+        #    [:key_marker] 1) if :id_marker is not set, return only
+        # those transactions with object key *after* :key_marker; 2) if
+        # :id_marker is set, return only thoese transactions with
+        # object key *equals* :key_marker and txn id after :id_marker
+        #    [:prefix] if set only return those transactions with the
+        # object key prefixed with it
+        #    [:delimiter] if set return common prefixes
+        # [return] [transactions, more]
+        def list_multipart_transactions(opts = {})
+          logger.debug("Begin list_multipart_transactions, opts: #{opts}")
+
+          sub_res = {'uploads' => nil}
+          params = {
+            'prefix' => opts[:prefix],
+            'delimiter' => opts[:delimiter],
+            'upload-id-marker' => opts[:id_marker],
+            'key-marker' => opts[:key_marker],
+            'max-uploads' => opts[:limit],
+            'encoding-type' => opts[:encoding]
+          }.select {|k, v| v}
+
+          _, body = HTTP.get(
+            {:bucket => bucket_name, :sub_res => sub_res},
+            {:query => params})
+
+          doc = parse_xml(body)
+          txns = doc.css("Upload").map do |node|
+            Multipart::Transaction.new(
+              :id => get_node_text(node, "UploadId"),
+              :object_key => get_node_text(node, "Key"),
+              :creation_time =>
+                get_node_text(node, "Initiated") {|t| Time.parse(t)})
+          end
+
+          more = Hash[{
+                        :prefix => 'Prefix',
+                        :delimiter => 'Delimiter',
+                        :limit => 'MaxUploads',
+                        :id_marker => 'UploadIdMarker',
+                        :next_id_marker => 'NextUploadIdMarker',
+                        :key_marker => 'KeyMarker',
+                        :next_key_marker => 'NextKeyMarker',
+                        :truncated => 'IsTruncated',
+                        :encoding => 'encoding-type'
+                      }.map do |k, v|
+                        [k, get_node_text(doc.root, v)]
+                      end].select {|k, v| v}
+
+          more[:limit] = more[:limit].to_i if more[:limit]
+          more[:truncated] = more[:truncated].to_bool if more[:truncated]
+
+          logger.debug("Done list_multipart_transactions")
+
+          [txns, more]
+        end
+
+        # Get a list of parts that are successfully uploaded in a
+        # transaction.
+        # [txn_id] the txn id
+        # [opts] options:
+        #     [:marker] if set only return thoses parts after part
+        # number
+        #     [:limit] if set return :limit parts at most
+        # [return] the parts that are successfully uploaded
+        def list_parts(txn_id, opts = {})
+          logger.debug("Begin list_parts, txn id: #{txn_id}, options: #{opts}")
+
+          sub_res = {'uploadId' => txn_id}
+          params = {
+            'part-number-marker' => opts[:marker],
+            'max-parts' => opts[:limit],
+            'encoding-type' => opts[:encoding]
+          }.select {|k, v| v}
+
+          _, body = HTTP.get(
+            {:bucket => bucket_name, :sub_res => sub_res},
+            {:query => params})
+
+          doc = parse_xml(body)
+          parts = doc.css("Part").map do |node|
+            Multipart::Part.new(
+              :number => get_node_text(node, 'PartNumber') {|x| x.to_i},
+              :etag => get_node_text(node, 'ETag'),
+              :size => get_node_text(node, 'Size') {|x| x.to_i},
+              :last_modified =>
+                get_node_text(node, 'LastModified') {|x| Time.parse(x)})
+          end
+
+          more = Hash[{
+                        :limit => 'MaxParts',
+                        :marker => 'PartNumberMarker',
+                        :next_marker => 'NextPartNumberMarker',
+                        :truncated => 'IsTruncated',
+                        :encoding => 'encoding-type'
+                      }.map do |k, v|
+                        [k, get_node_text(doc.root, v)]
+                      end].select {|k, v| v}
+
+          more[:limit] = more[:limit].to_i if more[:limit]
+          more[:truncated] = more[:truncated].to_bool if more[:truncated]
+
+          logger.debug("Done list_parts")
+
+          [parts, more]
         end
 
         private

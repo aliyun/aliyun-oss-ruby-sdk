@@ -192,7 +192,30 @@ module Aliyun
 
           logger.debug("Received HTTP response, code: #{r.code}, headers: #{r.headers}, body: #{r.body}")
 
-          r.body
+          [r.headers, r.body]
+        end
+
+        ##
+        # helper methods
+        #
+        def get(resources = {}, http_options = {}, &block)
+          do_request('GET', resources, http_options, &block)
+        end
+
+        def put(resources = {}, http_options = {}, &block)
+          do_request('PUT', resources, http_options, &block)
+        end
+
+        def post(resources = {}, http_options = {}, &block)
+          do_request('POST', resources, http_options, &block)
+        end
+
+        def delete(resources = {}, http_options = {}, &block)
+          do_request('DELETE', resources, http_options, &block)
+        end
+
+        def head(resources = {}, http_options = {}, &block)
+          do_request('HEAD', resources, http_options, &block)
         end
 
       end # self
