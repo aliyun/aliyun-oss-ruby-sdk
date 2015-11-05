@@ -381,11 +381,13 @@ module Aliyun
           }
           sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
 
-          HTTP.put(
+          headers, _ = HTTP.put(
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
             {:headers => headers})
 
           logger.debug("Done upload_part_from_object")
+
+          Multipart::Part.new(:number => part_no, :etag => headers[:etag])
         end
 
         # Commit a multipart uploading transaction
@@ -421,8 +423,10 @@ module Aliyun
         # being uploaded while the abort happens, they may not be
         # discarded. Call abort_multipart several times for this
         # situation.
+        # [bucket_name] the bucket name
+        # [object_name] the object name
         # [txn_id] the txn id
-        def abort_multipart(txn_id)
+        def abort_multipart(bucket_name, object_name, txn_id)
           logger.debug("Begin abort_multipart, txn id: #{txn_id}")
 
           sub_res = {'uploadId' => txn_id}
@@ -435,6 +439,7 @@ module Aliyun
 
         # Get a list of all the on-going multipart uploading
         # transactions.That is: thoses started and not aborted.
+        # [bucket_name] the bucket name
         # [opts] options:
         #    [:id_marker] if set return only thoese transactions with
         # txn id after :id_marker
@@ -446,7 +451,7 @@ module Aliyun
         # object key prefixed with it
         #    [:delimiter] if set return common prefixes
         # [return] [transactions, more]
-        def list_multipart_transactions(opts = {})
+        def list_multipart_transactions(bucket_name, opts = {})
           logger.debug("Begin list_multipart_transactions, opts: #{opts}")
 
           sub_res = {'uploads' => nil}
@@ -502,8 +507,8 @@ module Aliyun
         # number
         #     [:limit] if set return :limit parts at most
         # [return] the parts that are successfully uploaded
-        def list_parts(txn_id, opts = {})
-          logger.debug("Begin list_parts, txn id: #{txn_id}, options: #{opts}")
+        def list_parts(bucket_name, object_name, txn_id, opts = {})
+          logger.debug("Begin list_parts, bucket: #{bucket_name}, object: #{object_name}, txn id: #{txn_id}, options: #{opts}")
 
           sub_res = {'uploadId' => txn_id}
           params = {
@@ -513,7 +518,7 @@ module Aliyun
           }.select {|k, v| v}
 
           _, body = HTTP.get(
-            {:bucket => bucket_name, :sub_res => sub_res},
+            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
             {:query => params})
 
           doc = parse_xml(body)
