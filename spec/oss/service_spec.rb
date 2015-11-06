@@ -19,7 +19,10 @@ module Aliyun
         @all_buckets = []
         (1..10).each do |i|
           name = "rubysdk-bucket-#{i.to_s.rjust(3, '0')}"
-          @all_buckets << Bucket.new(name, 'oss-cn-hangzhou', Time.now)
+          @all_buckets << Bucket.new(
+            :name => name,
+            :location => 'oss-cn-hangzhou',
+            :creation_time => Time.now)
         end
       end
 

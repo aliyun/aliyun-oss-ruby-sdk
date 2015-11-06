@@ -324,7 +324,7 @@ module Aliyun
           query = {'acl' => ''}
           stub_request(:put, request_path).with(:query => query)
 
-          @oss.update_bucket_acl(@bucket, Bucket::ACL::PUBLIC_READ)
+          @oss.update_bucket_acl(@bucket, Struct::ACL::PUBLIC_READ)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => nil)
@@ -332,7 +332,7 @@ module Aliyun
 
         it "should get acl" do
           query = {'acl' => ''}
-          return_acl = Bucket::ACL::PUBLIC_READ
+          return_acl = Struct::ACL::PUBLIC_READ
           stub_request(:get, request_path)
             .with(:query => query)
             .to_return(:body => mock_acl(return_acl))
@@ -456,12 +456,12 @@ module Aliyun
           expect(opts).to eq(referer_opts)
         end
 
-        it "should update lifecycle" do
+        it "should update lifecycle", :focus => true do
           query = {'lifecycle' => ''}
           stub_request(:put, request_path).with(:query => query)
 
           rules = (1..5).map do |i|
-            Bucket::LifeCycleRule.new(
+            Struct::LifeCycleRule.new(
               :id => i, :enabled => i % 2 == 0, :prefix => "foo#{i}",
               :expiry => (i % 2 == 1 ? Time.now : 10 + i))
           end
@@ -475,7 +475,7 @@ module Aliyun
         it "should get lifecycle" do
           query = {'lifecycle' => ''}
           return_rules = (1..5).map do |i|
-            Bucket::LifeCycleRule.new(
+            Struct::LifeCycleRule.new(
               :id => i, :enabled => i % 2 == 0, :prefix => "foo#{i}",
               :expiry => (i % 2 == 1 ? Time.now.iso8601 : 10 + i))
           end
@@ -506,7 +506,7 @@ module Aliyun
           stub_request(:put, request_path).with(:query => query)
 
           rules = (1..5).map do |i|
-            Bucket::CORSRule.new(
+            Struct::CORSRule.new(
               :allowed_origins => (1..3).map {|x| "origin-#{x}"},
               :allowed_methods => ['PUT', 'GET'],
               :allowed_headers => (1..3).map {|x| "header-#{x}"},
@@ -521,7 +521,7 @@ module Aliyun
         it "should get cors" do
           query = {'cors' => ''}
           return_rules = (1..5).map do |i|
-            Bucket::CORSRule.new(
+            Struct::CORSRule.new(
               :allowed_origins => (1..3).map {|x| "origin-#{x}"},
               :allowed_methods => ['PUT', 'GET'],
               :allowed_headers => (1..3).map {|x| "header-#{x}"},

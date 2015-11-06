@@ -8,50 +8,9 @@ module Aliyun
     #
     class Bucket
 
-      class ACL
-        PUBLIC_READ_WRITE = "public-read-write"
-        PUBLIC_READ = "public-read"
-        PRIVATE = "private"
-      end
+      include Struct::Base
 
-      class LifeCycleRule
-        attr_reader :id, :enabled, :prefix, :expiry
-
-        def initialize(opts)
-          @id = opts[:id]
-          @enabled = opts[:enabled]
-          @prefix = opts[:prefix]
-          @expiry = opts[:expiry]
-        end
-      end
-
-      class CORSRule
-        @@attrs = [
-          :allowed_origins, :allowed_methods, :allowed_headers,
-          :expose_headers, :max_age_seconds]
-
-        attr_reader(*@@attrs)
-
-        def initialize(opts = {})
-          @@attrs.each do |attr|
-            instance_variable_set("@#{attr}", opts[attr])
-          end
-        end
-
-        def to_s
-          @@attrs.map do |attr|
-            v = instance_variable_get("@#{attr}")
-            "#{attr.to_s}: #{v}"
-          end.join(",")
-        end
-      end
-
-      attr_reader :name, :location, :creation_time
-
-      # 构造一个Bucket
-      def initialize(name, location, creation_time)
-        @name, @location, @creation_time = name, location, creation_time
-      end
+      attrs :name, :location, :creation_time
 
     end # Bucket
   end # OSS

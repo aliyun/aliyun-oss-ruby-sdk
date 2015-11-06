@@ -368,11 +368,11 @@ module Aliyun
           query = {'acl' => ''}
           stub_request(:put, url).with(:query => query)
 
-          @oss.update_object_acl(@bucket, object_name, Object::ACL::PUBLIC_READ)
+          @oss.update_object_acl(@bucket, object_name, Struct::ACL::PUBLIC_READ)
 
           expect(WebMock).to have_requested(:put, url)
             .with(:query => query,
-                  :headers => {'x-oss-acl' => Object::ACL::PUBLIC_READ},
+                  :headers => {'x-oss-acl' => Struct::ACL::PUBLIC_READ},
                   :body => nil)
         end
 
@@ -381,7 +381,7 @@ module Aliyun
           url = get_request_path(object_name)
 
           query = {'acl' => ''}
-          return_acl = Object::ACL::PUBLIC_READ
+          return_acl = Struct::ACL::PUBLIC_READ
 
           stub_request(:get, url)
             .with(:query => query)
@@ -400,7 +400,7 @@ module Aliyun
           object_name = 'ruby'
           url = get_request_path(object_name)
 
-          return_rule = Bucket::CORSRule.new(
+          return_rule = Struct::CORSRule.new(
             :allowed_origins => 'origin',
             :allowed_methods => 'PUT',
             :allowed_headers => 'Authorization',

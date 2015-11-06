@@ -45,10 +45,12 @@ module Aliyun
           doc = parse_xml(body)
 
           buckets = doc.css("Buckets Bucket").map do |node|
-            name = get_node_text(node, "Name")
-            location = get_node_text(node, "Location")
-            creation_time = Time.parse(get_node_text(node, "CreationDate"))
-            Bucket.new(name, location, creation_time)
+            Bucket.new(
+              :name => get_node_text(node, "Name"),
+              :location => get_node_text(node, "Location"),
+              :creation_time =>
+                get_node_text(node, "CreationDate") {|t| Time.parse(t)}
+            )
           end
 
           more = Hash[{
@@ -352,7 +354,7 @@ module Aliyun
             raise Client.new("We can only have one of Date and Days for expiry.") \
                             if (days and date) or (not days and not date)
 
-            Bucket::LifeCycleRule.new(
+            Struct::LifeCycleRule.new(
               :id => get_node_text(n, 'ID') {|x| x.to_i},
               :prefix => get_node_text(n, 'Prefix'),
               :enabled => get_node_text(n, 'Status') {|x| x == 'Enabled'},
@@ -430,7 +432,7 @@ module Aliyun
             expose_headers = n.css("ExposeHeader").map {|x| x.text}
             max_age_seconds = get_node_text(n, 'MaxAgeSeconds') {|x| x.to_i}
 
-            rules << Bucket::CORSRule.new(
+            rules << Struct::CORSRule.new(
               :allowed_origins => allowed_origins,
               :allowed_methods => allowed_methods,
               :allowed_headers => allowed_headers,
@@ -584,8 +586,8 @@ module Aliyun
               :type => get_node_text(node, "Type"),
               :size => get_node_text(node, "Size").to_i,
               :etag => get_node_text(node, "ETag"),
-              :last_modified =>
-              get_node_text(node, "LastModified") {|x| Time.parse(x)})
+              :last_modified => get_node_text(node, "LastModified") {|x| Time.parse(x)}
+            )
           end
 
           more = Hash[{
@@ -779,7 +781,7 @@ module Aliyun
 
           logger.debug("Done get object cors")
 
-          Bucket::CORSRule.new(
+          Struct::CORSRule.new(
             :allowed_origins => return_headers[:access_control_allow_origin],
             :allowed_methods => return_headers[:access_control_allow_methods],
             :allowed_headers => return_headers[:access_control_allow_headers],

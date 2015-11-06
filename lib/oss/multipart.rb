@@ -12,41 +12,42 @@ module Aliyun
       # A multipart uploading transaction
       #
       class Transaction
-        attr_accessor :id, :object_key, :creation_time
 
-        def initialize(opts = {})
-          @id = opts[:id]
-          @object_key = opts[:object_key]
-          @creation_time = opts[:creation_time]
-        end
-      end
+        include Struct::Base
+
+        attrs :id, :object_key, :creation_time
+
+      end # Transaction
 
       ##
       # A part in a multipart uploading transaction
       #
       class Part
-        attr_accessor :number, :etag
-        attr_reader :size, :last_modified
 
-        def initialize(opts = {})
-          @number = opts[:number]
-          @etag = opts[:etag]
-          @size = opts[:size]
-          @last_modified = opts[:last_modified]
+        include Struct::Base
+
+        attrs :number, :etag, :size, :last_modified
+
+        def number=(n)
+          @number = n
         end
-      end
+
+        def etag=(e)
+          @etag = e
+        end
+      end # Part
 
       ##
       # A checkpoint for a multipart uploading transaction. It can be
       # used resume and complete a transaction after interrupted.
       #
       class CheckPoint
-        attr_reader :txn_id, :parts
 
-        def self.create(txn_id, parts)
-          self.new
-        end
-      end
+        include Struct::Base
+
+        attrs :txn_id, :parts
+
+      end # CheckPoint
 
     end # Multipart
 
