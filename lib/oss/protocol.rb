@@ -604,6 +604,78 @@ module Aliyun
           logger.info("Done delete object")
         end
 
+        # Batch delete objects
+        # [bucket_name] the bucket name
+        # [object_names] the object names to delete
+        # [return] object names that are successfully deleted, or [] if :quiet is true
+        def batch_delete_objects(bucket_name, object_names, opts = {})
+          logger.info("Begin batch delete object, bucket: #{bucket_name}, objects: #{object_names}")
+
+          sub_res = {'delete' => nil}
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.Delete {
+              xml.Quiet opts[:quiet]? true : false
+              object_names.each do |o|
+                xml.Object {
+                  xml.Key o
+                }
+              end
+            }
+          end.to_xml
+
+          _, body = HTTP.post(
+               {:bucket => bucket_name, :sub_res => sub_res},
+               {:body => body})
+
+          deleted = []
+          unless opts[:quiet]
+            doc = parse_xml(body)
+            doc.css("Deleted").map do |n|
+              deleted << get_node_text(n, 'Key')
+            end
+          end
+
+          logger.info("Done delete object")
+
+          deleted
+        end
+
+        # Update object acl
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [acl] the object acl
+        def update_object_acl(bucket_name, object_name, acl)
+          logger.debug("Begin update object acl, bucket: #{bucket_name}, object: #{object_name}, acl: #{acl}")
+
+          sub_res = {'acl' => nil}
+          headers = {'x-oss-acl' => acl}
+
+          HTTP.put(
+            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+            {:headers => headers})
+
+          logger.debug("Done update object acl")
+        end
+
+        # Get object acl
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [return] the object acl
+        def get_object_acl(bucket_name, object_name)
+          logger.debug("Begin get object acl, bucket: #{bucket_name}, object: #{object_name}")
+
+          sub_res = {'acl' => nil}
+          _, body = HTTP.get(
+               {:bucket => bucket_name, :object => object_name, :sub_res => sub_res})
+
+          doc = parse_xml(body)
+          acl = get_node_text(doc.at_css("AccessControlList"), 'Grant')
+
+          logger.debug("Done get object acl")
+
+          acl
+        end
+
         ##
         # Multipart uploading
         #

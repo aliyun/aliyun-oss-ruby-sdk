@@ -20,8 +20,10 @@ module Aliyun
         @bucket = 'rubysdk-bucket'
       end
 
-      def get_request_path(object)
-        "#{@bucket}.#{@endpoint}/#{object}"
+      def get_request_path(object = nil)
+        p = "#{@bucket}.#{@endpoint}/"
+        p += object if object
+        p
       end
 
       def get_resource_path(object)
@@ -37,6 +39,46 @@ module Aliyun
         end
 
         builder.to_xml
+      end
+
+      def mock_acl(acl)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.AccessControlPolicy {
+            xml.Owner {
+              xml.ID 'owner_id'
+              xml.DisplayName 'owner_name'
+            }
+
+            xml.AccessControlList {
+              xml.Grant acl
+            }
+          }
+        end.to_xml
+      end
+
+      def mock_delete(objects, opts = {})
+        Nokogiri::XML::Builder.new do |xml|
+          xml.Delete {
+            xml.Quiet opts[:quiet]? true : false
+            objects.each do |o|
+              xml.Object {
+                xml.Key o
+              }
+            end
+          }
+        end.to_xml
+      end
+
+      def mock_delete_result(deleted)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.DeleteResult {
+            deleted.each do |o|
+              xml.Deleted {
+                xml.Key o
+              }
+            end
+          }
+        end.to_xml
       end
 
       def mock_error(code, message)
@@ -297,7 +339,61 @@ module Aliyun
           expect(WebMock).to have_requested(:delete, url)
             .with(:body => nil, :query => {})
         end
+
+        it "should batch delete objects" do
+          url = get_request_path
+          query = {'delete' => ''}
+
+          object_names = (1..5).map do |i|
+            "object-#{i}"
+          end
+
+          stub_request(:post, url)
+            .with(:query => query)
+            .to_return(:body => mock_delete_result(object_names))
+
+          deleted = @oss.batch_delete_objects(@bucket, object_names)
+
+          expect(WebMock).to have_requested(:post, url)
+            .with(:query => query, :body => mock_delete(object_names))
+          expect(deleted).to match_array(object_names)
+        end
       end # delete object
+
+      context "acl" do
+        it "should update acl" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          query = {'acl' => ''}
+          stub_request(:put, url).with(:query => query)
+
+          @oss.update_object_acl(@bucket, object_name, Object::ACL::PUBLIC_READ)
+
+          expect(WebMock).to have_requested(:put, url)
+            .with(:query => query,
+                  :headers => {'x-oss-acl' => Object::ACL::PUBLIC_READ},
+                  :body => nil)
+        end
+
+        it "should get acl" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          query = {'acl' => ''}
+          return_acl = Object::ACL::PUBLIC_READ
+
+          stub_request(:get, url)
+            .with(:query => query)
+            .to_return(:body => mock_acl(return_acl))
+
+          acl = @oss.get_object_acl(@bucket, object_name)
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => query)
+          expect(acl).to eq(return_acl)
+        end
+      end # acl
 
     end # Object
 
