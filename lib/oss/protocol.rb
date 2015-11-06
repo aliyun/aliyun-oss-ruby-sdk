@@ -755,6 +755,39 @@ module Aliyun
           acl
         end
 
+        # Get object CORS rule
+        # NOTE: this is usually used by browser to make a 'preflight'
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [origin] the origin of the request
+        # [method] the method to request access: Access-Control-Request-Method
+        # [headers] the method to request access: Access-Control-Request-Headers
+        # [return] CORSRule that describe access rule of the object
+        def get_object_cors(bucket_name, object_name, origin, method, headers = [])
+          logger.debug("Begin get object cors, bucket: #{bucket_name}, object: #{object_name} \
+                        origin: #{origin}, method: #{method}, headers: #{headers.join(',')}")
+
+          h = {
+            'Origin' => origin,
+            'Access-Control-Request-Method' => method,
+            'Access-Control-Request-Headers' => headers.join(',')
+          }
+
+          return_headers, _ = HTTP.options(
+                            {:bucket => bucket_name, :object => object_name},
+                            {:headers => h})
+
+          logger.debug("Done get object cors")
+
+          Bucket::CORSRule.new(
+            :allowed_origins => return_headers[:access_control_allow_origin],
+            :allowed_methods => return_headers[:access_control_allow_methods],
+            :allowed_headers => return_headers[:access_control_allow_headers],
+            :expose_headers => return_headers[:access_control_expose_headers],
+            :max_age_seconds => return_headers[:access_control_max_age]
+          )
+        end
+
         ##
         # Multipart uploading
         #

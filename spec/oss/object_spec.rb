@@ -395,6 +395,37 @@ module Aliyun
         end
       end # acl
 
+      context "cors" do
+        it "should get object cors" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          return_rule = Bucket::CORSRule.new(
+            :allowed_origins => 'origin',
+            :allowed_methods => 'PUT',
+            :allowed_headers => 'Authorization',
+            :expose_headers => 'x-oss-test',
+            :max_age_seconds => 10
+          )
+          stub_request(:options, url).to_return(
+            :headers => {
+              'Access-Control-Allow-Origin' => return_rule.allowed_origins,
+              'Access-Control-Allow-Methods' => return_rule.allowed_methods,
+              'Access-Control-Allow-Headers' => return_rule.allowed_headers,
+              'Access-Control-Expose-Headers' => return_rule.expose_headers,
+              'Access-Control-Max-Age' => return_rule.max_age_seconds
+            }
+          )
+
+          rule = @oss.get_object_cors(
+            @bucket, object_name, 'origin', 'PUT', ['Authorization'])
+
+          expect(WebMock).to have_requested(:options, url)
+            .with(:body => nil, :query => {})
+          expect(rule.to_s).to eq(return_rule.to_s)
+        end
+      end # cors
+
     end # Object
 
   end # OSS

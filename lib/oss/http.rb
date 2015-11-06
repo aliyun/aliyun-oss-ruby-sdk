@@ -158,6 +158,10 @@ module Aliyun
           do_request('HEAD', resources, http_options, &block)
         end
 
+        def options(resources = {}, http_options = {}, &block)
+          do_request('OPTIONS', resources, http_options, &block)
+        end
+
         private
         # 进行RESTful HTTP请求
         # [verb] HTTP动作: GET/PUT/POST/DELETE/HEAD
