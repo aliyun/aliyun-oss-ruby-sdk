@@ -92,6 +92,123 @@ module Aliyun
           logger.info("Done create bucket")
         end
 
+        # Update bucket acl
+        # [name] the bucket name
+        # [acl] the bucket acl
+        def update_bucket_acl(name, acl)
+          logger.info("Begin update bucket acl, name: #{name}, acl: #{acl}")
+
+          sub_res = {'acl' => nil}
+          headers = {'x-oss-acl' => acl}
+          HTTP.put(
+            {:bucket => name, :sub_res => sub_res},
+            {:headers => headers, :body => nil})
+
+          logger.info("Done update bucket acl")
+        end
+
+        # Get bucket acl
+        # [name] the bucket name
+        # [return] the acl of this bucket
+        def get_bucket_acl(name)
+          logger.info("Begin get bucket acl, name: #{name}")
+
+          sub_res = {'acl' => nil}
+          _, body = HTTP.get({:bucket => name, :sub_res => sub_res})
+
+          doc = parse_xml(body)
+          acl = get_node_text(doc.at_css("AccessControlList"), 'Grant')
+          logger.info("Done get bucket acl")
+
+          acl
+        end
+
+        # Update bucket logging settings
+        # [name] the bucket name
+        # [opts] the logging options
+        def update_bucket_logging(name, opts)
+          logger.info("Begin update bucket logging, name: #{name}, options: #{opts}")
+          logger.info("Done update bucket logging")
+        end
+
+        # Get bucket logging settings
+        # [name] the bucket name
+        # [return] a Hash represents the logging settings of this bucket
+        def get_bucket_logging(name)
+          logger.info("Begin get bucket logging, name: #{name}")
+          logger.info("Done get bucket logging")
+        end
+
+        # Delete bucket logging settings, a.k.a. disable bucket logging
+        # [name] the bucket name
+        def delete_bucket_logging(name)
+          logger.info("Begin delete bucket logging, name: #{name}")
+          logger.info("Done delete bucket logging")
+        end
+
+        # Update bucket website settings
+        # [name] the bucket name
+        # [opts] the bucket website options
+        def update_bucket_website(name, opts)
+          logger.info("Begin update bucket website, name: #{name}, options: #{opts}")
+          logger.info("Done update bucket website")
+        end
+
+        # Get bucket website settings
+        # [name] the bucket name
+        # [return] a Hash represents the website settings of this bucket
+        def get_bucket_website(name)
+          logger.info("Begin get bucket website, name: #{name}")
+          logger.info("Done get bucket website")
+        end
+
+        # Delete bucket website settings
+        # [name] the bucket name
+        def delete_bucket_website(name)
+          logger.info("Begin delete bucket website, name: #{name}")
+          logger.info("Done delete bucket website")
+        end
+
+        # Update bucket referer
+        # [name] the bucket name
+        # [opts] the bucket referer options
+        def update_bucket_referer(name, opts)
+          logger.info("Begin update bucket referer, name: #{name}, options: #{opts}")
+          logger.info("Done update bucket referer")
+        end
+
+        # Get bucket referer
+        # [name] the bucket name
+        # [return] a Hash represents the referer settings of this bucket
+        def get_bucket_referer(name)
+          logger.info("Begin get bucket referer, name: #{name}")
+          logger.info("Done get bucket referer")
+        end
+
+        # Update bucket lifecycle settings
+        # [name] the bucket name
+        # [rules] the lifecycle rules
+        def update_bucket_lifecycle(name, rules)
+          logger.info("Begin update bucket lifecycle, name: #{name}, rules: #{rules.map {|r| r.to_s}}")
+          logger.info("Done update bucket lifecycle")
+        end
+
+        # Get bucket lifecycle settings
+        # [name] the bucket name
+        # [return] Rule[] the lifecycle rules set on this bucket
+        def get_bucket_lifecycle(name)
+          logger.info("Begin get bucket lifecycle, name: #{name}")
+          logger.info("Done get bucket lifecycle")
+        end
+
+        # Delete bucket lifecycle settings
+        # NOTE: this will delete all lifecycle rules
+        # [name] the bucket name
+        def delete_bucket_lifecycle(name)
+          logger.info("Begin delete bucket lifecycle, name: #{name}")
+          logger.info("Done delete bucket lifecycle")
+        end
+
         # 删除一个bucket
         # [name] bucket的名字
         def delete_bucket(name)
