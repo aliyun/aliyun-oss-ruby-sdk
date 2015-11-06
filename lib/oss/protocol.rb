@@ -128,6 +128,30 @@ module Aliyun
         # [opts] the logging options
         def update_bucket_logging(name, opts)
           logger.info("Begin update bucket logging, name: #{name}, options: #{opts}")
+
+          raise ClientError.new("Must specify :enabled when update bucket logging.") \
+                               unless opts.has_key?(:enable)
+          raise ClientError.new("Must specify target bucket when enabling bucket logging.") \
+                               if opts[:enable] and not opts.has_key?(:target_bucket)
+          raise ClientError.new("Unexpected extra options when update bucket logging.") \
+                               if (opts.size > 1 and not opts[:enable])
+
+          sub_res = {'logging' => nil}
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.BucketLoggingStatus {
+              if opts[:enable]
+                xml.LoggingEnabled {
+                  xml.TargetBucket opts[:target_bucket]
+                  xml.TargetPrefix opts[:prefix] if opts[:prefix]
+                }
+              end
+            }
+          end.to_xml
+
+          HTTP.put(
+            {:bucket => name, :sub_res => sub_res},
+            {:body => body})
+
           logger.info("Done update bucket logging")
         end
 
@@ -136,13 +160,34 @@ module Aliyun
         # [return] a Hash represents the logging settings of this bucket
         def get_bucket_logging(name)
           logger.info("Begin get bucket logging, name: #{name}")
+
+          sub_res = {'logging' => nil}
+          _, body = HTTP.get({:bucket => name, :sub_res => sub_res})
+
+          doc = parse_xml(body)
+          opts = {:enable => false}
+
+          logging_node = doc.at_css("LoggingEnabled")
+          if logging_node
+            opts.update(:enable => true)
+            opts.update(
+              :target_bucket => get_node_text(logging_node, 'TargetBucket'),
+              :prefix => get_node_text(logging_node, 'TargetPrefix')
+            )
+          end
           logger.info("Done get bucket logging")
+
+          opts.select {|_, v| v != nil}
         end
 
         # Delete bucket logging settings, a.k.a. disable bucket logging
         # [name] the bucket name
         def delete_bucket_logging(name)
           logger.info("Begin delete bucket logging, name: #{name}")
+
+          sub_res = {'logging' => nil}
+          HTTP.delete({:bucket => name, :sub_res => sub_res})
+
           logger.info("Done delete bucket logging")
         end
 
@@ -151,6 +196,28 @@ module Aliyun
         # [opts] the bucket website options
         def update_bucket_website(name, opts)
           logger.info("Begin update bucket website, name: #{name}, options: #{opts}")
+
+          raise ClientError.new("Must specify :index to update bucket website") \
+                               unless opts.has_key?(:index)
+
+          sub_res = {'website' => nil}
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.WebsiteConfiguration {
+              xml.IndexDocument {
+                xml.Suffix opts[:index]
+              }
+              if opts[:error]
+                xml.ErrorDocument {
+                  xml.Key opts[:error]
+                }
+              end
+            }
+          end.to_xml
+
+          HTTP.put(
+            {:bucket => name, :sub_res => sub_res},
+            {:body => body})
+
           logger.info("Done update bucket website")
         end
 
@@ -159,13 +226,30 @@ module Aliyun
         # [return] a Hash represents the website settings of this bucket
         def get_bucket_website(name)
           logger.info("Begin get bucket website, name: #{name}")
+
+          sub_res = {'website' => nil}
+          _, body = HTTP.get({:bucket => name, :sub_res => sub_res})
+
+          opts = {}
+          doc = parse_xml(body)
+          opts.update(
+            :index => get_node_text(doc.at_css('IndexDocument'), 'Suffix'),
+            :error => get_node_text(doc.at_css('ErrorDocument'), 'Key')
+          )
+
           logger.info("Done get bucket website")
+
+          opts.select {|_, v| v}
         end
 
         # Delete bucket website settings
         # [name] the bucket name
         def delete_bucket_website(name)
           logger.info("Begin delete bucket website, name: #{name}")
+
+          sub_res = {'website' => nil}
+          HTTP.delete({:bucket => name, :sub_res => sub_res})
+
           logger.info("Done delete bucket website")
         end
 
@@ -174,6 +258,26 @@ module Aliyun
         # [opts] the bucket referer options
         def update_bucket_referer(name, opts)
           logger.info("Begin update bucket referer, name: #{name}, options: #{opts}")
+
+          raise ClientError.new("Must specify :allow_empty to update bucket referer.") \
+                               unless opts.has_key?(:allow_empty)
+
+          sub_res = {'referer' => nil}
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.RefererConfiguration {
+              xml.AllowEmptyReferer opts[:allow_empty]
+              xml.RefererList {
+                (opts[:referers] or []).each do |r|
+                  xml.Referer r
+                end
+              }
+            }
+          end.to_xml
+
+          HTTP.put(
+            {:bucket => name, :sub_res => sub_res},
+            {:body => body})
+
           logger.info("Done update bucket referer")
         end
 
@@ -182,7 +286,19 @@ module Aliyun
         # [return] a Hash represents the referer settings of this bucket
         def get_bucket_referer(name)
           logger.info("Begin get bucket referer, name: #{name}")
+
+          sub_res = {'referer' => nil}
+          _, body = HTTP.get({:bucket => name, :sub_res => sub_res})
+
+          doc = parse_xml(body)
+          opts = {
+            :allow_empty => get_node_text(doc.root, 'AllowEmptyReferer') {|x| x.to_bool},
+            :referers => doc.css("RefererList Referer").map {|n| n.text}
+          }
+
           logger.info("Done get bucket referer")
+
+          opts.select {|_, v| v}
         end
 
         # Update bucket lifecycle settings
@@ -190,6 +306,32 @@ module Aliyun
         # [rules] the lifecycle rules
         def update_bucket_lifecycle(name, rules)
           logger.info("Begin update bucket lifecycle, name: #{name}, rules: #{rules.map {|r| r.to_s}}")
+          sub_res = {'lifecycle' => nil}
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.LifecycleConfiguration {
+              rules.each do |r|
+                xml.Rule {
+                  xml.ID r.id if r.id
+                  xml.Status r.enabled ? 'Enabled' : 'Disabled'
+                  xml.Prefix r.prefix
+                  xml.Expiration {
+                    if r.expiry.is_a?(Time)
+                      xml.Date r.expiry.iso8601
+                    elsif r.expiry.is_a?(Fixnum)
+                      xml.Days r.expiry
+                    else
+                      raise ClientError.new("Expiry must be a Time or Fixnum.")
+                    end
+                  }
+                }
+              end
+            }
+          end.to_xml
+
+          HTTP.put(
+            {:bucket => name, :sub_res => sub_res},
+            {:body => body})
+
           logger.info("Done update bucket lifecycle")
         end
 
@@ -198,7 +340,28 @@ module Aliyun
         # [return] Rule[] the lifecycle rules set on this bucket
         def get_bucket_lifecycle(name)
           logger.info("Begin get bucket lifecycle, name: #{name}")
+
+          sub_res = {'lifecycle' => nil}
+          _, body = HTTP.get({:bucket => name, :sub_res => sub_res})
+
+          doc = parse_xml(body)
+          rules = doc.css("Rule").map do |n|
+            days = n.at_css("Expiration Days")
+            date = n.at_css("Expiration Date")
+
+            raise Client.new("We can only have one of Date and Days for expiry.") \
+                            if (days and date) or (not days and not date)
+
+            Bucket::LifeCycleRule.new(
+              :id => get_node_text(n, 'ID') {|x| x.to_i},
+              :prefix => get_node_text(n, 'Prefix'),
+              :enabled => get_node_text(n, 'Status') {|x| x == 'Enabled'},
+              :expiry => days ? days.text.to_i : Time.parse(date.text)
+            )
+          end
           logger.info("Done get bucket lifecycle")
+
+          rules
         end
 
         # Delete bucket lifecycle settings
@@ -206,6 +369,10 @@ module Aliyun
         # [name] the bucket name
         def delete_bucket_lifecycle(name)
           logger.info("Begin delete bucket lifecycle, name: #{name}")
+
+          sub_res = {'lifecycle' => nil}
+          HTTP.delete({:bucket => name, :sub_res => sub_res})
+
           logger.info("Done delete bucket lifecycle")
         end
 

@@ -74,10 +74,25 @@ module Aliyun
         builder.to_xml
       end
 
+      def mock_acl(acl)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.AccessControlPolicy {
+            xml.Owner {
+              xml.ID 'owner_id'
+              xml.DisplayName 'owner_name'
+            }
+
+            xml.AccessControlList {
+              xml.Grant acl
+            }
+          }
+        end.to_xml
+      end
+
       def mock_logging(opts)
         Nokogiri::XML::Builder.new do |xml|
           xml.BucketLoggingStatus {
-            if opts[:enabled]
+            if opts[:enable]
               xml.LoggingEnabled {
                 xml.TargetBucket opts[:target_bucket]
                 xml.TargetPrefix opts[:prefix]
@@ -121,7 +136,7 @@ module Aliyun
             rules.each do |r|
               xml.Rule {
                 xml.ID r.id if r.id
-                xml.Status r.enabled
+                xml.Status r.enabled ? 'Enabled' : 'Disabled'
                 xml.Prefix r.prefix
                 xml.Expiration {
                   if r.expiry.is_a?(Time)
@@ -296,7 +311,7 @@ module Aliyun
           return_acl = Bucket::ACL::PUBLIC_READ
           stub_request(:get, request_path)
             .with(:query => query)
-            .to_return(:headers => {'x-oss-acl' => return_acl})
+            .to_return(:body => mock_acl(return_acl))
 
           acl = @oss.get_bucket_acl(@bucket)
 
@@ -329,7 +344,7 @@ module Aliyun
             .with(:query => query, :body => mock_logging(logging_opts))
         end
 
-        it "should get logging" do
+        it "should get logging", :focus => true do
           query = {'logging' => ''}
           logging_opts = {
             :enable => true, :target_bucket => 'target-bucket', :prefix => 'foo'
@@ -441,7 +456,7 @@ module Aliyun
               :expiry => (i % 2 == 1 ? Time.now.iso8601 : 10 + i))
           end
 
-          stub_request(:put, request_path)
+          stub_request(:get, request_path)
             .with(:query => query)
             .to_return(:body => mock_lifecycle(return_rules))
 
