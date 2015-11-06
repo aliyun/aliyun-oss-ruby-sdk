@@ -151,6 +151,30 @@ module Aliyun
         end.to_xml
       end
 
+      def mock_cors(rules)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.CORSConfiguration {
+            rules.each do |r|
+              xml.CORSRule {
+                r.allowed_origins.each do |x|
+                  xml.AllowedOrigin x
+                end
+                r.allowed_methods.each do |x|
+                  xml.AllowedMethod x
+                end
+                r.allowed_headers.each do |x|
+                  xml.AllowedHeader x
+                end
+                r.expose_headers.each do |x|
+                  xml.ExposeHeader x
+                end
+                xml.MaxAgeSeconds r.max_age_seconds if r.max_age_seconds
+              }
+            end
+          }
+        end.to_xml
+      end
+
       def mock_error(code, message)
         builder = Nokogiri::XML::Builder.new do |xml|
           xml.Error {
@@ -344,7 +368,7 @@ module Aliyun
             .with(:query => query, :body => mock_logging(logging_opts))
         end
 
-        it "should get logging", :focus => true do
+        it "should get logging" do
           query = {'logging' => ''}
           logging_opts = {
             :enable => true, :target_bucket => 'target-bucket', :prefix => 'foo'
@@ -477,7 +501,55 @@ module Aliyun
             .with(:query => query, :body => nil)
         end
 
-      end # acl, etc
+        it "should set cors" do
+          query = {'cors' => ''}
+          stub_request(:put, request_path).with(:query => query)
+
+          rules = (1..5).map do |i|
+            Bucket::CORSRule.new(
+              :allowed_origins => (1..3).map {|x| "origin-#{x}"},
+              :allowed_methods => ['PUT', 'GET'],
+              :allowed_headers => (1..3).map {|x| "header-#{x}"},
+              :expose_headers => (1..3).map {|x| "header-#{x}"})
+          end
+          @oss.set_bucket_cors(@bucket, rules)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:query => query, :body => mock_cors(rules))
+        end
+
+        it "should get cors" do
+          query = {'cors' => ''}
+          return_rules = (1..5).map do |i|
+            Bucket::CORSRule.new(
+              :allowed_origins => (1..3).map {|x| "origin-#{x}"},
+              :allowed_methods => ['PUT', 'GET'],
+              :allowed_headers => (1..3).map {|x| "header-#{x}"},
+              :expose_headers => (1..3).map {|x| "header-#{x}"})
+          end
+
+          stub_request(:get, request_path)
+            .with(:query => query)
+            .to_return(:body => mock_cors(return_rules))
+
+          rules = @oss.get_bucket_cors(@bucket)
+
+          expect(WebMock).to have_requested(:get, request_path)
+            .with(:query => query, :body => nil)
+          expect(rules.map {|r| r.to_s}.join("; ")).to eq(return_rules.map {|r| r.to_s}.join("; "))
+        end
+
+        it "should delete cors" do
+          query = {'cors' => ''}
+
+          stub_request(:delete, request_path).with(:query => query)
+
+          @oss.delete_bucket_cors(@bucket)
+          expect(WebMock).to have_requested(:delete, request_path)
+            .with(:query => query, :body => nil)
+        end
+
+      end # acl, logging, cors, etc
 
     end # Bucket
 

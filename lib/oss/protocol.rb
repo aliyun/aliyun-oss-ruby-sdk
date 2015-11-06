@@ -376,6 +376,85 @@ module Aliyun
           logger.info("Done delete bucket lifecycle")
         end
 
+        # Set bucket CORS rules
+        # [name] the bucket name
+        # [rules] the CORS rules
+        def set_bucket_cors(name, rules)
+          logger.info("Begin set bucket cors, bucket: #{name}, rules: #{rules.map {|r| r.to_s}.join(';')}")
+          sub_res = {'cors' => nil}
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.CORSConfiguration {
+              rules.each do |r|
+                xml.CORSRule {
+                  r.allowed_origins.each do |x|
+                    xml.AllowedOrigin x
+                  end
+                  r.allowed_methods.each do |x|
+                    xml.AllowedMethod x
+                  end
+                  r.allowed_headers.each do |x|
+                    xml.AllowedHeader x
+                  end
+                  r.expose_headers.each do |x|
+                    xml.ExposeHeader x
+                  end
+                  xml.MaxAgeSeconds r.max_age_seconds if r.max_age_seconds
+                }
+              end
+            }
+          end.to_xml
+
+          HTTP.put(
+            {:bucket => name, :sub_res => sub_res},
+            {:body => body})
+
+          logger.info("Done delete bucket lifecycle")
+        end
+
+        # Get bucket CORS rules
+        # [name] the bucket name
+        # [return] the CORS rules for the bucket
+        def get_bucket_cors(name)
+          logger.info("Begin get bucket cors, bucket: #{name}")
+
+          sub_res = {'cors' => nil}
+          _, body = HTTP.get({:bucket => name, :sub_res => sub_res})
+
+          doc = parse_xml(body)
+          rules = []
+
+          doc.css("CORSRule").map do |n|
+            allowed_origins = n.css("AllowedOrigin").map {|x| x.text}
+            allowed_methods = n.css("AllowedMethod").map {|x| x.text}
+            allowed_headers = n.css("AllowedHeader").map {|x| x.text}
+            expose_headers = n.css("ExposeHeader").map {|x| x.text}
+            max_age_seconds = get_node_text(n, 'MaxAgeSeconds') {|x| x.to_i}
+
+            rules << Bucket::CORSRule.new(
+              :allowed_origins => allowed_origins,
+              :allowed_methods => allowed_methods,
+              :allowed_headers => allowed_headers,
+              :expose_headers => expose_headers,
+              :max_age_seconds => max_age_seconds)
+          end
+
+          logger.info("Done get bucket cors")
+
+          rules
+        end
+
+        # Delete all bucket CORS rules
+        # [name] the bucket name
+        def delete_bucket_cors(name)
+          logger.info("Begin delete bucket cors, bucket: #{name}")
+
+          sub_res = {'cors' => nil}
+
+          HTTP.delete({:bucket => name, :sub_res => sub_res})
+
+          logger.info("Done delete bucket cors")
+        end
+
         # 删除一个bucket
         # [name] bucket的名字
         def delete_bucket(name)

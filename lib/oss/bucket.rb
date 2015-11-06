@@ -25,6 +25,27 @@ module Aliyun
         end
       end
 
+      class CORSRule
+        @@attrs = [
+          :allowed_origins, :allowed_methods, :allowed_headers,
+          :expose_headers, :max_age_seconds]
+
+        attr_reader(*@@attrs)
+
+        def initialize(opts = {})
+          @@attrs.each do |attr|
+            instance_variable_set("@#{attr}", opts[attr])
+          end
+        end
+
+        def to_s
+          @@attrs.map do |attr|
+            v = instance_variable_get("@#{attr}")
+            "#{attr.to_s}: #{v}"
+          end.join(",")
+        end
+      end
+
       attr_reader :name, :location, :creation_time
 
       # 构造一个Bucket
