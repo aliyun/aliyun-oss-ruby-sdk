@@ -301,21 +301,7 @@ module Aliyun
 
       context "Copy object" do
 
-        it "should PUT to copy object" do
-          src_object = 'ruby'
-          dst_object = 'rails'
-          url = get_request_path(dst_object)
-
-          stub_request(:put, url)
-
-          @oss.copy_object(@bucket, src_object, dst_object)
-
-          expect(WebMock).to have_requested(:put, url)
-            .with(:body => nil, :headers => {
-                    'x-oss-copy-source' => get_resource_path(src_object)})
-        end
-
-        it "should parse copy object result" do
+        it "should copy object" do
           src_object = 'ruby'
           dst_object = 'rails'
           url = get_request_path(dst_object)
@@ -330,6 +316,45 @@ module Aliyun
           expect(WebMock).to have_requested(:put, url)
             .with(:body => nil, :headers => {
                     'x-oss-copy-source' => get_resource_path(src_object)})
+
+          expect(result[:last_modified]).to eq(last_modified)
+          expect(result[:etag]).to eq(etag)
+        end
+
+        it "should set acl and conditions when copy object" do
+          src_object = 'ruby'
+          dst_object = 'rails'
+          url = get_request_path(dst_object)
+
+          last_modified = Time.parse(Time.now.rfc822)
+          etag = '0000'
+
+          headers = {
+            'x-oss-copy-source' => get_resource_path(src_object),
+            'x-oss-object-acl' => Struct::ACL::PRIVATE,
+            'x-oss-metadata-directive' => Struct::MetaDirective::REPLACE,
+            'x-oss-copy-source-if-modified-since' => 'ms',
+            'x-oss-copy-source-if-unmodified-since' => 'ums',
+            'x-oss-copy-source-if-match' => 'me',
+            'x-oss-copy-source-if-none-match' => 'ume'
+          }
+          stub_request(:put, url).to_return(
+            :body => mock_copy_object(last_modified, etag))
+
+          result = @oss.copy_object(
+            @bucket, src_object, dst_object,
+            {:acl => Struct::ACL::PRIVATE,
+             :meta_directive => Struct::MetaDirective::REPLACE,
+             :condition => {
+               :if_modified_since => 'ms',
+               :if_unmodified_since => 'ums',
+               :if_match_etag => 'me',
+               :if_unmatch_etag => 'ume'
+             }
+            })
+
+          expect(WebMock).to have_requested(:put, url)
+            .with(:body => nil, :headers => headers)
 
           expect(result[:last_modified]).to eq(last_modified)
           expect(result[:etag]).to eq(etag)

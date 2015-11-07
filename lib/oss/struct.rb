@@ -7,11 +7,16 @@ module Aliyun
     #
 
     module Struct
-      class ACL
+      module ACL
         PUBLIC_READ_WRITE = "public-read-write"
         PUBLIC_READ = "public-read"
         PRIVATE = "private"
       end # ACL
+
+      module MetaDirective
+        COPY = "COPY"
+        REPLACE = "REPLACE"
+      end # MetaDirective
 
       module Base
         def self.included(base)

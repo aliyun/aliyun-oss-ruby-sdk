@@ -746,24 +746,53 @@ module Aliyun
           logger.info("Done get object to file")
         end
 
-        # 在一个bucket中拷贝一个object
-        # [bucket_name] bucket的名字
-        # [src_object_name] 源object的名字
-        # [dst_object_name] 目标object的名字
-        def copy_object(bucket_name, src_object_name, dst_object_name)
-          logger.info("Begin copy object, bucket: #{bucket_name}, source object: #{src_object_name}, dest object: #{dst_object_name}")
+        # Copy an object in the bucket. The source object and the dest
+        # object must be in the same bucket.
+        # [bucket_name] the bucket name
+        # [src_object_name] the source object name
+        # [dst_object_name] the dest object name
+        # [opts] options
+        #     [:acl] the dest object's Struct::ACL
+        #     [:meta_directive] what to do with the object's meta:
+        # copy or replace; see Struct::MetaDirective
+        #     [:condition] preconditions to get the object:
+        #       [:if_modified_since] the modified time
+        #       [:if_unmodified_since] the unmodified time
+        #       [:if_match_etag] the etag to expect to match
+        #       [:if_unmatch_etag] the etag to expect to not match
+        # [return] a Hash that includes :etag and :last_modified of the dest object
+        def copy_object(bucket_name, src_object_name, dst_object_name, opts = {})
+          logger.info("Begin copy object, bucket: #{bucket_name}, source object: \
+                      #{src_object_name}, dest object: #{dst_object_name}, options: #{opts}")
 
           headers = {
             'x-oss-copy-source' =>
               HTTP.get_resource_path(bucket_name, src_object_name)
           }
 
+          {
+            :acl => 'x-oss-object-acl',
+            :meta_directive => 'x-oss-metadata-directive'
+          }.each do |k, v|
+            headers[v] = opts[k] if opts[k]
+          end
+
+          conditions = opts[:condition]
+          {
+            :if_modified_since => 'x-oss-copy-source-if-modified-since',
+            :if_unmodified_since => 'x-oss-copy-source-if-unmodified-since',
+            :if_match_etag => 'x-oss-copy-source-if-match',
+            :if_unmatch_etag => 'x-oss-copy-source-if-none-match'
+          }.each do |k, v|
+            headers[v] = conditions[k] if conditions and conditions[k]
+          end
+
           _, body = HTTP.put(
             {:bucket => bucket_name, :object => dst_object_name},
             {:headers => headers})
 
           doc = parse_xml(body)
-          result = {
+          copy_result = {
             :last_modified => get_node_text(
               doc.root, 'LastModified') {|x| Time.parse(x)},
             :etag => get_node_text(doc.root, 'ETag')
@@ -771,7 +800,7 @@ module Aliyun
 
           logger.info("Done copy object")
 
-          result
+          copy_result
         end
 
         # 删除指定的bucket中的指定object
@@ -936,19 +965,47 @@ module Aliyun
         end
 
         # Upload a part in a multipart uploading transaction by copying
-        # from an existent object as the part's content
+        # from an existent object as the part's content. It may copy
+        # only part of the object by specifying the bytes range to read.
         # [bucket_name] the bucket name
         # [object_name] the object name
         # [txn_id] the txn id
         # [part_no] the part number
         # [source_object] the source object to copy from
-        def upload_part_from_object(bucket_name, object_name, txn_id, part_no, source_object)
-          logger.debug("Begin upload part from object, bucket: #{bucket_name}, object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}, source object: #{source_object}")
+        # [opts] options
+        #     [:range] the bytes range to copy: [begin, end)
+        #     [:condition] preconditions to copy the object:
+        #       [:if_modified_since] the modified time
+        #       [:if_unmodified_since] the unmodified time
+        #       [:if_match_etag] the etag to expect to match
+        #       [:if_unmatch_etag] the etag to expect to not match
+        def upload_part_from_object(
+              bucket_name, object_name, txn_id, part_no, source_object, opts = {})
+          logger.debug("Begin upload part from object, bucket: #{bucket_name}, \
+                       object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}, \
+                       source object: #{source_object}, options: #{opts}")
+
+          range = opts[:range]
+          conditions = opts[:condition]
+
+          raise ClientError.new("Range must be an array contains 2 int.") \
+                               if range and not range.is_a?(Array) and not range.size == 2
 
           headers = {
             'x-oss-copy-source' =>
               HTTP.get_resource_path(bucket_name, source_object)
           }
+          headers['Range'] = range.join('-') if range
+
+          {
+            :if_modified_since => 'x-oss-copy-source-if-modified-since',
+            :if_unmodified_since => 'x-oss-copy-source-if-unmodified-since',
+            :if_match_etag => 'x-oss-copy-source-if-match',
+            :if_unmatch_etag => 'x-oss-copy-source-if-none-match'
+          }.each do |k, v|
+            headers[v] = conditions[k] if conditions and conditions[k]
+          end
+
           sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
 
           headers, _ = HTTP.put(

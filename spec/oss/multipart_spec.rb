@@ -242,6 +242,42 @@ module Aliyun
           expect(p.etag).to eq(return_etag)
         end
 
+        it "should set range and conditions when copy" do
+          txn_id = 'xxxyyyzzz'
+          part_no = 1
+          copy_source = "/#{@bucket}/src_obj"
+
+          query = {'partNumber' => part_no, 'uploadId' => txn_id}
+          headers = {
+            'Range' => '1-5',
+            'x-oss-copy-source' => copy_source,
+            'x-oss-copy-source-if-modified-since' => 'ms',
+            'x-oss-copy-source-if-unmodified-since' => 'ums',
+            'x-oss-copy-source-if-match' => 'me',
+            'x-oss-copy-source-if-none-match' => 'ume'
+          }
+          return_etag = 'etag_1'
+
+          stub_request(:put, request_path)
+            .with(:query => query, :headers => headers)
+            .to_return(:headers => {'ETag' => return_etag})
+
+          p = @oss.upload_part_from_object(
+            @bucket, @object, txn_id, part_no, 'src_obj',
+            {:range => [1, 5],
+             :condition => {
+               :if_modified_since => 'ms',
+               :if_unmodified_since => 'ums',
+               :if_match_etag => 'me',
+               :if_unmatch_etag => 'ume'
+             }})
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:body => nil, :query => query, :headers => headers)
+          expect(p.number).to eq(part_no)
+          expect(p.etag).to eq(return_etag)
+        end
+
         it "should raise Exception on error" do
           txn_id = 'xxxyyyzzz'
           part_no = 1
