@@ -22,7 +22,7 @@ module Aliyun
 
       def get_request_path(object = nil)
         p = "#{@bucket}.#{@endpoint}/"
-        p += object if object
+        p += CGI.escape(object) if object
         p
       end
 
@@ -69,9 +69,10 @@ module Aliyun
         end.to_xml
       end
 
-      def mock_delete_result(deleted)
+      def mock_delete_result(deleted, opts = {})
         Nokogiri::XML::Builder.new do |xml|
           xml.DeleteResult {
+            xml.EncodingType opts[:encoding] if opts[:encoding]
             deleted.each do |o|
               xml.Deleted {
                 xml.Key o
@@ -186,6 +187,20 @@ module Aliyun
           expect(WebMock).to have_requested(:put, url)
             .with(:body => 'hello world',
                   :headers => {'Content-Type' => 'application/ruby'})
+        end
+
+        it "should support non-ascii object name" do
+          object_name = '中国のruby'
+          url = get_request_path(object_name)
+          stub_request(:put, url)
+
+          content = "hello world"
+          @oss.put_object(@bucket, object_name) do |c|
+            c << content
+          end
+
+          expect(WebMock).to have_requested(:put, url)
+            .with(:body => content, :query => {})
         end
       end # put object
 
@@ -529,7 +544,7 @@ module Aliyun
 
         it "should batch delete objects" do
           url = get_request_path
-          query = {'delete' => ''}
+          query = {'delete' => '', 'encoding-type' => 'url'}
 
           object_names = (1..5).map do |i|
             "object-#{i}"
@@ -539,10 +554,34 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_delete_result(object_names))
 
-          deleted = @oss.batch_delete_objects(@bucket, object_names)
+          opts = {:quiet => false, :encoding => 'url'}
+          deleted = @oss.batch_delete_objects(@bucket, object_names, opts)
 
           expect(WebMock).to have_requested(:post, url)
-            .with(:query => query, :body => mock_delete(object_names))
+            .with(:query => query, :body => mock_delete(object_names, opts))
+          expect(deleted).to match_array(object_names)
+        end
+
+        it "should decode object key in batch delete response" do
+          url = get_request_path
+          query = {'delete' => '', 'encoding-type' => 'url'}
+
+          object_names = (1..5).map do |i|
+            "对象-#{i}"
+          end
+          es_objects = (1..5).map do |i|
+            CGI.escape "对象-#{i}"
+          end
+          opts = {:quiet => false, :encoding => 'url'}
+
+          stub_request(:post, url)
+            .with(:query => query)
+            .to_return(:body => mock_delete_result(es_objects, opts))
+
+          deleted = @oss.batch_delete_objects(@bucket, object_names, opts)
+
+          expect(WebMock).to have_requested(:post, url)
+            .with(:query => query, :body => mock_delete(object_names, opts))
           expect(deleted).to match_array(object_names)
         end
       end # delete object

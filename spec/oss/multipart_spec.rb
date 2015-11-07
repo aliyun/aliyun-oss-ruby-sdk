@@ -47,7 +47,7 @@ module Aliyun
               :key_marker => 'KeyMarker',
               :next_key_marker => 'NextKeyMarker',
               :truncated => 'IsTruncated',
-              :encoding => 'encoding-type'
+              :encoding => 'EncodingType'
             }.map do |k, v|
               xml.send(v, more[k]) if more[k]
             end
@@ -71,7 +71,7 @@ module Aliyun
               :next_marker => 'NextPartNumberMarker',
               :limit => 'MaxParts',
               :truncated => 'IsTruncated',
-              :encoding => 'encoding-type'
+              :encoding => 'EncodingType'
             }.map do |k, v|
               xml.send(v, more[k]) if more[k]
             end
@@ -442,7 +442,7 @@ module Aliyun
           return_multiparts = (1..5).map do |i|
             Multipart::Transaction.new(
               :id => "id-#{i}",
-              :key => "key-#{i}",
+              :object_key => "key-#{i}",
               :creation_time => Time.parse(Time.now.rfc822))
           end
 
@@ -469,10 +469,80 @@ module Aliyun
                   :limit => 100,
                   :encoding => 'url')
 
-          txn_ids = return_multiparts.map {|x| x.id}
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)
-          expect(txns.map {|x| x.id}).to match_array(txn_ids)
+          expect(txns.map {|x| x.to_s}.join(';'))
+            .to eq(return_multiparts.map {|x| x.to_s}.join(';'))
+          expect(more).to eq(return_more)
+        end
+
+        it "should decode object key" do
+          request_path = "#{@bucket}.#{@endpoint}/"
+          query = {
+            'uploads' => '',
+            'prefix' => 'foo-',
+            'delimiter' => '-',
+            'upload-id-marker' => 'id-marker',
+            'key-marker' => 'key-marker',
+            'max-uploads' => 100,
+            'encoding-type' => 'url'
+          }
+
+          return_multiparts = (1..5).map do |i|
+            Multipart::Transaction.new(
+              :id => "id-#{i}",
+              :object_key => "中国-#{i}",
+              :creation_time => Time.parse(Time.now.rfc822))
+          end
+
+          es_multiparts = return_multiparts.map do |x|
+            Multipart::Transaction.new(
+              :id => x.id,
+              :object_key => CGI.escape(x.object_key),
+              :creation_time => x.creation_time)
+          end
+
+          return_more = {
+            :prefix => 'foo-',
+            :delimiter => '中国のruby',
+            :id_marker => 'id-marker',
+            :key_marker => '杭州のruby',
+            :next_id_marker => 'next-id-marker',
+            :next_key_marker => '西湖のruby',
+            :limit => 100,
+            :truncated => true,
+            :encoding => 'url'
+          }
+
+          es_more = {
+            :prefix => 'foo-',
+            :delimiter => CGI.escape('中国のruby'),
+            :id_marker => 'id-marker',
+            :key_marker => CGI.escape('杭州のruby'),
+            :next_id_marker => 'next-id-marker',
+            :next_key_marker => CGI.escape('西湖のruby'),
+            :limit => 100,
+            :truncated => true,
+            :encoding => 'url'
+          }
+
+          stub_request(:get, request_path)
+            .with(:query => query)
+            .to_return(:body => mock_multiparts(es_multiparts, es_more))
+
+          txns, more = @oss.list_multipart_transactions(
+                  @bucket,
+                  :prefix => 'foo-',
+                  :delimiter => '-',
+                  :id_marker => 'id-marker',
+                  :key_marker => 'key-marker',
+                  :limit => 100,
+                  :encoding => 'url')
+
+          expect(WebMock).to have_requested(:get, request_path)
+            .with(:body => nil, :query => query)
+          expect(txns.map {|x| x.to_s}.join(';'))
+            .to eq(return_multiparts.map {|x| x.to_s}.join(';'))
           expect(more).to eq(return_more)
         end
 

@@ -107,7 +107,7 @@ module Aliyun
           url = ""
           url += "#{bucket}." if bucket
           url += Config.get(:endpoint)
-          url += "/#{object}" if object
+          url += "/#{CGI.escape(object)}" if object
 
           url
         end

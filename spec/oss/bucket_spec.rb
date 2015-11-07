@@ -43,7 +43,7 @@ module Aliyun
               :marker => 'Marker',
               :next_marker => 'NextMarker',
               :truncated => 'IsTruncated',
-              :encoding => 'encoding-type'
+              :encoding => 'EncodingType'
             }.map do |k, v|
               xml.send(v, more[k]) if more[k]
             end
@@ -223,7 +223,8 @@ module Aliyun
 
         it "should parse object response" do
           return_objects = ['hello', 'world', 'foo/bar']
-          stub_request(:get, request_path).to_return(:body => mock_objects(return_objects))
+          stub_request(:get, request_path)
+            .to_return(:body => mock_objects(return_objects))
 
           objects, more = @oss.list_object(@bucket)
 
@@ -243,7 +244,7 @@ module Aliyun
             :prefix => 'foo-',
             :delimiter => '-',
             :limit => 10,
-            :encoding => 'request_path'}
+            :encoding => 'url'}
 
           query = opts.clone
           query['max-keys'] = query.delete(:limit)
@@ -264,7 +265,7 @@ module Aliyun
             :prefix => 'foo-',
             :delimiter => '-',
             :limit => 10,
-            :encoding => 'request_path',
+            :encoding => 'url',
             :next_marker => 'foo-xxx',
             :truncated => true
           }
@@ -274,7 +275,7 @@ module Aliyun
             :prefix => 'foo-',
             :delimiter => '-',
             :limit => 10,
-            :encoding => 'request_path'
+            :encoding => 'url'
           }
 
           query = opts.clone
@@ -293,6 +294,40 @@ module Aliyun
           expect(more).to eq(return_more)
         end
 
+        it "should decode object key" do
+          return_objects = ['中国のruby', 'world', 'foo/bar']
+          return_more = {
+            :marker => '杭州のruby',
+            :prefix => 'foo-',
+            :delimiter => '分隔のruby',
+            :limit => 10,
+            :encoding => 'url',
+            :next_marker => '西湖のruby',
+            :truncated => true
+          }
+
+          es_objects = [CGI.escape('中国のruby'), 'world', 'foo/bar']
+          es_more = {
+            :marker => CGI.escape('杭州のruby'),
+            :prefix => 'foo-',
+            :delimiter => CGI.escape('分隔のruby'),
+            :limit => 10,
+            :encoding => 'url',
+            :next_marker => CGI.escape('西湖のruby'),
+            :truncated => true
+          }
+
+          stub_request(:get, request_path)
+            .to_return(:body => mock_objects(es_objects, es_more))
+
+          objects, more = @oss.list_object(@bucket)
+
+          expect(WebMock).to have_requested(:get, request_path)
+            .with(:body => nil, :query => {})
+
+          expect(objects.map {|o| o.key}).to match_array(return_objects)
+          expect(more).to eq(return_more)
+        end
       end # list objects
 
       context "Delete bucket" do

@@ -48,6 +48,7 @@ oss.put_object('t-hello-world', 'foo/obj1') {}
 oss.put_object('t-hello-world', 'foo/bar/obj1') {}
 oss.put_object('t-hello-world', 'foo/bar/obj2') {}
 oss.put_object('t-hello-world', 'foo/xxx/obj1') {}
+oss.put_object('t-hello-world', '中国の') {}
 
 # list所有object
 objects, more = oss.list_object('t-hello-world')

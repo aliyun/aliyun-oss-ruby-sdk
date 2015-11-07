@@ -18,6 +18,20 @@ module Aliyun
         REPLACE = "REPLACE"
       end # MetaDirective
 
+      module KeyEncoding
+        URL = "url"
+
+        @@all = [URL]
+
+        def self.include?(enc)
+          all.include?(enc)
+        end
+
+        def self.all
+          @@all
+        end
+      end # KeyEncoding
+
       module Base
         def self.included(base)
           base.extend(AttrHelper)

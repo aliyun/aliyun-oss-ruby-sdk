@@ -623,9 +623,12 @@ module Aliyun
           _, body = HTTP.get({:bucket => bucket_name}, {:query => params})
 
           doc = parse_xml(body)
+
+          encoding = get_node_text(doc.root, 'EncodingType')
+
           objects = doc.css("Contents").map do |node|
             Object.new(
-              :key => get_node_text(node, "Key"),
+              :key => get_node_text(node, "Key") {|x| decode_key(x, encoding)},
               :type => get_node_text(node, "Type"),
               :size => get_node_text(node, "Size").to_i,
               :etag => get_node_text(node, "ETag"),
@@ -633,30 +636,36 @@ module Aliyun
             )
           end
 
-          more = Hash[{
-                        :prefix => 'Prefix',
-                        :delimiter => 'Delimiter',
-                        :limit => 'MaxKeys',
-                        :marker => 'Marker',
-                        :next_marker => 'NextMarker',
-                        :truncated => 'IsTruncated',
-                        :encoding => 'encoding-type'
-                      }.map do |k, v|
-                        [k, get_node_text(doc.root, v)]
-                      end].select {|k, v| v}
+          more = Hash[
+            {
+              :prefix => 'Prefix',
+              :delimiter => 'Delimiter',
+              :limit => 'MaxKeys',
+              :marker => 'Marker',
+              :next_marker => 'NextMarker',
+              :truncated => 'IsTruncated',
+              :encoding => 'EncodingType'
+            }.map do |k, v|
+              [k, get_node_text(doc.root, v)]
+            end].select {|k, v| v}
 
-          more[:limit] = more[:limit].to_i if more[:limit]
-          more[:truncated] = more[:truncated].to_bool if more[:truncated]
+          more.update(
+            :limit => wrap(more[:limit]) {|x| x.to_i},
+            :truncated => wrap(more[:truncated]) {|x| x.to_bool},
+            :delimiter => wrap(more[:delimiter]) {|x| decode_key(x, encoding)},
+            :marker => wrap(more[:marker]) {|x| decode_key(x, encoding)},
+            :next_marker => wrap(more[:next_marker]) {|x| decode_key(x, encoding)}
+          )
 
           common_prefixes = []
           doc.css("CommonPrefixes Prefix").map do |node|
-            common_prefixes << node.text
+            common_prefixes << decode_key(node.text, encoding)
           end
           more[:common_prefixes] = common_prefixes unless common_prefixes.empty?
 
           logger.info("Done list object")
 
-          [objects, more]
+          [objects, more.select {|_, v| v != nil}]
         end
 
         # Get an object from the bucket. Data chunks are handled to
@@ -817,9 +826,15 @@ module Aliyun
         # Batch delete objects
         # [bucket_name] the bucket name
         # [object_names] the object names to delete
-        # [return] object names that are successfully deleted, or [] if :quiet is true
+        # [opts] options
+        #     [:quiet] if set to true, return empty list
+        #     [:encoding-type] the encoding type for object key, only
+        # supports 'url' now
+        # [return] object names that are successfully deleted, or []
+        # if :quiet is true
         def batch_delete_objects(bucket_name, object_names, opts = {})
-          logger.info("Begin batch delete object, bucket: #{bucket_name}, objects: #{object_names}")
+          logger.info("Begin batch delete object, bucket: #{bucket_name}, \
+                      objects: #{object_names}, options: #{opts}")
 
           sub_res = {'delete' => nil}
           body = Nokogiri::XML::Builder.new do |xml|
@@ -833,15 +848,19 @@ module Aliyun
             }
           end.to_xml
 
+          query = {}
+          query['encoding-type'] = opts[:encoding] if opts[:encoding]
+
           _, body = HTTP.post(
                {:bucket => bucket_name, :sub_res => sub_res},
-               {:body => body})
+               {:query => query, :body => body})
 
           deleted = []
           unless opts[:quiet]
             doc = parse_xml(body)
+            encoding = get_node_text(doc.root, 'EncodingType')
             doc.css("Deleted").map do |n|
-              deleted << get_node_text(n, 'Key')
+              deleted << get_node_text(n, 'Key') {|x| decode_key(x, encoding)}
             end
           end
 
@@ -1096,34 +1115,44 @@ module Aliyun
             {:query => params})
 
           doc = parse_xml(body)
+
+          encoding = get_node_text(doc.root, 'EncodingType')
+
           txns = doc.css("Upload").map do |node|
             Multipart::Transaction.new(
               :id => get_node_text(node, "UploadId"),
-              :object_key => get_node_text(node, "Key"),
-              :creation_time =>
-                get_node_text(node, "Initiated") {|t| Time.parse(t)})
+              :object_key => get_node_text(node, "Key") {|x| decode_key(x, encoding)},
+              :creation_time => get_node_text(node, "Initiated") {|t| Time.parse(t)}
+            )
           end
 
-          more = Hash[{
-                        :prefix => 'Prefix',
-                        :delimiter => 'Delimiter',
-                        :limit => 'MaxUploads',
-                        :id_marker => 'UploadIdMarker',
-                        :next_id_marker => 'NextUploadIdMarker',
-                        :key_marker => 'KeyMarker',
-                        :next_key_marker => 'NextKeyMarker',
-                        :truncated => 'IsTruncated',
-                        :encoding => 'encoding-type'
-                      }.map do |k, v|
-                        [k, get_node_text(doc.root, v)]
-                      end].select {|k, v| v}
+          more = Hash[
+            {
+              :prefix => 'Prefix',
+              :delimiter => 'Delimiter',
+              :limit => 'MaxUploads',
+              :id_marker => 'UploadIdMarker',
+              :next_id_marker => 'NextUploadIdMarker',
+              :key_marker => 'KeyMarker',
+              :next_key_marker => 'NextKeyMarker',
+              :truncated => 'IsTruncated',
+              :encoding => 'EncodingType'
+            }.map do |k, v|
+              [k, get_node_text(doc.root, v)]
+            end].select {|k, v| v}
 
-          more[:limit] = more[:limit].to_i if more[:limit]
-          more[:truncated] = more[:truncated].to_bool if more[:truncated]
+          more.update(
+            :limit => wrap(more[:limit]) {|x| x.to_i},
+            :truncated => wrap(more[:truncated]) {|x| x.to_bool},
+            :delimiter => wrap(more[:delimiter]) {|x| decode_key(x, encoding)},
+            :key_marker => wrap(more[:key_marker]) {|x| decode_key(x, encoding)},
+            :next_key_marker =>
+              wrap(more[:next_key_marker]) {|x| decode_key(x, encoding)}
+          )
 
           logger.debug("Done list_multipart_transactions")
 
-          [txns, more]
+          [txns, more.select {|_, v| v != nil}]
         end
 
         # Get a list of parts that are successfully uploaded in a
@@ -1158,22 +1187,25 @@ module Aliyun
                 get_node_text(node, 'LastModified') {|x| Time.parse(x)})
           end
 
-          more = Hash[{
-                        :limit => 'MaxParts',
-                        :marker => 'PartNumberMarker',
-                        :next_marker => 'NextPartNumberMarker',
-                        :truncated => 'IsTruncated',
-                        :encoding => 'encoding-type'
-                      }.map do |k, v|
-                        [k, get_node_text(doc.root, v)]
-                      end].select {|k, v| v}
+          more = Hash[
+            {
+              :limit => 'MaxParts',
+              :marker => 'PartNumberMarker',
+              :next_marker => 'NextPartNumberMarker',
+              :truncated => 'IsTruncated',
+              :encoding => 'EncodingType'
+            }.map do |k, v|
+              [k, get_node_text(doc.root, v)]
+            end].select {|k, v| v}
 
-          more[:limit] = more[:limit].to_i if more[:limit]
-          more[:truncated] = more[:truncated].to_bool if more[:truncated]
+          more.update(
+            :limit => wrap(more[:limit]) {|x| x.to_i},
+            :truncated => wrap(more[:truncated]) {|x| x.to_bool}
+          )
 
           logger.debug("Done list_parts")
 
-          [parts, more]
+          [parts, more.select {|_, v| v != nil}]
         end
 
         private
@@ -1200,6 +1232,23 @@ module Aliyun
         def get_content_type(file)
           t = MIME::Types.of(file)
           t.first.content_type unless t.empty?
+        end
+
+        # decode object key
+        def decode_key(key, encoding)
+          return key unless encoding
+
+          raise ClientError.new("Unsupported key encoding: #{encoding}") \
+                    unless Struct::KeyEncoding.include?(encoding)
+
+          if encoding == 'url'
+            return CGI.unescape(key)
+          end
+        end
+
+        # transform x if x is not nil
+        def wrap(x, &block)
+          x == nil ? nil : block.call(x)
         end
 
       end # self
