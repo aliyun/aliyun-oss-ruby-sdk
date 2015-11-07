@@ -18,6 +18,7 @@ module Aliyun
       class StreamEnd; end
 
       ENDS = StreamEnd.new
+      DEFAULT_CONTENT_TYPE = 'application/octet-stream'
 
       ##
       # 实现了:read(bytes, outbuf)方法的一个stream实现，用于对HTTP请求
@@ -181,7 +182,7 @@ module Aliyun
           headers = http_options[:headers] || {}
           headers['User-Agent'] = get_user_agent
           headers['Date'] = Util.get_date
-          headers['Content-Type'] = 'application/octet-stream'
+          headers['Content-Type'] ||= DEFAULT_CONTENT_TYPE
 
           if body = http_options[:body] and body.respond_to?(:read)
             headers['Transfer-Encoding'] = 'chunked'

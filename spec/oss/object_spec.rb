@@ -142,6 +142,51 @@ module Aliyun
           expect(WebMock).to have_requested(:put, url)
             .with(:body => content, :query => {})
         end
+
+        it "should use default content-type", :focus => true do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          stub_request(:put, url)
+
+          @oss.put_object(@bucket, object_name) do |content|
+            content << 'hello world' << HTTP::ENDS
+          end
+
+          expect(WebMock).to have_requested(:put, url)
+            .with(:body => 'hello world',
+                  :headers => {'Content-Type' => HTTP::DEFAULT_CONTENT_TYPE})
+        end
+
+        it "should use infer content-type from file" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          stub_request(:put, url)
+
+          file = '/tmp/x.html'
+          content = "<html>hello world</html>"
+          File.open(file, 'w') {|f| f.write(content)}
+          @oss.put_object_from_file(@bucket, object_name, file)
+
+          expect(WebMock).to have_requested(:put, url)
+            .with(:body => content,
+                  :headers => {'Content-Type' => 'text/html'})
+        end
+
+        it "should use customized content-type" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          stub_request(:put, url)
+
+          @oss.put_object(
+            @bucket, object_name, :content_type => 'application/ruby'
+          ) do |content|
+            content << 'hello world' << HTTP::ENDS
+          end
+
+          expect(WebMock).to have_requested(:put, url)
+            .with(:body => 'hello world',
+                  :headers => {'Content-Type' => 'application/ruby'})
+        end
       end # put object
 
       context "Append object" do
@@ -198,7 +243,61 @@ module Aliyun
           expect(WebMock).to have_requested(:post, url)
             .with(:body => content, :query => query)
         end
-      end # put object
+
+        it "should use default content-type", :focus => true do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          query = {'append' => '', 'position' => 0}
+
+          stub_request(:post, url).with(:query => query)
+
+          @oss.append_object(@bucket, object_name, 0) do |content|
+            content << 'hello world' << HTTP::ENDS
+          end
+
+          expect(WebMock).to have_requested(:post, url)
+            .with(:body => 'hello world',
+                  :query => query,
+                  :headers => {'Content-Type' => HTTP::DEFAULT_CONTENT_TYPE})
+        end
+
+        it "should use infer content-type from file" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          query = {'append' => '', 'position' => 0}
+
+          stub_request(:post, url).with(:query => query)
+
+          file = '/tmp/x.html'
+          content = "<html>hello world</html>"
+          File.open(file, 'w') {|f| f.write(content)}
+          @oss.append_object_from_file(@bucket, object_name, 0, file)
+
+          expect(WebMock).to have_requested(:post, url)
+            .with(:body => content,
+                  :query => query,
+                  :headers => {'Content-Type' => 'text/html'})
+        end
+
+        it "should use customized content-type" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          query = {'append' => '', 'position' => 0}
+
+          stub_request(:post, url).with(:query => query)
+
+          @oss.append_object(
+            @bucket, object_name, 0, :content_type => 'application/ruby'
+          ) do |content|
+            content << 'hello world' << HTTP::ENDS
+          end
+
+          expect(WebMock).to have_requested(:post, url)
+            .with(:body => 'hello world',
+                  :query => query,
+                  :headers => {'Content-Type' => 'application/ruby'})
+        end
+      end # append object
 
       context "Copy object" do
 

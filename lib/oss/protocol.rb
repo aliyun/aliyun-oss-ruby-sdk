@@ -467,73 +467,116 @@ module Aliyun
           logger.info("Done delete bucket")
         end
 
-        # 向名为bucket_name的bucket中添加一个object，名字为object_name，
-        # object的内容由block提供
-        # [bucket_name] bucket名字
-        # [object_name] object名字
-        # [block] 提供object的内容
-        def put_object(bucket_name, object_name, &block)
+        # Put an object to the specified bucket, a block is required
+        # to provide the object data
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [opts] Options
+        #     [:content_type] the HTTP Content-Type for the file, if
+        # not specified client will try to determine the type itself
+        # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
+        # do so
+        # [block] the block is handled the StreamReader which data can
+        # be written to
+        def put_object(bucket_name, object_name, opts = {}, &block)
           raise ClientError.new('Missing block in put_object') unless block
 
-          logger.info("Begin put object, bucket: #{bucket_name}, object:#{object_name}")
+          logger.info("Begin put object, bucket: #{bucket_name}, object:#{object_name}, \
+                      options: #{opts}")
 
           HTTP.put(
             {:bucket => bucket_name, :object => object_name},
-            {:body => HTTP::StreamPayload.new(block)})
+            {:headers => {'Content-Type' => opts[:content_type]},
+             :body => HTTP::StreamPayload.new(block)})
 
           logger.info('Done put object')
         end
 
-        # 向名为bucket_name的bucket中添加一个object，名字为object_name，
-        # object的内容从路径为file_path的文件读取
-        # [bucket_name] bucket名字
-        # [object_name] object名字
-        # [file_path] 要读取的文件
-        def put_object_from_file(bucket_name, object_name, file_path)
-          logger.info("Begin put object from file: #{file_path}")
+        # Put an object to the specified bucket. The object's content
+        # is read from a local file specified by +file_path+
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [file_path] the file to read object data
+        # [opts] Options
+        #     [:content_type] the HTTP Content-Type for the file, if
+        # not specified client will try to determine the type itself
+        # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
+        # do so
+        def put_object_from_file(bucket_name, object_name, file_path, opts = {})
+          logger.info("Begin put object from file: #{file_path}, options: #{opts}")
 
           file = File.open(File.expand_path(file_path))
-          put_object(bucket_name, object_name) do |content|
+          content_type = get_content_type(File.expand_path(file_path))
+          put_object(
+            bucket_name, object_name,
+            :content_type => opts[:content_type] || content_type
+          ) do |content|
             content << file.read(STREAM_CHUNK_SIZE) unless file.eof?
           end
 
           logger.info('Done put object from file')
         end
 
-        # 向名为bucket_name的bucket中名字为object_name的object追加内容，
-        # object的内容由block提供，如果object不存在，则创建一个
-        # Appendable Object。
-        # [bucket_name] bucket名字
-        # [object_name] object名字
-        # [position] 追加的位置
-        # [block] 提供object的内容
-        # *注意：不能向Normal object追加内容*
-        def append_object(bucket_name, object_name, position, &block)
+        # Append to an object of a bucket. Create an 'Appendable
+        # Object' if the object does not exist. A block is required to
+        # provide the appending data.
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [position] the position to append
+        # [opts] options
+        #     [:content_type] the HTTP Content-Type for the file, if
+        # not specified client will try to determine the type itself
+        # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
+        # do so
+        # [block] the block is handled the StreamReader which data can
+        # be written to
+        # NOTE:
+        #   1. Can not append to a 'Normal Object'
+        #   2. The position must equal to the object's size before append
+        #   3. The :content_type is only used when the object is created
+        def append_object(bucket_name, object_name, position, opts = {}, &block)
           raise ClientError.new('Missing block in append_object') unless block
 
-          logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, position: #{position}")
+          logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, \
+                      position: #{position}, options: #{opts}")
 
           sub_res = {'append' => nil, 'position' => position}
           HTTP.post(
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-            {:body => HTTP::StreamPayload.new(block)})
+            {:headers => {'Content-Type' => opts[:content_type]},
+             :body => HTTP::StreamPayload.new(block)})
 
           logger.info('Done append object')
         end
 
-        # 向名为bucket_name的bucket中名字为object_name的object追加内容，
-        # object的内容从文件中读取，如果object不存在，则创建一个
-        # Appendable Object。
-        # [bucket_name] bucket名字
-        # [object_name] object名字
-        # [position] 追加的位置
-        # [file_path] 要读取的文件
-        # *注意：不能向Normal object追加内容*
-        def append_object_from_file(bucket_name, object_name, position, file_path, &block)
-          logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, position: #{position}, file: #{file_path}")
+        # Append to an object of a bucket. Create an 'Appendable
+        # Object' if the object does not exist. The appending data is
+        # read from a local file specified by +file_path+.
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [position] the position to append
+        # [file_path] the local file to read from
+        # [opts] options
+        #     [:content_type] the HTTP Content-Type for the file, if
+        # not specified client will try to determine the type itself
+        # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
+        # do so
+        # NOTE:
+        #   1. Can not append to a 'Normal Object'
+        #   2. The position must equal to the object's size before append
+        #   3. The :content_type is only used when the object is created
+        def append_object_from_file(
+              bucket_name, object_name, position, file_path, opts = {}, &block)
+
+          logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, \
+                      position: #{position}, file: #{file_path}, options: #{opts}")
 
           file = File.open(File.expand_path(file_path))
-          append_object(bucket_name, object_name, position) do |content|
+          content_type = get_content_type(File.expand_path(file_path))
+          append_object(
+            bucket_name, object_name, position,
+            :content_type => opts[:content_type] || content_type
+          ) do |content|
             content << file.read(STREAM_CHUNK_SIZE) unless file.eof?
           end
 
@@ -1037,6 +1080,12 @@ module Aliyun
           value = block.call(value) if block and value
 
           value
+        end
+
+        # infer the file's content type using MIME::Types
+        def get_content_type(file)
+          t = MIME::Types.of(file)
+          t.first.content_type unless t.empty?
         end
 
       end # self
