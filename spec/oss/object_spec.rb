@@ -355,7 +355,7 @@ module Aliyun
         end
       end # copy object
 
-      context "Get object" do
+      context "Get object", :focus => true do
 
         it "should GET to get object" do
           object_name = 'ruby'
@@ -406,6 +406,69 @@ module Aliyun
             .with(:body => nil, :query => {})
         end
 
+        it "should get object range" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          stub_request(:get, url)
+
+          @oss.get_object(@bucket, object_name, {:range => [0, 9]}) {}
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {},
+                  :headers => {
+                    'Range' => '0-9'
+                  })
+        end
+
+        it "should match modify time and etag" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          stub_request(:get, url)
+
+          modified_since = Util.get_date
+          unmodified_since = Util.get_date
+          etag = 'xxxyyyzzz'
+          not_etag = 'aaabbbccc'
+          @oss.get_object(
+            @bucket, object_name,
+            {:condition => {
+               :if_modified_since => modified_since,
+               :if_unmodified_since => unmodified_since,
+               :if_match_etag => etag,
+               :if_unmatch_etag => not_etag}}) {}
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {},
+                  :headers => {
+                    'If-Modified-Since' => modified_since,
+                    'If-Unmodified-since' => unmodified_since,
+                    'If-Match' => etag,
+                    'If-None-Match' => not_etag})
+        end
+
+        it "should rewrite response headers" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          rewrites = {
+               :content_type => 'ct',
+               :content_language => 'cl',
+               :expires => 'e',
+               :cache_control => 'cc',
+               :content_disposition => 'cd',
+               :content_encoding => 'ce'
+          }
+          query = Hash[rewrites.map {|k, v| ["response-#{k.to_s.sub('_', '-')}", v]}]
+
+          stub_request(:get, url).with(:query => query)
+
+          @oss.get_object(@bucket, object_name, :rewrite => rewrites) {}
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => query)
+        end
       end # Get object
 
       context "Delete object" do

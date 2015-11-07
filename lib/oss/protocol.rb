@@ -659,31 +659,88 @@ module Aliyun
           [objects, more]
         end
 
-        # 下载指定的bucket中的指定object
-        # [bucket_name] bucket的名字
-        # [object_name] object的名字
-        # [block] 处理object内容
-        def get_object(bucket_name, object_name, &block)
+        # Get an object from the bucket. Data chunks are handled to
+        # the block passed in.
+        # User can get the whole object or only part of it by specify
+        # the bytes range;
+        # User can specify conditions to get the object like:
+        # if-modified-since, if-unmodified-since, if-match-etag,
+        # if-unmatch-etag. If the object to get fails to meet the
+        # conditions, it will not be returned;
+        # User can indicate the server to rewrite the response headers
+        # such as content-type, content-encoding when get the object
+        # by specify the :rewrite options. The specified headers will
+        # be returned instead of the original property of the object.
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [opts] options
+        #     [:range] bytes range to read in the format: xx-yy
+        #     [:condition] preconditions to get the object:
+        #       [:if_modified_since] the modified time
+        #       [:if_unmodified_since] the unmodified time
+        #       [:if_match_etag] the etag to expect to match
+        #       [:if_unmatch_etag] the etag to expect to not match
+        #     [:rewrite] response headers to rewrite
+        #       [:content_type] the Content-Type header
+        #       [:content_language] the Content-Language header
+        #       [:expires] the Expires header
+        #       [:cache_control] the Cache-Control header
+        #       [:content_disposition] the Content-Disposition header
+        #       [:content_encoding] the Content-Encoding header
+        # [block] the block is handled data chunk of the object
+        def get_object(bucket_name, object_name, opts = {}, &block)
           logger.info("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
 
-          HTTP.get({:bucket => bucket_name, :object => object_name}) do |chunk|
-            block.call(chunk)
+          range = opts[:range]
+          conditions = opts[:condition]
+          rewrites = opts[:rewrite]
+
+          raise ClientError.new("Range must be an array contains 2 int.") \
+                               if range and not range.is_a?(Array) and not range.size == 2
+
+          headers = {}
+          headers['Range'] = range.join('-') if range
+          {
+            :if_modified_since => 'If-Modified-Since',
+            :if_unmodified_since => 'If-Unmodified-Since',
+            :if_match_etag => 'If-Match',
+            :if_unmatch_etag => 'If-None-Match'
+          }.each do |k, v|
+            headers[v] = conditions[k] if conditions and conditions[k]
           end
+
+          query = {}
+          [
+            :content_type,
+            :content_language,
+            :expires,
+            :cache_control,
+            :content_disposition,
+            :content_encoding
+          ].each do |k|
+            query["response-#{k.to_s.sub('_', '-')}"] =
+              rewrites[k] if rewrites and rewrites[k]
+          end
+
+          HTTP.get(
+            {:bucket => bucket_name, :object => object_name},
+            {:headers => headers, :query => query}) {|chunk| yield chunk}
 
           logger.info("Done get object")
         end
 
-        # 下载指定的bucket中的指定object，将object内容写入到文件中
-        # [bucket_name] bucket的名字
-        # [object_name] object的名字
-        # [file_path] 写入object内容的文件名
-        def get_object_to_file(bucket_name, object_name, file_path)
-          logger.info("Begin get object to file, bucket: #{bucket_name}, object: #{object_name}, file: #{file_path}")
+        # Get an object from the bucket and write the content into a
+        # local file.
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [file_path] the local file to write
+        # [opts] options referer to get_object for details
+        def get_object_to_file(bucket_name, object_name, file_path, opts = {})
+          logger.info("Begin get object to file, bucket: #{bucket_name}, \
+                      object: #{object_name}, file: #{file_path}, options: #{opts}")
 
-          get_object(bucket_name, object_name) do |chunk|
-            File.open(File.expand_path(file_path), 'w') do |f|
-              f.write(chunk)
-            end
+          File.open(File.expand_path(file_path), 'w') do |f|
+            get_object(bucket_name, object_name, opts) {|chunk| f.write(chunk)}
           end
 
           logger.info("Done get object to file")
