@@ -307,7 +307,9 @@ module Aliyun
         # [name] the bucket name
         # [rules] the lifecycle rules
         def update_bucket_lifecycle(name, rules)
-          logger.info("Begin update bucket lifecycle, name: #{name}, rules: #{rules.map {|r| r.to_s}}")
+          logger.info("Begin update bucket lifecycle, name: #{name}, rules: \
+                       #{rules.map {|r| r.to_s}}")
+
           sub_res = {'lifecycle' => nil}
           body = Nokogiri::XML::Builder.new do |xml|
             xml.LifecycleConfiguration {
@@ -382,7 +384,9 @@ module Aliyun
         # [name] the bucket name
         # [rules] the CORS rules
         def set_bucket_cors(name, rules)
-          logger.info("Begin set bucket cors, bucket: #{name}, rules: #{rules.map {|r| r.to_s}.join(';')}")
+          logger.info("Begin set bucket cors, bucket: #{name}, rules: \
+                       #{rules.map {|r| r.to_s}.join(';')}")
+
           sub_res = {'cors' => nil}
           body = Nokogiri::XML::Builder.new do |xml|
             xml.CORSConfiguration {
@@ -481,15 +485,15 @@ module Aliyun
         def put_object(bucket_name, object_name, opts = {}, &block)
           raise ClientError.new('Missing block in put_object') unless block
 
-          logger.info("Begin put object, bucket: #{bucket_name}, object:#{object_name}, \
-                      options: #{opts}")
+          logger.debug("Begin put object, bucket: #{bucket_name}, object:#{object_name}, \
+                        options: #{opts}")
 
           HTTP.put(
             {:bucket => bucket_name, :object => object_name},
             {:headers => {'Content-Type' => opts[:content_type]},
              :body => HTTP::StreamPayload.new(block)})
 
-          logger.info('Done put object')
+          logger.debug('Done put object')
         end
 
         # Put an object to the specified bucket. The object's content
@@ -503,7 +507,7 @@ module Aliyun
         # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
         # do so
         def put_object_from_file(bucket_name, object_name, file_path, opts = {})
-          logger.info("Begin put object from file: #{file_path}, options: #{opts}")
+          logger.debug("Begin put object from file: #{file_path}, options: #{opts}")
 
           file = File.open(File.expand_path(file_path))
           content_type = get_content_type(File.expand_path(file_path))
@@ -514,7 +518,7 @@ module Aliyun
             content << file.read(STREAM_CHUNK_SIZE) unless file.eof?
           end
 
-          logger.info('Done put object from file')
+          logger.debug('Done put object from file')
         end
 
         # Append to an object of a bucket. Create an 'Appendable
@@ -537,8 +541,8 @@ module Aliyun
         def append_object(bucket_name, object_name, position, opts = {}, &block)
           raise ClientError.new('Missing block in append_object') unless block
 
-          logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, \
-                      position: #{position}, options: #{opts}")
+          logger.debug("Begin append object, bucket: #{bucket_name}, object: \
+                        #{object_name}, position: #{position}, options: #{opts}")
 
           sub_res = {'append' => nil, 'position' => position}
           HTTP.post(
@@ -546,7 +550,7 @@ module Aliyun
             {:headers => {'Content-Type' => opts[:content_type]},
              :body => HTTP::StreamPayload.new(block)})
 
-          logger.info('Done append object')
+          logger.debug('Done append object')
         end
 
         # Append to an object of a bucket. Create an 'Appendable
@@ -568,8 +572,9 @@ module Aliyun
         def append_object_from_file(
               bucket_name, object_name, position, file_path, opts = {}, &block)
 
-          logger.info("Begin append object, bucket: #{bucket_name}, object: #{object_name}, \
-                      position: #{position}, file: #{file_path}, options: #{opts}")
+          logger.debug("Begin append object, bucket: #{bucket_name}, object: \
+                        #{object_name}, position: #{position}, file: #{file_path}, \
+                        options: #{opts}")
 
           file = File.open(File.expand_path(file_path))
           content_type = get_content_type(File.expand_path(file_path))
@@ -580,7 +585,7 @@ module Aliyun
             content << file.read(STREAM_CHUNK_SIZE) unless file.eof?
           end
 
-          logger.info('Done append object')
+          logger.debug('Done append object')
         end
 
         # 列出指定的bucket中的所有object
@@ -610,7 +615,7 @@ module Aliyun
         #    [:truncated] 本次查询是否被截断（还有更多的object待返回）
         #    [:encoding] 返回结果中object key和prefix等的编码方式
         def list_objects(bucket_name, opts = {})
-          logger.info("Begin list object, bucket: #{bucket_name}")
+          logger.debug("Begin list object, bucket: #{bucket_name}")
 
           params = {
             'prefix' => opts[:prefix],
@@ -663,7 +668,7 @@ module Aliyun
           end
           more[:common_prefixes] = common_prefixes unless common_prefixes.empty?
 
-          logger.info("Done list object")
+          logger.debug("Done list object")
 
           [objects, more.select {|_, v| v != nil}]
         end
@@ -698,7 +703,7 @@ module Aliyun
         #       [:content_encoding] the Content-Encoding header
         # [block] the block is handled data chunk of the object
         def get_object(bucket_name, object_name, opts = {}, &block)
-          logger.info("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
+          logger.debug("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
 
           range = opts[:range]
           conditions = opts[:condition]
@@ -735,7 +740,7 @@ module Aliyun
             {:bucket => bucket_name, :object => object_name},
             {:headers => headers, :query => query}) {|chunk| yield chunk}
 
-          logger.info("Done get object")
+          logger.debug("Done get object")
         end
 
         # Get the object meta rather than the whole object.
@@ -753,8 +758,8 @@ module Aliyun
         #       [:if_match_etag] the etag to expect to match
         #       [:if_unmatch_etag] the etag to expect to not match
         def get_object_meta(bucket_name, object_name, opts = {})
-          logger.info("Begin get object meta, bucket: #{bucket_name}, \
-                      object: #{object_name}, options: #{opts}")
+          logger.debug("Begin get object meta, bucket: #{bucket_name}, \
+                        object: #{object_name}, options: #{opts}")
 
           conditions = opts[:condition]
 
@@ -779,7 +784,7 @@ module Aliyun
             :etag => h[:etag],
             :last_modified => wrap(h[:last_modified]) {|x| Time.parse(x)})
 
-          logger.info("Done get object meta")
+          logger.debug("Done get object meta")
 
           obj
         end
@@ -791,14 +796,14 @@ module Aliyun
         # [file_path] the local file to write
         # [opts] options referer to get_object for details
         def get_object_to_file(bucket_name, object_name, file_path, opts = {})
-          logger.info("Begin get object to file, bucket: #{bucket_name}, \
+          logger.debug("Begin get object to file, bucket: #{bucket_name}, \
                       object: #{object_name}, file: #{file_path}, options: #{opts}")
 
           File.open(File.expand_path(file_path), 'w') do |f|
             get_object(bucket_name, object_name, opts) {|chunk| f.write(chunk)}
           end
 
-          logger.info("Done get object to file")
+          logger.debug("Done get object to file")
         end
 
         # Copy an object in the bucket. The source object and the dest
@@ -817,8 +822,8 @@ module Aliyun
         #       [:if_unmatch_etag] the etag to expect to not match
         # [return] a Hash that includes :etag and :last_modified of the dest object
         def copy_object(bucket_name, src_object_name, dst_object_name, opts = {})
-          logger.info("Begin copy object, bucket: #{bucket_name}, source object: \
-                      #{src_object_name}, dest object: #{dst_object_name}, options: #{opts}")
+          logger.debug("Begin copy object, bucket: #{bucket_name}, source object: \
+                        #{src_object_name}, dest object: #{dst_object_name}, options: #{opts}")
 
           headers = {
             'x-oss-copy-source' =>
@@ -853,7 +858,7 @@ module Aliyun
             :etag => get_node_text(doc.root, 'ETag')
           }.select {|k, v| v}
 
-          logger.info("Done copy object")
+          logger.debug("Done copy object")
 
           copy_result
         end
@@ -862,11 +867,11 @@ module Aliyun
         # [bucket_name] bucket的名字
         # [object_name] object的名字
         def delete_object(bucket_name, object_name)
-          logger.info("Begin delete object, bucket: #{bucket_name}, object: #{object_name}")
+          logger.debug("Begin delete object, bucket: #{bucket_name}, object: #{object_name}")
 
           HTTP.delete({:bucket => bucket_name, :object => object_name})
 
-          logger.info("Done delete object")
+          logger.debug("Done delete object")
         end
 
         # Batch delete objects
@@ -879,8 +884,8 @@ module Aliyun
         # [return] object names that are successfully deleted, or []
         # if :quiet is true
         def batch_delete_objects(bucket_name, object_names, opts = {})
-          logger.info("Begin batch delete object, bucket: #{bucket_name}, \
-                      objects: #{object_names}, options: #{opts}")
+          logger.debug("Begin batch delete object, bucket: #{bucket_name}, \
+                        objects: #{object_names}, options: #{opts}")
 
           sub_res = {'delete' => nil}
           body = Nokogiri::XML::Builder.new do |xml|
@@ -910,7 +915,7 @@ module Aliyun
             end
           end
 
-          logger.info("Done delete object")
+          logger.debug("Done delete object")
 
           deleted
         end
@@ -920,7 +925,8 @@ module Aliyun
         # [object_name] the object name
         # [acl] the object acl
         def update_object_acl(bucket_name, object_name, acl)
-          logger.debug("Begin update object acl, bucket: #{bucket_name}, object: #{object_name}, acl: #{acl}")
+          logger.debug("Begin update object acl, bucket: #{bucket_name}, \
+                        object: #{object_name}, acl: #{acl}")
 
           sub_res = {'acl' => nil}
           headers = {'x-oss-acl' => acl}
@@ -937,7 +943,8 @@ module Aliyun
         # [object_name] the object name
         # [return] the object acl
         def get_object_acl(bucket_name, object_name)
-          logger.debug("Begin get object acl, bucket: #{bucket_name}, object: #{object_name}")
+          logger.debug("Begin get object acl, bucket: #{bucket_name}, \
+                        object: #{object_name}")
 
           sub_res = {'acl' => nil}
           _, body = HTTP.get(
@@ -960,8 +967,9 @@ module Aliyun
         # [headers] the method to request access: Access-Control-Request-Headers
         # [return] CORSRule that describe access rule of the object
         def get_object_cors(bucket_name, object_name, origin, method, headers = [])
-          logger.debug("Begin get object cors, bucket: #{bucket_name}, object: #{object_name} \
-                        origin: #{origin}, method: #{method}, headers: #{headers.join(',')}")
+          logger.debug("Begin get object cors, bucket: #{bucket_name}, object: \
+                        #{object_name}, origin: #{origin}, method: #{method}, \
+                        headers: #{headers.join(',')}")
 
           h = {
             'Origin' => origin,
@@ -994,7 +1002,8 @@ module Aliyun
         # [opts] options
         # [return] the txn id
         def begin_multipart(bucket_name, object_name, opts = {})
-          logger.debug("Begin begin_multipart, bucket: #{bucket_name}, object: #{object_name}, options: #{opts}")
+          logger.info("Begin begin_multipart, bucket: #{bucket_name}, \
+                       object: #{object_name}, options: #{opts}")
 
           sub_res = {'uploads' => nil}
           _, body = HTTP.post(
@@ -1003,7 +1012,7 @@ module Aliyun
           doc = parse_xml(body)
           txn_id = get_node_text(doc.root, 'UploadId')
 
-          logger.debug("Done begin_multipart")
+          logger.info("Done begin_multipart")
 
           txn_id
         end
@@ -1017,7 +1026,8 @@ module Aliyun
         def upload_part(bucket_name, object_name, txn_id, part_no, &block)
           raise ClientError.new('Missing block in upload_part') unless block
 
-          logger.debug("Begin upload part, bucket: #{bucket_name}, object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}")
+          logger.debug("Begin upload part, bucket: #{bucket_name}, object: \
+                        #{object_name}, txn id: #{txn_id}, part No: #{part_no}")
 
           sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
           headers, _ = HTTP.put(
@@ -1047,8 +1057,8 @@ module Aliyun
         def upload_part_from_object(
               bucket_name, object_name, txn_id, part_no, source_object, opts = {})
           logger.debug("Begin upload part from object, bucket: #{bucket_name}, \
-                       object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}, \
-                       source object: #{source_object}, options: #{opts}")
+                        object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}, \
+                        source object: #{source_object}, options: #{opts}")
 
           range = opts[:range]
           conditions = opts[:condition]
@@ -1088,7 +1098,7 @@ module Aliyun
         # [txn_id] the txn id
         # [parts] all the parts in this transaction
         def commit_multipart(bucket_name, object_name, txn_id, parts)
-          logger.debug("Begin commit_multipart, txn id: #{txn_id}, parts: #{parts}")
+          logger.info("Begin commit_multipart, txn id: #{txn_id}, parts: #{parts}")
 
           sub_res = {'uploadId' => txn_id}
 
@@ -1107,7 +1117,7 @@ module Aliyun
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
             {:body => body})
 
-          logger.debug("Done commit_multipart")
+          logger.info("Done commit_multipart")
         end
 
         # Abort a multipart uploading transaction
@@ -1119,14 +1129,14 @@ module Aliyun
         # [object_name] the object name
         # [txn_id] the txn id
         def abort_multipart(bucket_name, object_name, txn_id)
-          logger.debug("Begin abort_multipart, txn id: #{txn_id}")
+          logger.info("Begin abort_multipart, txn id: #{txn_id}")
 
           sub_res = {'uploadId' => txn_id}
 
           HTTP.delete(
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res})
 
-          logger.debug("Done abort_multipart")
+          logger.info("Done abort_multipart")
         end
 
         # Get a list of all the on-going multipart uploading
@@ -1144,7 +1154,8 @@ module Aliyun
         #    [:delimiter] if set return common prefixes
         # [return] [transactions, more]
         def list_multipart_transactions(bucket_name, opts = {})
-          logger.debug("Begin list_multipart_transactions, bucket: #{bucket_name}, opts: #{opts}")
+          logger.debug("Begin list_multipart_transactions, bucket: #{bucket_name}, \
+                        opts: #{opts}")
 
           sub_res = {'uploads' => nil}
           params = {
@@ -1210,7 +1221,8 @@ module Aliyun
         #     [:limit] if set return :limit parts at most
         # [return] the parts that are successfully uploaded
         def list_parts(bucket_name, object_name, txn_id, opts = {})
-          logger.debug("Begin list_parts, bucket: #{bucket_name}, object: #{object_name}, txn id: #{txn_id}, options: #{opts}")
+          logger.debug("Begin list_parts, bucket: #{bucket_name}, object: \
+                        #{object_name}, txn id: #{txn_id}, options: #{opts}")
 
           sub_res = {'uploadId' => txn_id}
           params = {

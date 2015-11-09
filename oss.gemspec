@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.email         = ['tianlong.wtl@alibaba-inc.com']
 
   spec.summary       = 'Aliyun OSS Ruby SDK'
-  spec.description   = 'Ruby SDK for Aliyun OSS storage service'
+  spec.description   = 'Ruby SDK for Aliyun Object Storage Service'
   spec.homepage      = 'https://gitlab.alibaba-inc.com/oss/ruby-sdk'
 
   spec.files         = `git ls-files`.split.reject { |f| f.match(%r{^(spec|examples)}) }
