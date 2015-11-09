@@ -7,9 +7,9 @@ module Aliyun
 
     describe HTTP do
 
-      context HTTP::StreamReader do
+      context HTTP::StreamWriter do
         it "should read out chunks that are written" do
-          sr = HTTP::StreamReader.new
+          sr = HTTP::StreamWriter.new
 
           10.times do
             sr << 'hello world'
@@ -22,7 +22,7 @@ module Aliyun
 
         it "should call block to fetch data" do
           called = 0
-          sr = HTTP::StreamReader.new(lambda {|r| called += 1; r << 'hello world'})
+          sr = HTTP::StreamWriter.new(lambda {|r| called += 1; r << 'hello world'})
 
           10.times do
             bytes, outbuf = 0, ''
@@ -35,7 +35,7 @@ module Aliyun
         end
 
         it "should close when write HTTP::ENDS" do
-          sr = HTTP::StreamReader.new
+          sr = HTTP::StreamWriter.new
 
           expect(sr.closed?).to be false
 
@@ -45,7 +45,7 @@ module Aliyun
         end
 
         it "should raise error when write a closed stream reader" do
-          sr = HTTP::StreamReader.new
+          sr = HTTP::StreamWriter.new
           sr << 'hello world' << HTTP::ENDS
 
           expect {
@@ -54,7 +54,7 @@ module Aliyun
         end
 
         it "should read all chunk before closed" do
-          sr = HTTP::StreamReader.new
+          sr = HTTP::StreamWriter.new
 
           5.times {sr << 'hello world'}
           sr.close!
@@ -67,7 +67,7 @@ module Aliyun
           end
         end
 
-      end # StreamReader
+      end # StreamWriter
     end # HTTP
 
   end # OSS

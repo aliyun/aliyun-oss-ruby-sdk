@@ -111,20 +111,6 @@ module Aliyun
             .with(:body => content, :query => {})
         end
 
-        it "should PUT to create object from file" do
-          object_name = 'ruby'
-          url = get_request_path(object_name)
-          stub_request(:put, url)
-
-          file = '/tmp/x'
-          content = "hello world"
-          File.open(file, 'w') {|f| f.write(content)}
-          Protocol.put_object_from_file(@bucket, object_name, file)
-
-          expect(WebMock).to have_requested(:put, url)
-            .with(:body => content, :query => {})
-        end
-
         it "should raise Exception on error" do
           object_name = 'ruby'
           url = get_request_path(object_name)
@@ -157,21 +143,6 @@ module Aliyun
           expect(WebMock).to have_requested(:put, url)
             .with(:body => 'hello world',
                   :headers => {'Content-Type' => HTTP::DEFAULT_CONTENT_TYPE})
-        end
-
-        it "should use infer content-type from file" do
-          object_name = 'ruby'
-          url = get_request_path(object_name)
-          stub_request(:put, url)
-
-          file = '/tmp/x.html'
-          content = "<html>hello world</html>"
-          File.open(file, 'w') {|f| f.write(content)}
-          Protocol.put_object_from_file(@bucket, object_name, file)
-
-          expect(WebMock).to have_requested(:put, url)
-            .with(:body => content,
-                  :headers => {'Content-Type' => 'text/html'})
         end
 
         it "should use customized content-type" do
@@ -223,22 +194,6 @@ module Aliyun
             .with(:body => content, :query => query)
         end
 
-        it "should POST to append object from file" do
-          object_name = 'ruby'
-          url = get_request_path(object_name)
-
-          query = {'append' => '', 'position' => 11}
-          stub_request(:post, url).with(:query => query)
-
-          file = '/tmp/x'
-          content = "hello world"
-          File.open(file, 'w') {|f| f.write(content)}
-          Protocol.append_object_from_file(@bucket, object_name, 11, file)
-
-          expect(WebMock).to have_requested(:post, url)
-            .with(:body => content, :query => query)
-        end
-
         it "should raise Exception on error" do
           object_name = 'ruby'
           url = get_request_path(object_name)
@@ -275,24 +230,6 @@ module Aliyun
             .with(:body => 'hello world',
                   :query => query,
                   :headers => {'Content-Type' => HTTP::DEFAULT_CONTENT_TYPE})
-        end
-
-        it "should use infer content-type from file" do
-          object_name = 'ruby'
-          url = get_request_path(object_name)
-          query = {'append' => '', 'position' => 0}
-
-          stub_request(:post, url).with(:query => query)
-
-          file = '/tmp/x.html'
-          content = "<html>hello world</html>"
-          File.open(file, 'w') {|f| f.write(content)}
-          Protocol.append_object_from_file(@bucket, object_name, 0, file)
-
-          expect(WebMock).to have_requested(:post, url)
-            .with(:body => content,
-                  :query => query,
-                  :headers => {'Content-Type' => 'text/html'})
         end
 
         it "should use customized content-type" do
@@ -412,22 +349,6 @@ module Aliyun
             .with(:body => nil, :query => {})
 
           expect(content).to eq(return_content)
-        end
-
-        it "should get object to file" do
-          object_name = 'ruby'
-          url = get_request_path(object_name)
-
-          return_content = "hello world"
-          stub_request(:get, url).to_return(:body => return_content)
-
-          file = '/tmp/x'
-          Protocol.get_object_to_file(@bucket, object_name, file)
-
-          expect(WebMock).to have_requested(:get, url)
-            .with(:body => nil, :query => {})
-
-          expect(File.read(file)).to eq(return_content)
         end
 
         it "should raise Exception on error" do

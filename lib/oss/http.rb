@@ -24,7 +24,7 @@ module Aliyun
       # 实现了:read(bytes, outbuf)方法的一个stream实现，用于对HTTP请求
       # 的body进行streaming
       #
-      class StreamReader
+      class StreamWriter
         def initialize(block = nil)
           @block = block
           @chunks = []
@@ -45,7 +45,7 @@ module Aliyun
         end
 
         def write(chunk)
-          raise ClientError.new("Cannot write a closed stream reader") if closed?
+          raise ClientError.new("Cannot write a closed stream writer") if closed?
 
           if chunk.is_a?(StreamEnd)
             @done = true
@@ -74,7 +74,7 @@ module Aliyun
 
       class StreamPayload
         def initialize(block)
-          @stream = StreamReader.new(block)
+          @stream = StreamWriter.new(block)
         end
 
         # NOTE: We are not doing the real read here, just return a

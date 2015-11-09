@@ -9,7 +9,7 @@ module Aliyun
 
     ##
     # Protocol implement the OSS Open API which is low-level. User
-    # should refer to Aliyun::OSS::Client for normal use.
+    # should refer to {OSS::Client} for normal use.
     #
     class Protocol
 
@@ -19,19 +19,23 @@ module Aliyun
 
         include Logging
 
-        # 列出当前所有的bucket
-        # [opts] 可能的选项
-        #     [:prefix] 如果设置，则只返回以它为前缀的bucket
-        #     [:marker] 如果设置，则从从marker后开始返回bucket，*不包含marker*
-        #     [:limit] 如果设置，则最多返回limit个bucket
-        # [return] [buckets, more]，其中buckets是bucket数组，more是一个Hash，可能
-        # 包含的值是：
-        #     [:prefix] 此次查询的前缀
-        #     [:marker] 此次查询的marker
-        #     [:limit] 此次查询的limit
-        #     [:next_marker] 下次查询的marker
-        #     [:truncated] 这次查询是否被截断（还有更多的bucket没有返回）
-        # *注意：如果所有的bucket都已经返回，more将是空的*
+        # List all the buckets.
+        # @param opts [Hash] options
+        # @option opts [String] :prefix return only those buckets
+        #  prefixed with it if specified
+        # @option opts [String] :marker return buckets after where it
+        #  indicates (exclusively). All buckets are sorted by name
+        #  alphabetically
+        # @option opts [Integer] :limit return only the first N
+        #  buckets if specified
+        # @return [Array<Bucket>, Hash] the returned buckets and a
+        #  hash including the next tokens.
+        # @option more [String] :prefix the prefix used
+        # @option more [String] :marker the marker used
+        # @option more [Integer] :limit the limit used
+        # @option more [String] :next_marker marker to continue list buckets
+        # @option more [Boolean] :truncated whether there are more
+        #  buckets to be returned
         def list_buckets(opts = {})
           logger.info('Begin list bucket')
 
@@ -71,10 +75,13 @@ module Aliyun
           [buckets, more]
         end
 
-        # 创建一个bucket
-        # [name] bucket的名字
-        # [opts] 可选的参数：
-        #     [:location] bucket所在的region，例如oss-cn-hangzhou
+        # Create a bucket
+        # @param name [String] the bucket name
+        # @param opts [Hash] options
+        # @option opts [String] :location the region where the bucket
+        #  is located
+        # @example
+        #   oss-cn-hangzhou
         def create_bucket(name, opts = {})
           logger.info("Begin create bucket, name: #{name}, opts: #{opts}")
 
@@ -95,8 +102,9 @@ module Aliyun
         end
 
         # Update bucket acl
-        # [name] the bucket name
-        # [acl] the bucket acl
+        # @param name [String] the bucket name
+        # @param acl [String] the bucket acl
+        # @see Struct::ACL
         def update_bucket_acl(name, acl)
           logger.info("Begin update bucket acl, name: #{name}, acl: #{acl}")
 
@@ -110,8 +118,8 @@ module Aliyun
         end
 
         # Get bucket acl
-        # [name] the bucket name
-        # [return] the acl of this bucket
+        # @param name [String] the bucket name
+        # @return [String] the acl of this bucket
         def get_bucket_acl(name)
           logger.info("Begin get bucket acl, name: #{name}")
 
@@ -126,8 +134,13 @@ module Aliyun
         end
 
         # Update bucket logging settings
-        # [name] the bucket name
-        # [opts] the logging options
+        # @param name [String] the bucket name
+        # @param opts [Hash] logging options
+        # @option opts [Boolean] :enable whether to enable logging
+        # @option opts [String] :target_bucket the target bucket to
+        #  store logging objects
+        # @option opts [String] :prefix only turn on logging for those
+        #  objects prefixed with it if specified
         def update_bucket_logging(name, opts)
           logger.info("Begin update bucket logging, name: #{name}, options: #{opts}")
 
@@ -158,8 +171,9 @@ module Aliyun
         end
 
         # Get bucket logging settings
-        # [name] the bucket name
-        # [return] a Hash represents the logging settings of this bucket
+        # @param name [String] the bucket name
+        # @return [Hash] logging options of this bucket
+        # @see #set_bucket_logging
         def get_bucket_logging(name)
           logger.info("Begin get bucket logging, name: #{name}")
 
@@ -183,7 +197,7 @@ module Aliyun
         end
 
         # Delete bucket logging settings, a.k.a. disable bucket logging
-        # [name] the bucket name
+        # @param name [String] the bucket name
         def delete_bucket_logging(name)
           logger.info("Begin delete bucket logging, name: #{name}")
 
@@ -194,8 +208,12 @@ module Aliyun
         end
 
         # Update bucket website settings
-        # [name] the bucket name
-        # [opts] the bucket website options
+        # @param name [String] the bucket name
+        # @param opts [Hash] the bucket website options
+        # @option opts [String] :index the object name to serve as the
+        #  index page of website
+        # @option opts [String] :error the object name to serve as the
+        #  error page of website
         def update_bucket_website(name, opts)
           logger.info("Begin update bucket website, name: #{name}, options: #{opts}")
 
@@ -224,8 +242,9 @@ module Aliyun
         end
 
         # Get bucket website settings
-        # [name] the bucket name
-        # [return] a Hash represents the website settings of this bucket
+        # @param name [String] the bucket name
+        # @return [Hash] the bucket website options
+        # @see set_bucket_website
         def get_bucket_website(name)
           logger.info("Begin get bucket website, name: #{name}")
 
@@ -245,7 +264,7 @@ module Aliyun
         end
 
         # Delete bucket website settings
-        # [name] the bucket name
+        # @param name [String] the bucket name
         def delete_bucket_website(name)
           logger.info("Begin delete bucket website, name: #{name}")
 
@@ -256,8 +275,12 @@ module Aliyun
         end
 
         # Update bucket referer
-        # [name] the bucket name
-        # [opts] the bucket referer options
+        # @param name [String] the bucket name
+        # @param opts [Hash] the bucket referer options
+        # @option opts [Boolean] :allow_empty whether to allow empty
+        #  referer
+        # @option opts [Array<String>] :referers the referer white
+        #  list to allow access to this bucket
         def update_bucket_referer(name, opts)
           logger.info("Begin update bucket referer, name: #{name}, options: #{opts}")
 
@@ -284,8 +307,9 @@ module Aliyun
         end
 
         # Get bucket referer
-        # [name] the bucket name
-        # [return] a Hash represents the referer settings of this bucket
+        # @param name [String] the bucket name
+        # @return [Hash] the bucket referer options
+        # @see #set_bucket_referer
         def get_bucket_referer(name)
           logger.info("Begin get bucket referer, name: #{name}")
 
@@ -304,8 +328,10 @@ module Aliyun
         end
 
         # Update bucket lifecycle settings
-        # [name] the bucket name
-        # [rules] the lifecycle rules
+        # @param name [String] the bucket name
+        # @param rules [Array<Struct::LifeCycleRule>] the
+        #  lifecycle rules
+        # @see Struct::LifeCycleRule
         def update_bucket_lifecycle(name, rules)
           logger.info("Begin update bucket lifecycle, name: #{name}, rules: \
                        #{rules.map {|r| r.to_s}}")
@@ -340,8 +366,9 @@ module Aliyun
         end
 
         # Get bucket lifecycle settings
-        # [name] the bucket name
-        # [return] Rule[] the lifecycle rules set on this bucket
+        # @param name [String] the bucket name
+        # @return [Array<Struct::LifeCycleRule>] the
+        #  lifecycle rules. See {Struct::LifeCycleRule}
         def get_bucket_lifecycle(name)
           logger.info("Begin get bucket lifecycle, name: #{name}")
 
@@ -368,9 +395,9 @@ module Aliyun
           rules
         end
 
-        # Delete bucket lifecycle settings
-        # NOTE: this will delete all lifecycle rules
-        # [name] the bucket name
+        # Delete *all* lifecycle rules on the bucket
+        # @note this will delete all lifecycle rules
+        # @param name [String] the bucket name
         def delete_bucket_lifecycle(name)
           logger.info("Begin delete bucket lifecycle, name: #{name}")
 
@@ -380,9 +407,11 @@ module Aliyun
           logger.info("Done delete bucket lifecycle")
         end
 
-        # Set bucket CORS rules
-        # [name] the bucket name
-        # [rules] the CORS rules
+        # Set bucket CORS(Cross-Origin Resource Sharing) rules
+        # @param name [String] the bucket name
+        # @param rules [Array<Struct::CORSRule] the CORS
+        #  rules
+        # @see Struct::CORSRule
         def set_bucket_cors(name, rules)
           logger.info("Begin set bucket cors, bucket: #{name}, rules: \
                        #{rules.map {|r| r.to_s}.join(';')}")
@@ -418,8 +447,8 @@ module Aliyun
         end
 
         # Get bucket CORS rules
-        # [name] the bucket name
-        # [return] the CORS rules for the bucket
+        # @param name [String] the bucket name
+        # @return [Array<Struct::CORSRule] the CORS rules
         def get_bucket_cors(name)
           logger.info("Begin get bucket cors, bucket: #{name}")
 
@@ -450,7 +479,8 @@ module Aliyun
         end
 
         # Delete all bucket CORS rules
-        # [name] the bucket name
+        # @note this will delete all CORS rules of this bucket
+        # @param name [String] the bucket name
         def delete_bucket_cors(name)
           logger.info("Begin delete bucket cors, bucket: #{name}")
 
@@ -461,8 +491,10 @@ module Aliyun
           logger.info("Done delete bucket cors")
         end
 
-        # 删除一个bucket
-        # [name] bucket的名字
+        # Delete a bucket
+        # @param name [String] the bucket name
+        # @note it will fails if the bucket is not empty (it contains
+        #  objects)
         def delete_bucket(name)
           logger.info("Begin delete bucket: #{name}")
 
@@ -473,15 +505,19 @@ module Aliyun
 
         # Put an object to the specified bucket, a block is required
         # to provide the object data
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [opts] Options
-        #     [:content_type] the HTTP Content-Type for the file, if
-        # not specified client will try to determine the type itself
-        # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
-        # do so
-        # [block] the block is handled the StreamReader which data can
-        # be written to
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param opts [Hash] Options
+        # @option opts [String] :content_type the HTTP Content-Type
+        #  for the file, if not specified client will try to determine
+        #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
+        #  if it fails to do so
+        # @yield [HTTP::StreamWriter] a stream writer is
+        #  yielded to the caller to which it can write chunks of data
+        #  streamingly
+        # @example
+        #   chunk = get_chunk
+        #   put_object('bucket', 'object') { |sw| sw.write(chunk) }
         def put_object(bucket_name, object_name, opts = {}, &block)
           raise ClientError.new('Missing block in put_object') unless block
 
@@ -496,46 +532,22 @@ module Aliyun
           logger.debug('Done put object')
         end
 
-        # Put an object to the specified bucket. The object's content
-        # is read from a local file specified by +file_path+
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [file_path] the file to read object data
-        # [opts] Options
-        #     [:content_type] the HTTP Content-Type for the file, if
-        # not specified client will try to determine the type itself
-        # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
-        # do so
-        def put_object_from_file(bucket_name, object_name, file_path, opts = {})
-          logger.debug("Begin put object from file: #{file_path}, options: #{opts}")
-
-          file = File.open(File.expand_path(file_path))
-          content_type = get_content_type(File.expand_path(file_path))
-          put_object(
-            bucket_name, object_name,
-            :content_type => opts[:content_type] || content_type
-          ) do |content|
-            content << file.read(STREAM_CHUNK_SIZE) unless file.eof?
-          end
-
-          logger.debug('Done put object from file')
-        end
-
-        # Append to an object of a bucket. Create an 'Appendable
-        # Object' if the object does not exist. A block is required to
+        # Append to an object of a bucket. Create an "Appendable
+        # Object" if the object does not exist. A block is required to
         # provide the appending data.
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [position] the position to append
-        # [opts] options
-        #     [:content_type] the HTTP Content-Type for the file, if
-        # not specified client will try to determine the type itself
-        # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
-        # do so
-        # [block] the block is handled the StreamReader which data can
-        # be written to
-        # NOTE:
-        #   1. Can not append to a 'Normal Object'
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param position [Integer] the position to append
+        # @param opts [Hash] Options
+        # @option opts [String] :content_type the HTTP Content-Type
+        #  for the file, if not specified client will try to determine
+        #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
+        #  if it fails to do so
+        # @yield [HTTP::StreamWriter] a stream writer is
+        #  yielded to the caller to which it can write chunks of data
+        #  streamingly
+        # @note
+        #   1. Can not append to a "Normal Object"
         #   2. The position must equal to the object's size before append
         #   3. The :content_type is only used when the object is created
         def append_object(bucket_name, object_name, position, opts = {}, &block)
@@ -553,67 +565,42 @@ module Aliyun
           logger.debug('Done append object')
         end
 
-        # Append to an object of a bucket. Create an 'Appendable
-        # Object' if the object does not exist. The appending data is
-        # read from a local file specified by +file_path+.
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [position] the position to append
-        # [file_path] the local file to read from
-        # [opts] options
-        #     [:content_type] the HTTP Content-Type for the file, if
-        # not specified client will try to determine the type itself
-        # and fall back to HTTP::DEFAULT_CONTENT_TYPE if it fails to
-        # do so
-        # NOTE:
-        #   1. Can not append to a 'Normal Object'
-        #   2. The position must equal to the object's size before append
-        #   3. The :content_type is only used when the object is created
-        def append_object_from_file(
-              bucket_name, object_name, position, file_path, opts = {}, &block)
-
-          logger.debug("Begin append object, bucket: #{bucket_name}, object: \
-                        #{object_name}, position: #{position}, file: #{file_path}, \
-                        options: #{opts}")
-
-          file = File.open(File.expand_path(file_path))
-          content_type = get_content_type(File.expand_path(file_path))
-          append_object(
-            bucket_name, object_name, position,
-            :content_type => opts[:content_type] || content_type
-          ) do |content|
-            content << file.read(STREAM_CHUNK_SIZE) unless file.eof?
-          end
-
-          logger.debug('Done append object')
-        end
-
-        # 列出指定的bucket中的所有object
-        # [bucket_name] bucket的名字
-        # [opts] 可选的参数，可能的值有：
-        #    [:prefix] 返回的object key的前缀
-        #    [:marker] 如果设置，则从marker之后开始返回object，*注意：不包含marker*
-        #    [:limit] 最多返回的object的个数
-        #    [:delimiter] 如果指定，则结果中包含一个common prefix数组，
-        # 表示所有object的公共前缀。例如有以下objects：
+        # List objects in a bucket.
+        # @param bucket_name [String] the bucket name
+        # @param opts [Hash] options
+        # @option opts [String] :prefix return only those buckets
+        #  prefixed with it if specified
+        # @option opts [String] :marker return buckets after where it
+        #  indicates (exclusively). All buckets are sorted by name
+        #  alphabetically
+        # @option opts [Integer] :limit return only the first N
+        #  buckets if specified
+        # @option opts [String] :delimiter the delimiter to get common
+        #  prefixes of all objects
+        # @example
+        #  Assume we have the following objects:
         #     /foo/bar/obj1
         #     /foo/bar/obj2
         #     ...
         #     /foo/bar/obj9999999
-        #     /foo/xx/
-        # 指定foo/为prefix，/为delimiter，则返回的common prefix为
-        # /foo/bar/, /foo/xxx/
-        #    [:encoding] 返回的object key的编码方式
-        # [return] [objects, more] 前者是返回的object数组，后者是一个
-        # Hash，可能包含：
-        #    [:common_prefixes] common prefix数组
-        #    [:prefix] 所使用的prefix
-        #    [:delimiter] 所使用的delimiter
-        #    [:limit] 所使用的limit
-        #    [:marker] 所使用的marker
-        #    [:next_marker] 下次查询的marker
-        #    [:truncated] 本次查询是否被截断（还有更多的object待返回）
-        #    [:encoding] 返回结果中object key和prefix等的编码方式
+        #     /foo/xxx/
+        #  use 'foo/' as the prefix, '/' as the delimiter, the common
+        #  prefixes we get are: '/foo/bar/', '/foo/xxx/'. They are
+        #  coincidentally the sub-directories under '/foo/'. Using
+        #  delimiter we avoid list all the objects whose number may be
+        #  large.
+        # @option opts [String] :encoding the encoding of object key
+        #  in the response body. Only 'url' is supported now.
+        # @return [Array<Objects>, Hash] the returned object and a
+        # hash including the next tokens
+        # @option more [String] :prefix the prefix used
+        # @option more [String] :delimiter the delimiter used
+        # @option more [String] :marker the marker used
+        # @option more [Integer] :limit the limit used
+        # @option more [String] :next_marker marker to continue list buckets
+        # @option more [Boolean] :truncated whether there are more
+        #  buckets to be returned
+        # @option more [String] :encoding the object key encoding used
         def list_objects(bucket_name, opts = {})
           logger.debug("Begin list object, bucket: #{bucket_name}")
 
@@ -673,35 +660,41 @@ module Aliyun
           [objects, more.select {|_, v| v != nil}]
         end
 
-        # Get an object from the bucket. Data chunks are handled to
-        # the block passed in.
-        # User can get the whole object or only part of it by specify
-        # the bytes range;
-        # User can specify conditions to get the object like:
-        # if-modified-since, if-unmodified-since, if-match-etag,
-        # if-unmatch-etag. If the object to get fails to meet the
-        # conditions, it will not be returned;
-        # User can indicate the server to rewrite the response headers
-        # such as content-type, content-encoding when get the object
-        # by specify the :rewrite options. The specified headers will
-        # be returned instead of the original property of the object.
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [opts] options
-        #     [:range] bytes range to read in the format: xx-yy
-        #     [:condition] preconditions to get the object:
-        #       [:if_modified_since] the modified time
-        #       [:if_unmodified_since] the unmodified time
-        #       [:if_match_etag] the etag to expect to match
-        #       [:if_unmatch_etag] the etag to expect to not match
-        #     [:rewrite] response headers to rewrite
-        #       [:content_type] the Content-Type header
-        #       [:content_language] the Content-Language header
-        #       [:expires] the Expires header
-        #       [:cache_control] the Cache-Control header
-        #       [:content_disposition] the Content-Disposition header
-        #       [:content_encoding] the Content-Encoding header
-        # [block] the block is handled data chunk of the object
+        # Get an object from the bucket. A block is required to handle
+        # the object data chunks.
+        # @note User can get the whole object or only part of it by specify
+        #  the bytes range;
+        # @note User can specify conditions to get the object like:
+        #  if-modified-since, if-unmodified-since, if-match-etag,
+        #  if-unmatch-etag. If the object to get fails to meet the
+        #  conditions, it will not be returned;
+        # @note User can indicate the server to rewrite the response headers
+        #  such as content-type, content-encoding when get the object
+        #  by specify the :rewrite options. The specified headers will
+        #  be returned instead of the original property of the object.
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param opts [Hash] options
+        # @option opts [Array<Integer>] :range bytes range to get from
+        #  the object, in the format: xx-yy
+        # @option opts [Hash] :condition preconditions to get the object
+        #   * :if_modified_since (Time) get the object if its modified
+        #     time is later than specified
+        #   * :if_unmodified_since (Time) get the object if its
+        #     unmodified time if earlier than specified
+        #   * :if_match_etag (String) get the object if its etag match
+        #     specified
+        #   * :if_unmatch_etag (String) get the object if its etag
+        #     doesn't match specified
+        # @option opts [Hash] :rewrite response headers to rewrite
+        #   * :content_type (String) the Content-Type header
+        #   * :content_language (String) the Content-Language header
+        #   * :expires (Time) the Expires header
+        #   * :cache_control (String) the Cache-Control header
+        #   * :content_disposition (String) the Content-Disposition header
+        #   * :content_encoding (String) the Content-Encoding header
+        # @yield [String] it gives the data chunks of the object to
+        #  the block
         def get_object(bucket_name, object_name, opts = {}, &block)
           logger.debug("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
 
@@ -744,19 +737,17 @@ module Aliyun
         end
 
         # Get the object meta rather than the whole object.
-        # User can specify conditions to get the object like:
-        # if-modified-since, if-unmodified-since, if-match-etag,
-        # if-unmatch-etag. If the object to get fails to meet the
-        # conditions, it will not be returned.
+        # @note User can specify conditions to get the object like:
+        #  if-modified-since, if-unmodified-since, if-match-etag,
+        #  if-unmatch-etag. If the object to get fails to meet the
+        #  conditions, it will not be returned.
         #
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [opts] options
-        #     [:condition] preconditions to get the object:
-        #       [:if_modified_since] the modified time
-        #       [:if_unmodified_since] the unmodified time
-        #       [:if_match_etag] the etag to expect to match
-        #       [:if_unmatch_etag] the etag to expect to not match
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param opts [Hash] options
+        # @option opts [Hash] :condition preconditions to get the
+        #  object meta. The same as #get_object
+        # @see #get_object
         def get_object_meta(bucket_name, object_name, opts = {})
           logger.debug("Begin get object meta, bucket: #{bucket_name}, \
                         object: #{object_name}, options: #{opts}")
@@ -789,38 +780,23 @@ module Aliyun
           obj
         end
 
-        # Get an object from the bucket and write the content into a
-        # local file.
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [file_path] the local file to write
-        # [opts] options referer to get_object for details
-        def get_object_to_file(bucket_name, object_name, file_path, opts = {})
-          logger.debug("Begin get object to file, bucket: #{bucket_name}, \
-                      object: #{object_name}, file: #{file_path}, options: #{opts}")
-
-          File.open(File.expand_path(file_path), 'w') do |f|
-            get_object(bucket_name, object_name, opts) {|chunk| f.write(chunk)}
-          end
-
-          logger.debug("Done get object to file")
-        end
-
         # Copy an object in the bucket. The source object and the dest
         # object must be in the same bucket.
-        # [bucket_name] the bucket name
-        # [src_object_name] the source object name
-        # [dst_object_name] the dest object name
-        # [opts] options
-        #     [:acl] the dest object's Struct::ACL
-        #     [:meta_directive] what to do with the object's meta:
-        # copy or replace; see Struct::MetaDirective
-        #     [:condition] preconditions to get the object:
-        #       [:if_modified_since] the modified time
-        #       [:if_unmodified_since] the unmodified time
-        #       [:if_match_etag] the etag to expect to match
-        #       [:if_unmatch_etag] the etag to expect to not match
-        # [return] a Hash that includes :etag and :last_modified of the dest object
+        # @param bucket_name [String] the bucket name
+        # @param src_object_name [String] the source object name
+        # @param dst_object_name [String] the dest object name
+        # @param opts [Hash] options
+        # @option opts [String] :acl specify the dest object's
+        #  ACL. See {Struct::ACL}
+        # @option opts [String] :meta_directive specify what to do
+        #  with the object's meta: copy or replace. See
+        #  {Struct::MetaDirective}
+        # @option opts [Hash] :condition preconditions to get the
+        #  object. See #get_object
+        # @return a Hash that describes dest object
+        # @option return [String] :etag the etag of the dest object
+        # @option return [Time] :last_modified the last modification
+        #  time of the dest object
         def copy_object(bucket_name, src_object_name, dst_object_name, opts = {})
           logger.debug("Begin copy object, bucket: #{bucket_name}, source object: \
                         #{src_object_name}, dest object: #{dst_object_name}, options: #{opts}")
@@ -863,9 +839,9 @@ module Aliyun
           copy_result
         end
 
-        # 删除指定的bucket中的指定object
-        # [bucket_name] bucket的名字
-        # [object_name] object的名字
+        # Delete an object from the bucket
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
         def delete_object(bucket_name, object_name)
           logger.debug("Begin delete object, bucket: #{bucket_name}, object: #{object_name}")
 
@@ -875,14 +851,15 @@ module Aliyun
         end
 
         # Batch delete objects
-        # [bucket_name] the bucket name
-        # [object_names] the object names to delete
-        # [opts] options
-        #     [:quiet] if set to true, return empty list
-        #     [:encoding-type] the encoding type for object key, only
-        # supports 'url' now
-        # [return] object names that are successfully deleted, or []
-        # if :quiet is true
+        # @param bucket_name [String] the bucket name
+        # @param object_names [Enumerator<String>] the object names
+        # @param opts [Hash] options
+        # @option opts [Boolean] :quiet indicates whether the server
+        #  should return the delete result of the objects
+        # @option opts [String] :encoding-type the encoding type for
+        #  object key in the response body, only 'url' is supported now
+        # @return [Array<String>] object names that have been
+        #  successfully deleted or empty if :quiet is true
         def batch_delete_objects(bucket_name, object_names, opts = {})
           logger.debug("Begin batch delete object, bucket: #{bucket_name}, \
                         objects: #{object_names}, options: #{opts}")
@@ -921,9 +898,9 @@ module Aliyun
         end
 
         # Update object acl
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [acl] the object acl
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param acl [String] the object's ACL. See {Struct::ACL}
         def update_object_acl(bucket_name, object_name, acl)
           logger.debug("Begin update object acl, bucket: #{bucket_name}, \
                         object: #{object_name}, acl: #{acl}")
@@ -939,9 +916,9 @@ module Aliyun
         end
 
         # Get object acl
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [return] the object acl
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # [return] the object's acl. See {Struct::ACL}
         def get_object_acl(bucket_name, object_name)
           logger.debug("Begin get object acl, bucket: #{bucket_name}, \
                         object: #{object_name}")
@@ -959,13 +936,15 @@ module Aliyun
         end
 
         # Get object CORS rule
-        # NOTE: this is usually used by browser to make a 'preflight'
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [origin] the origin of the request
-        # [method] the method to request access: Access-Control-Request-Method
-        # [headers] the method to request access: Access-Control-Request-Headers
-        # [return] CORSRule that describe access rule of the object
+        # @note this is usually used by browser to make a "preflight"
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param origin [String] the Origin of the reqeust
+        # @param method [String] the method to request access:
+        #  Access-Control-Request-Method
+        # @param headers [Array<String>] the headers to request access:
+        #  Access-Control-Request-Headers
+        # @return [CORSRule] the CORS rule of the object
         def get_object_cors(bucket_name, object_name, origin, method, headers = [])
           logger.debug("Begin get object cors, bucket: #{bucket_name}, object: \
                         #{object_name}, origin: #{origin}, method: #{method}, \
@@ -996,11 +975,11 @@ module Aliyun
         # Multipart uploading
         #
 
-        # Begin a a multipart uploading transaction
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [opts] options
-        # [return] the txn id
+        # Initiate a a multipart uploading transaction
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param opts [Hash] options
+        # @return [String] the upload id
         def begin_multipart(bucket_name, object_name, opts = {})
           logger.info("Begin begin_multipart, bucket: #{bucket_name}, \
                        object: #{object_name}, options: #{opts}")
@@ -1018,11 +997,13 @@ module Aliyun
         end
 
         # Upload a part in a multipart uploading transaction.
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [txn_id] the txn id
-        # [part_no] the part number
-        # [block] provide the part content
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param txn_id [String] the upload id
+        # @param part_no [Integer] the part number
+        # @yield [HTTP::StreamWriter] a stream writer is
+        #  yielded to the caller to which it can write chunks of data
+        #  streamingly
         def upload_part(bucket_name, object_name, txn_id, part_no, &block)
           raise ClientError.new('Missing block in upload_part') unless block
 
@@ -1042,18 +1023,16 @@ module Aliyun
         # Upload a part in a multipart uploading transaction by copying
         # from an existent object as the part's content. It may copy
         # only part of the object by specifying the bytes range to read.
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [txn_id] the txn id
-        # [part_no] the part number
-        # [source_object] the source object to copy from
-        # [opts] options
-        #     [:range] the bytes range to copy: [begin, end)
-        #     [:condition] preconditions to copy the object:
-        #       [:if_modified_since] the modified time
-        #       [:if_unmodified_since] the unmodified time
-        #       [:if_match_etag] the etag to expect to match
-        #       [:if_unmatch_etag] the etag to expect to not match
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param txn_id [String] the upload id
+        # @param part_no [Integer] the part number
+        # @param source_object [String] the source object name to copy from
+        # @param opts [Hash] options
+        # @option opts [Array<Integer>] :range the bytes range to
+        #  copy, int the format: [begin(inclusive), end(exclusive]
+        # @option opts [Hash] :condition preconditions to copy the
+        #  object. See #get_object
         def upload_part_from_object(
               bucket_name, object_name, txn_id, part_no, source_object, opts = {})
           logger.debug("Begin upload part from object, bucket: #{bucket_name}, \
@@ -1092,11 +1071,12 @@ module Aliyun
           Multipart::Part.new(:number => part_no, :etag => headers[:etag])
         end
 
-        # Commit a multipart uploading transaction
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [txn_id] the txn id
-        # [parts] all the parts in this transaction
+        # Complete a multipart uploading transaction
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param txn_id [String] the upload id
+        # @param parts [Array<Multipart::Part>] all the
+        #  parts in this transaction
         def commit_multipart(bucket_name, object_name, txn_id, parts)
           logger.info("Begin commit_multipart, txn id: #{txn_id}, parts: #{parts}")
 
@@ -1121,13 +1101,13 @@ module Aliyun
         end
 
         # Abort a multipart uploading transaction
-        # All the parts are discarded after abort. For some parts
-        # being uploaded while the abort happens, they may not be
-        # discarded. Call abort_multipart several times for this
-        # situation.
-        # [bucket_name] the bucket name
-        # [object_name] the object name
-        # [txn_id] the txn id
+        # @note All the parts are discarded after abort. For some parts
+        #  being uploaded while the abort happens, they may not be
+        #  discarded. Call abort_multipart several times for this
+        #  situation.
+        # @param bucket_name [String] the bucket name
+        # @param object_name [String] the object name
+        # @param txn_id [String] the upload id
         def abort_multipart(bucket_name, object_name, txn_id)
           logger.info("Begin abort_multipart, txn id: #{txn_id}")
 
@@ -1140,19 +1120,37 @@ module Aliyun
         end
 
         # Get a list of all the on-going multipart uploading
-        # transactions.That is: thoses started and not aborted.
-        # [bucket_name] the bucket name
-        # [opts] options:
-        #    [:id_marker] if set return only thoese transactions with
-        # txn id after :id_marker
-        #    [:key_marker] 1) if :id_marker is not set, return only
-        # those transactions with object key *after* :key_marker; 2) if
-        # :id_marker is set, return only thoese transactions with
-        # object key *equals* :key_marker and txn id after :id_marker
-        #    [:prefix] if set only return those transactions with the
-        # object key prefixed with it
-        #    [:delimiter] if set return common prefixes
-        # [return] [transactions, more]
+        # transactions. That is: thoses started and not aborted.
+        # @param bucket_name [String] the bucket name
+        # @param opts [Hash] options:
+        # @option opts [String] :id_marker return only thoese transactions with
+        #  txn id after :id_marker
+        # @option opts [String] :key_marker the object key marker for
+        #  a multipart upload transaction.
+        #   1. if :id_marker is not set, return only those
+        #     transactions with object key *after* :key_marker;
+        #   2. if :id_marker is set, return only thoese transactions
+        #     with object key *equals* :key_marker and txn id after
+        #     :id_marker
+        # @option opts [String] :prefix the prefix of the object key
+        #  for a multipart upload transaction. if set only return
+        #  those transactions with the object key prefixed with it
+        # @option opts [String] :delimiter the delimiter for the
+        #  object key for a multipart upload transaction.
+        # @return [Array<Multipart::Transaction>, Hash]
+        #  the returned transactions and a hash including next tokens
+        # @option more [String] :prefix the prefix used
+        # @option more [String] :delimiter the delimiter used
+        # @option more [Integer] :limit the limit used
+        # @option more [String] :id_marker the upload id marker used
+        # @option more [String] :next_id_marker upload id marker to
+        #  continue list buckets
+        # @option more [String] :key_marker the object key marker used
+        # @option more [String] :next_key_marker object key marker to
+        #  continue list buckets
+        # @option more [Boolean] :truncated whether there are more
+        #  buckets to be returned
+        # @option more [String] :encoding the object key encoding used
         def list_multipart_transactions(bucket_name, opts = {})
           logger.debug("Begin list_multipart_transactions, bucket: #{bucket_name}, \
                         opts: #{opts}")
@@ -1214,12 +1212,18 @@ module Aliyun
 
         # Get a list of parts that are successfully uploaded in a
         # transaction.
-        # [txn_id] the txn id
-        # [opts] options:
-        #     [:marker] if set only return thoses parts after part
-        # number
-        #     [:limit] if set return :limit parts at most
-        # [return] the parts that are successfully uploaded
+        # @param txn_id [String] the upload id
+        # @param opts [Hash] options:
+        # @option opts [Integer] :marker the part number marker after
+        #  which to return parts
+        # @option opts [Integer] :limit max number parts to return
+        # @return [Array<Multipart::Part, Hash] the
+        #  returned parts and a hash including next tokens
+        # @option more [Integer] :marker the marker used
+        # @option more [Integer] :limit the limit used
+        # @option more [Integer] :next_marker marker to continue list parts
+        # @option more [Boolean] :truncated whether there are more
+        #  parts to be returned
         def list_parts(bucket_name, object_name, txn_id, opts = {})
           logger.debug("Begin list_parts, bucket: #{bucket_name}, object: \
                         #{object_name}, txn id: #{txn_id}, options: #{opts}")
@@ -1268,7 +1272,9 @@ module Aliyun
 
         private
 
-        # 将content解析成xml doc对象
+        # Parse body content to xml document
+        # @param content [String] the xml content
+        # @return [Nokogiri::XML::Document] the parsed document
         def parse_xml(content)
           doc = Nokogiri::XML(content) do |config|
             config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
@@ -1277,7 +1283,10 @@ module Aliyun
           doc
         end
 
-        # 获取节点下面的tag内容
+        # Get the text of a xml node
+        # @param node [Nokogiri::XML::Node] the xml node
+        # @param tag [String] the node tag
+        # @yield [String] the node text is given to the block
         def get_node_text(node, tag, &block)
           n = node.at_css(tag) if node
           value = n.text if n
@@ -1286,13 +1295,20 @@ module Aliyun
           value
         end
 
-        # infer the file's content type using MIME::Types
+        # Infer the file's content type using MIME::Types
+        # @param file [String] the file path
+        # @return [String] the infered content type or nil if it fails
+        #  to infer the content type
         def get_content_type(file)
           t = MIME::Types.of(file)
           t.first.content_type unless t.empty?
         end
 
-        # decode object key
+        # Decode object key using encoding. If encoding is nil it
+        # returns the key directly.
+        # @param key [String] the object key
+        # @param encoding [String] the encoding used
+        # @return [String] the decoded key
         def decode_key(key, encoding)
           return key unless encoding
 
@@ -1304,7 +1320,10 @@ module Aliyun
           end
         end
 
-        # transform x if x is not nil
+        # Transform x if x is not nil
+        # @param x [Object] the object to transform
+        # @yield [Object] the object if given to the block
+        # @return [Object] the transformed object
         def wrap(x, &block)
           x == nil ? nil : block.call(x)
         end

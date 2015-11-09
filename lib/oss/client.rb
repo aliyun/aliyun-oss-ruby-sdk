@@ -23,7 +23,7 @@ module Aliyun
       end
 
       # 列出当前所有的bucket
-      # @param opts [Hash] 可能的选项
+      # @param opts [Hash] 查询选项
       # @option opts [String] :prefix 如果设置，则只返回以它为前缀的bucket
       # @return [Enumerator<Bucket>] Bucket的迭代器
       def list_buckets(opts = {})
