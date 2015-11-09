@@ -9,12 +9,13 @@ module Aliyun
 
     describe "Service" do
       before :all do
-        cred_file = "~/.oss.yml"
-        cred = YAML.load(File.read(File.expand_path(cred_file)))
+        creds_file = "~/.oss.yml"
+        creds = YAML.load(File.read(File.expand_path(creds_file)))
         Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 
         @host = 'oss.aliyuncs.com'
-        @oss = Client.new(@host, cred['id'], cred['key'])
+        Config.set_endpoint(@host)
+        Config.set_credentials(creds['id'], creds['key'])
 
         @all_buckets = []
         (1..10).each do |i|
@@ -62,7 +63,7 @@ module Aliyun
         it "should send correct request" do
           stub_request(:get, @host)
 
-          @oss.list_buckets
+          Protocol.list_buckets
 
           expect(WebMock).to have_requested(:get, @host).
                               with(:body => nil, :query => {})
@@ -73,7 +74,7 @@ module Aliyun
           stub_request(:get, @host).to_return(
             {:body => mock_response(@all_buckets, {})})
 
-          buckets, more = @oss.list_buckets
+          buckets, more = Protocol.list_buckets
           bucket_names = buckets.map {|b| b.name}
 
           all_bucket_names = @all_buckets.map {|b| b.name}
@@ -93,7 +94,7 @@ module Aliyun
           stub_request(:get, @host).with(
             :query => {'prefix' => prefix, 'marker' => marker, 'max-keys' => limit})
 
-          @oss.list_buckets(
+          Protocol.list_buckets(
             :prefix => prefix, :limit => limit, :marker => marker)
 
           expect(WebMock).to have_requested(:get, @host).
@@ -120,7 +121,7 @@ module Aliyun
           ).to_return(
             {:body => mock_response(return_buckets, more)})
 
-          buckets, more = @oss.list_buckets(
+          buckets, more = Protocol.list_buckets(
                      :prefix => prefix,
                      :limit => limit,
                      :marker => marker)

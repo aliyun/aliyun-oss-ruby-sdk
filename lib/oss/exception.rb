@@ -62,5 +62,9 @@ module Aliyun
       end
     end # SDKException
 
+    class FileInconsistentError < ClientError; end
+    class ObjectInconsistentError < ClientError; end
+    class PartsMissingError < ClientError; end
+
   end # OSS
 end # Aliyun
