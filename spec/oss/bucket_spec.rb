@@ -491,7 +491,7 @@ module Aliyun
           expect(opts).to eq(referer_opts)
         end
 
-        it "should update lifecycle", :focus => true do
+        it "should update lifecycle" do
           query = {'lifecycle' => ''}
           stub_request(:put, request_path).with(:query => query)
 

@@ -91,8 +91,7 @@ oss.put_object(bucket, large_file) do |content|
 end
 
 # 查看object大小
-object_size = 0
-oss.list_objects(bucket).first.each {|o| object_size = o.size if o.key == large_file}
+object_size = oss.get_object_meta(bucket, large_file).size
 puts "Object: #{large_file}的大小是：#{object_size}"
 
 # 流式下载文件，仅打印进度，不保存文件

@@ -738,6 +738,52 @@ module Aliyun
           logger.info("Done get object")
         end
 
+        # Get the object meta rather than the whole object.
+        # User can specify conditions to get the object like:
+        # if-modified-since, if-unmodified-since, if-match-etag,
+        # if-unmatch-etag. If the object to get fails to meet the
+        # conditions, it will not be returned.
+        #
+        # [bucket_name] the bucket name
+        # [object_name] the object name
+        # [opts] options
+        #     [:condition] preconditions to get the object:
+        #       [:if_modified_since] the modified time
+        #       [:if_unmodified_since] the unmodified time
+        #       [:if_match_etag] the etag to expect to match
+        #       [:if_unmatch_etag] the etag to expect to not match
+        def get_object_meta(bucket_name, object_name, opts = {})
+          logger.info("Begin get object meta, bucket: #{bucket_name}, \
+                      object: #{object_name}, options: #{opts}")
+
+          conditions = opts[:condition]
+
+          headers = {}
+          {
+            :if_modified_since => 'If-Modified-Since',
+            :if_unmodified_since => 'If-Unmodified-Since',
+            :if_match_etag => 'If-Match',
+            :if_unmatch_etag => 'If-None-Match'
+          }.each do |k, v|
+            headers[v] = conditions[k] if conditions and conditions[k]
+          end
+
+          h, _ = HTTP.head(
+               {:bucket => bucket_name, :object => object_name},
+               {:headers => headers})
+
+          obj = Object.new(
+            :key => object_name,
+            :type => h[:x_oss_object_type],
+            :size => wrap(h[:content_length]) {|x| x.to_i},
+            :etag => h[:etag],
+            :last_modified => wrap(h[:last_modified]) {|x| Time.parse(x)})
+
+          logger.info("Done get object meta")
+
+          obj
+        end
+
         # Get an object from the bucket and write the content into a
         # local file.
         # [bucket_name] the bucket name

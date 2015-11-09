@@ -144,7 +144,7 @@ module Aliyun
             .with(:body => content, :query => {})
         end
 
-        it "should use default content-type", :focus => true do
+        it "should use default content-type" do
           object_name = 'ruby'
           url = get_request_path(object_name)
           stub_request(:put, url)
@@ -259,7 +259,7 @@ module Aliyun
             .with(:body => content, :query => query)
         end
 
-        it "should use default content-type", :focus => true do
+        it "should use default content-type" do
           object_name = 'ruby'
           url = get_request_path(object_name)
           query = {'append' => '', 'position' => 0}
@@ -395,7 +395,7 @@ module Aliyun
         end
       end # copy object
 
-      context "Get object", :focus => true do
+      context "Get object" do
 
         it "should GET to get object" do
           object_name = 'ruby'
@@ -510,6 +510,62 @@ module Aliyun
             .with(:body => nil, :query => query)
         end
       end # Get object
+
+      context "Get object meta" do
+
+        it "should get object meta" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          last_modified = Time.now.rfc822
+          return_headers = {
+            'x-oss-object-type' => 'Normal',
+            'ETag' => 'xxxyyyzzz',
+            'Content-Length' => 1024,
+            'Last-Modified' => last_modified
+          }
+          stub_request(:head, url).to_return(:headers => return_headers)
+
+          obj = @oss.get_object_meta(@bucket, object_name)
+
+          expect(WebMock).to have_requested(:head, url)
+            .with(:body => nil, :query => {})
+
+          expect(obj.key).to eq(object_name)
+          expect(obj.type).to eq('Normal')
+          expect(obj.etag).to eq('xxxyyyzzz')
+          expect(obj.size).to eq(1024)
+          expect(obj.last_modified.rfc822).to eq(last_modified)
+        end
+
+        it "should set conditions" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          stub_request(:head, url)
+
+          modified_since = Util.get_date
+          unmodified_since = Util.get_date
+          etag = 'xxxyyyzzz'
+          not_etag = 'aaabbbccc'
+
+          @oss.get_object_meta(
+            @bucket, object_name,
+            :condition => {
+              :if_modified_since => modified_since,
+              :if_unmodified_since => unmodified_since,
+              :if_match_etag => etag,
+              :if_unmatch_etag => not_etag})
+
+          expect(WebMock).to have_requested(:head, url)
+            .with(:body => nil, :query => {},
+                  :headers => {
+                    'If-Modified-Since' => modified_since,
+                    'If-Unmodified-since' => unmodified_since,
+                    'If-Match' => etag,
+                    'If-None-Match' => not_etag})
+        end
+      end # Get object meta
 
       context "Delete object" do
 
