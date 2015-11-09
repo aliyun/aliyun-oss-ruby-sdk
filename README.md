@@ -1,4 +1,4 @@
-# Ruby SDK for Aliyun OSS
+# Aliyun OSS SDK for Ruby
 
 ## Requirements
 

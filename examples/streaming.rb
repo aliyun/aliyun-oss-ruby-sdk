@@ -92,7 +92,7 @@ end
 
 # 查看object大小
 object_size = 0
-oss.list_object(bucket).first.each {|o| object_size = o.size if o.key == large_file}
+oss.list_objects(bucket).first.each {|o| object_size = o.size if o.key == large_file}
 puts "Object: #{large_file}的大小是：#{object_size}"
 
 # 流式下载文件，仅打印进度，不保存文件

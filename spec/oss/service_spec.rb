@@ -26,7 +26,7 @@ module Aliyun
         end
       end
 
-      # 生成list_bucket返回的响应，包含bucket列表和more信息
+      # 生成list_buckets返回的响应，包含bucket列表和more信息
       def mock_response(buckets, more)
         builder = Nokogiri::XML::Builder.new do |xml|
           xml.ListAllMyBucketsResult {
@@ -58,22 +58,22 @@ module Aliyun
       end
 
       context "List all buckets" do
-        # 测试list_bucket正确地发送了HTTP请求
+        # 测试list_buckets正确地发送了HTTP请求
         it "should send correct request" do
           stub_request(:get, @host)
 
-          @oss.list_bucket
+          @oss.list_buckets
 
           expect(WebMock).to have_requested(:get, @host).
                               with(:body => nil, :query => {})
         end
 
-        # 测试list_bucket正确地解析了list_bucket的返回
+        # 测试list_buckets正确地解析了list_buckets的返回
         it "should correctly parse response" do
           stub_request(:get, @host).to_return(
             {:body => mock_response(@all_buckets, {})})
 
-          buckets, more = @oss.list_bucket
+          buckets, more = @oss.list_buckets
           bucket_names = buckets.map {|b| b.name}
 
           all_bucket_names = @all_buckets.map {|b| b.name}
@@ -84,7 +84,7 @@ module Aliyun
       end
 
       context "Paging buckets" do
-        # 测试list_bucket的请求中包含prefix/marker/maxkeys等信息
+        # 测试list_buckets的请求中包含prefix/marker/maxkeys等信息
         it "should set prefix/max-keys param" do
           prefix = 'rubysdk-bucket-00'
           marker = 'rubysdk-bucket-002'
@@ -93,7 +93,7 @@ module Aliyun
           stub_request(:get, @host).with(
             :query => {'prefix' => prefix, 'marker' => marker, 'max-keys' => limit})
 
-          @oss.list_bucket(
+          @oss.list_buckets(
             :prefix => prefix, :limit => limit, :marker => marker)
 
           expect(WebMock).to have_requested(:get, @host).
@@ -103,7 +103,7 @@ module Aliyun
                             'max-keys' => limit})
         end
 
-        # 测试list_bucket正确地解析了HTTP响应，包含more信息
+        # 测试list_buckets正确地解析了HTTP响应，包含more信息
         it "should parse next marker" do
           prefix = 'rubysdk-bucket-00'
           marker = 'rubysdk-bucket-002'
@@ -120,7 +120,7 @@ module Aliyun
           ).to_return(
             {:body => mock_response(return_buckets, more)})
 
-          buckets, more = @oss.list_bucket(
+          buckets, more = @oss.list_buckets(
                      :prefix => prefix,
                      :limit => limit,
                      :marker => marker)

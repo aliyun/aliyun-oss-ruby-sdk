@@ -81,7 +81,7 @@ puts
 oss.commit_multipart('t-hello-world', 'multipart.file', txn_id, parts)
 
 # 查看文件
-objects, _ = oss.list_object('t-hello-world', :prefix => 'multipart')
+objects, _ = oss.list_objects('t-hello-world', :prefix => 'multipart')
 
 puts "All objects:"
 objects.each do |o|

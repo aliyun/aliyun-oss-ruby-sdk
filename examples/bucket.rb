@@ -51,7 +51,7 @@ oss.put_object('t-hello-world', 'foo/xxx/obj1') {}
 oss.put_object('t-hello-world', '中国の') {}
 
 # list所有object
-objects, more = oss.list_object('t-hello-world')
+objects, more = oss.list_objects('t-hello-world')
 
 puts "All objects:"
 objects.each do |o|
@@ -60,7 +60,7 @@ end
 puts
 
 # list所有前缀为foo/bar/的object
-objects, more = oss.list_object('t-hello-world', :prefix => 'foo/bar/')
+objects, more = oss.list_objects('t-hello-world', :prefix => 'foo/bar/')
 
 puts "All objects begin with 'foo/bar':"
 objects.each do |o|
@@ -69,7 +69,7 @@ end
 puts
 
 # list所有前缀为foo/bar的object，限制一次最多返回1个
-objects, more = oss.list_object(
+objects, more = oss.list_objects(
            't-hello-world', :prefix => 'foo/bar/', :limit => 1)
 
 puts "First 1 objects begin with 'foo/bar':"
@@ -80,7 +80,7 @@ end
 puts "Next marker: #{more[:next_marker]}"
 
 # 从next marker开始list object，获取剩余的object
-objects, more = oss.list_object(
+objects, more = oss.list_objects(
            't-hello-world',
            :prefix => 'foo/bar/', :marker => more[:next_marker])
 puts "Remaining objects begin with 'foo/bar':"
@@ -102,7 +102,7 @@ puts
 # 这可以表示/foo/目录下的子目录。如果没有common prefix，你可能要遍历所
 # 有的object来找公共的前缀
 
-objects, more = oss.list_object(
+objects, more = oss.list_objects(
            't-hello-world', :prefix => 'foo/', :delimiter => '/')
 
 puts "All objects begin with 'foo/':"

@@ -32,7 +32,7 @@ module Aliyun
         #     [:next_marker] 下次查询的marker
         #     [:truncated] 这次查询是否被截断（还有更多的bucket没有返回）
         # *注意：如果所有的bucket都已经返回，more将是空的*
-        def list_bucket(opts = {})
+        def list_buckets(opts = {})
           logger.info('Begin list bucket')
 
           params = {
@@ -609,7 +609,7 @@ module Aliyun
         #    [:next_marker] 下次查询的marker
         #    [:truncated] 本次查询是否被截断（还有更多的object待返回）
         #    [:encoding] 返回结果中object key和prefix等的编码方式
-        def list_object(bucket_name, opts = {})
+        def list_objects(bucket_name, opts = {})
           logger.info("Begin list object, bucket: #{bucket_name}")
 
           params = {

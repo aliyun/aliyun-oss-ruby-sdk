@@ -215,7 +215,7 @@ module Aliyun
         it "should list all objects" do
           stub_request(:get, request_path)
 
-          @oss.list_object(@bucket)
+          @oss.list_objects(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => {})
@@ -226,7 +226,7 @@ module Aliyun
           stub_request(:get, request_path)
             .to_return(:body => mock_objects(return_objects))
 
-          objects, more = @oss.list_object(@bucket)
+          objects, more = @oss.list_objects(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => {})
@@ -252,7 +252,7 @@ module Aliyun
 
           stub_request(:get, request_path).with(:query => query)
 
-          @oss.list_object(@bucket, opts)
+          @oss.list_objects(@bucket, opts)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => "", :query => query)
@@ -285,7 +285,7 @@ module Aliyun
           stub_request(:get, request_path).with(:query => query).
             to_return(:body => mock_objects(return_objects, return_more))
 
-          objects, more = @oss.list_object(@bucket, opts)
+          objects, more = @oss.list_objects(@bucket, opts)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)
@@ -320,7 +320,7 @@ module Aliyun
           stub_request(:get, request_path)
             .to_return(:body => mock_objects(es_objects, es_more))
 
-          objects, more = @oss.list_object(@bucket)
+          objects, more = @oss.list_objects(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => {})
