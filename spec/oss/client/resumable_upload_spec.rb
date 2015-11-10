@@ -67,7 +67,7 @@ module Aliyun
         end.to_xml
       end
 
-      it "should upload file when all goes well", :focus => true do
+      it "should upload file when all goes well" do
         stub_request(:post, /#{object_url}\?uploads.*/)
           .to_return(:body => mock_txn_id('upload_id'))
         stub_request(:put, /#{object_url}\?partNumber.*/)
@@ -171,7 +171,7 @@ module Aliyun
           :post, /#{object_url}\?uploadId.*/).times(1)
       end
 
-      it "should resume when checkpoint fails", :focus => true do
+      it "should resume when checkpoint fails" do
         # Monkey patch to inject failures
         class ::Aliyun::OSS::Multipart::Upload
           alias :old_checkpoint! :checkpoint!

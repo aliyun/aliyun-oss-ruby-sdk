@@ -35,7 +35,7 @@ module Aliyun
 
           commit!
 
-          logger.info("Done upload, file: #{file}")
+          logger.info("Done upload, file: #{@file}")
         end
 
         # Checkpoint structures:
@@ -120,7 +120,7 @@ module Aliyun
           logger.info("Begin upload part: #{p}")
 
           result = nil
-          File.open(p['file']) do |f|
+          File.open(@file) do |f|
             range = p['range']
             f.seek(range.first)
 
