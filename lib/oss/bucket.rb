@@ -372,7 +372,7 @@ module Aliyun
         end
 
         Multipart::Download.new(
-          :id => txn_id,
+          :options => opts,
           :object => key,
           :bucket => name,
           :creation_time => Time.now,

@@ -19,7 +19,7 @@ module Aliyun
         end
 
         def run
-          logger.info("Begin download, file: #{file}, checkpoint file: #{checkpoint_file}")
+          logger.info("Begin download, file: #{@file}, checkpoint file: #{@checkpoint_file}")
 
           rebuild!
 
@@ -31,7 +31,7 @@ module Aliyun
 
           commit!
 
-          logger.info("Done download, file: #{file}")
+          logger.info("Done download, file: #{@file}")
         end
 
         # Checkpoint structures:
@@ -43,8 +43,8 @@ module Aliyun
         #     :size => 1024
         #   },
         #   :parts => [
-        #     {:number => 1, :range => [0, 100], :done => false},
-        #     {:number => 2, :range => [100, 200], :done => true}
+        #     {:number => 1, :range => [0, 100], :md5 => 'xxx', :done => false},
+        #     {:number => 2, :range => [100, 200], :md5 => 'yyy', :done => true}
         #   ]
         # }
         def checkpoint!
@@ -85,6 +85,7 @@ module Aliyun
           end
 
           File.delete(@checkpoint_file)
+          @parts.each{ |p| File.delete(get_part_file(p[:number])) }
 
           logger.info("Done commit transaction, id: #{id}")
         end
@@ -99,11 +100,11 @@ module Aliyun
             raise TokenInconsistentError.new("The resume token is changed.") \
                     if md5 != Util.get_content_md5(status.to_json)
 
-            status[:parts].each do |p|
+            status[:parts].select{ |p| p[:done] }.each do |p|
               part_file = get_part_file(p[:number])
               raise PartMissingError.new("The part file is missing.") \
                                         unless File.exist?(part_file)
-              raise FileInconsistentError.new("The file to upload is changed.") \
+              raise FileInconsistentError.new("The part file is changed.") \
                                         if p[:md5] != Digest::MD5.file(part_file).to_s
             end
             @id = status[:id]
@@ -120,7 +121,7 @@ module Aliyun
           logger.info("Begin initiate transaction")
 
           @id = generate_download_id
-          obj = Protocol.get_object_meta(bucket, object).etag
+          obj = Protocol.get_object_meta(bucket, object)
           @object_meta = {
             :etag => obj.etag,
             :size => obj.size
@@ -158,9 +159,9 @@ module Aliyun
           num_parts = (object_size - 1) / part_size + 1
           @parts = (1..num_parts).map do |i|
             {
-              'number' => i,
-              'range' => [(i-1) * part_size, [i * part_size, file_size].min],
-              'done' => false
+              :number => i,
+              :range => [(i-1) * part_size, [i * part_size, object_size].min],
+              :done => false
             }
           end
 
@@ -170,11 +171,10 @@ module Aliyun
         end
 
         # Ensure file not changed during uploading
-        def ensure_file_not_changed
-          obj = Protocol.get_object_meta(bucket, object).etag
-
+        def ensure_object_not_changed
+          obj = Protocol.get_object_meta(bucket, object)
           raise ObjectInconsistentError.new("The object to download is changed.") \
-                                           if obj.etag == @object_meta[:etag]
+                                           unless obj.etag == @object_meta[:etag]
 
         end
 
@@ -183,6 +183,16 @@ module Aliyun
           status = JSON.load(File.read(@checkpoint_file))
           status.symbolize_keys!
           status
+        end
+
+        # Generate a download id
+        def generate_download_id
+          "download_#{bucket}_#{object}_#{Time.now.to_i}"
+        end
+
+        # Get part file
+        def get_part_file(number)
+          "#{@file}.part.#{number}"
         end
       end # Download
 
