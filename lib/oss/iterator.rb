@@ -27,6 +27,10 @@ module Aliyun
           end
         end
 
+        def to_enum
+          self.enum_for(:next)
+        end
+
         private
         def fetch_more
           return if @more[:truncated] == false

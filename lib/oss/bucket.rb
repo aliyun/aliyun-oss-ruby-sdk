@@ -3,8 +3,11 @@
 module Aliyun
   module OSS
     ##
-    # Bucket是一个存放Object的空间，用户可以从中添加、删除Object。
-    # 可以在Bucket上设置ACL访问权限、logging、和Object的有效时间
+    # Bucket是用户的bucket相关的操作的client，主要包括三部分功能：
+    # 1. bucket相关：创建、删除bucket，设置bucket的属性（acl, logging,
+    #   website, etc）
+    # 2. object相关：上传、下载、追加、拷贝object等
+    # 3. multipart相关：断点续传、断点续载
     #
     class Bucket
 
@@ -15,32 +18,36 @@ module Aliyun
       ### Bucket相关的API ###
 
       # 创建一个bucket
-      # @param name [String] Bucket名字
       # @param opts [Hash] 创建Bucket的属性（可选）
       # @option opts [:location] [String] 指定bucket所在的区域，默认为oss-cn-hangzhou
       #  可以到 {http://aliyun.com} 查看完整的区域列表
-      def create(name, opts = {})
+      def create!(opts = {})
+        Protocol.create_bucket(name, opts)
       end
 
       # 删除一个bucket
       # @param name [String] Bucket名字
       # @note 如果要删除的Bucket不为空（包含有object），则删除会失败
-      def delete(name)
+      def delete!
+        Protocol.delete_bucket(name)
       end
 
       # 获取Bucket的ACL
       # @return [String] Bucket的{Struct::ACL ACL}
       def acl
+        Protocol.get_bucket_acl(name)
       end
 
       # 设置Bucket的ACL
       # @param acl [String] Bucket的{Struct::ACL ACL}
       def acl=(acl)
+        Protocol.update_bucket_acl(name, acl)
       end
 
       # 获取Bucket的logging配置
       # @return [Hash] Bucket的logging配置。See #logging=
       def logging
+        Protocol.get_bucket_logging(name)
       end
 
       # 设置Bucket的logging配置
@@ -49,24 +56,39 @@ module Aliyun
       # @option opts [String] [:target_bucket] 用于存放日志object的bucket名字
       # @option opts [String] [:prefix] 开启日志的object的前缀，若不指
       # 定则对bucket下的所有object都开启
+      # @note 如果opts为空，则会删除这个bucket上的logging配置
       def logging=(opts)
+        if opts.empty?
+          Protocol.delete_bucket_logging(name)
+        else
+          Protocol.update_bucket_logging(name, opts)
+        end
       end
 
       # 获取Bucket的website配置
       # @return [Hash] Bucket的website配置。See #website=
       def website
+        Protocol.get_bucket_website(name)
       end
 
       # 设置Bucket的website配置
       # @param opts [Hash] website配置
       # @option opts [String] :index 网站首页的后缀，如index.html
-      # @option opts [String] :error 网站错误页面的object名字，如error.html
+      # @option opts [String] :error 网站错误页面的object名字，如
+      #  error.html
+      # @note 如果opts为空，则会删除这个bucket上的website配置
       def website=(opts)
+        if opts.empty?
+          Protocol.delete_bucket_website(name)
+        else
+          Protocol.update_bucket_website(name, opts)
+        end
       end
 
       # 获取Bucket的Referer配置
       # @return [Hash] Bucket的Referer配置。See #referer=
       def referer
+        Protocol.get_bucket_referer(name)
       end
 
       # 设置Bucket的Referer配置
@@ -78,30 +100,46 @@ module Aliyun
       # @see
       #  https://docs.aliyun.com/?spm=5176.383663.9.2.73fUTr#/pub/oss/product-documentation/function&referer-white-list
       #  查看如何通过设置Referer来防盗链
+      # @note 如果opts为空，则会删除这个bucket上的referer配置
       def referer=(opts)
+        Protocol.update_bucket_referer(name, opts)
       end
 
       # 获取Bucket的生命周期配置
       # @return [Array<Struct::LifeCycleRule>] Bucket的生命周期规则
       def lifecycle
+        Protocol.get_bucket_lifecycle(name)
       end
 
       # 设置Bucket的生命周期配置
       # @param rules [Array<Struct::LifeCycleRule>] 生命
       #  周期配置规则
       # @see Struct::LifeCycleRule 查看如何设置生命周期规则
+      # @note 如果rules为空，则会删除这个bucket上的lifecycle配置
       def lifecycle=(rules)
+        if rules.empty?
+          Protocol.delete_bucket_lifecycle(name)
+        else
+          Protocol.update_bucket_lifecycle(name, rules)
+        end
       end
 
       # 获取Bucket的跨域资源共享(CORS)的规则
       # @return [Array<Struct::CORSRule>] Bucket的CORS规则
       def cors
+        Protocol.get_bucket_cors(name)
       end
 
       # 设置Bucket的跨域资源共享(CORS)的规则
       # @param rules [Array<Struct::CORSRule>] CORS规则
       # @see Struct::CORSRule 查看如何设置CORS规则
+      # @note 如果rules为空，则会删除这个bucket上的CORS配置
       def cors=(rules)
+        if rules.empty?
+          Protocol.delete_bucket_cors(name)
+        else
+          Protocol.set_bucket_cors(name, rules)
+        end
       end
 
       ### Object相关的API ###
@@ -129,6 +167,10 @@ module Aliyun
       # @return [Enumerator<OSS::Object>, Enumerator<String>] 返回
       #  的object迭代器和公共前缀迭代器
       def list_objects(opts = {})
+        objects = Iterator::Objects.new(name, opts).to_enum
+        common_prefixes = Iterator::CommonPrefixes.new(name, opts).to_enum
+
+        [objects, common_prefixes]
       end
 
       # 向Bucket中上传一个object
@@ -147,6 +189,16 @@ module Aliyun
       #  它读到的数据为nil停止。
       # @note 如果opts中指定了:file，则block会被忽略
       def put_object(key, opts = {}, &block)
+        file = opts[:file]
+        if file
+          File.open(File.expand_path(file)) do |f|
+            Protocol.put_object(name, key, opts) do |sw|
+              sw << f.read(Protocol::STREAM_CHUNK_SIZE) unless f.eof?
+            end
+          end
+        else
+          Protocol.put_object(name, key, opts, block)
+        end
       end
 
       # 从Bucket中下载一个object
@@ -174,6 +226,16 @@ module Aliyun
       #   get_object('x') {|chunk| file.write(chunk) }
       # @note 注意：如果opts中指定了:file，则block会被忽略
       def get_object(key, opts = {}, &block)
+        file = opts[:file]
+        if file
+          File.open(File.expand_path(file), 'w') do |f|
+            Protocol.get_object(name, key, opts) do |chunk|
+              f.write(chunk)
+            end
+          end
+        else
+          Protocol.get_object(name, key, opts, block)
+        end
       end
 
       # 向Bucket中的object追加内容。如果object不存在，则创建一个
@@ -185,6 +247,16 @@ module Aliyun
       #  Content-Type，默认是application/octet-stream
       # @yield [HTTP::StreamWriter] 同 {#put_object}
       def append_object(key, opts = {}, &block)
+        file = opts[:file]
+        if file
+          File.open(File.expand_path(file)) do |f|
+            Protocol.append_object(name, key, opts) do |sw|
+              sw << f.read(Protocol::STREAM_CHUNK_SIZE) unless f.eof?
+            end
+          end
+        else
+          Protocol.append_object(name, key, opts, block)
+        end
       end
 
       # 将Bucket中的一个object拷贝成另外一个object
@@ -198,11 +270,13 @@ module Aliyun
       # @option opts [Hash] :condition 指定拷贝object需要满足的条件，
       #  同 {#get_object}
       def copy_object(source, dest, opts = {})
+        Protocol.copy_object(name, source, dest, opts)
       end
 
       # 删除一个object
       # @param key [String] Object的名字
       def delete_object(key)
+        Protocol.delete_object(name, key)
       end
 
       # 批量删除object
@@ -211,30 +285,33 @@ module Aliyun
       # @option opts [Boolean] :quiet 指定是否允许Server返回成功删除的
       #  object
       # @option opts [String] :encoding 指定Server返回的成功删除的
-      #  object的名字的编码方式，目前只支持url
-      # @see Struct::KeyEncoding
+      #  object的名字的编码方式，目前只支持url。See
+      #  {Struct::KeyEncoding}
+      # @return [Array<String>] 成功删除的object的名字，如果指定
+      #  了:quiet参数，则返回[]
       def batch_delete_objects(keys, opts = {})
+        Protocol.batch_delete_objects(name, keys, opts)
       end
 
       # 设置object的ACL
       # @param key [String] Object的名字
-      # @param acl [String] Object的ACL
-      # @see Struct::ACL
+      # @param acl [String] Object的{Struct::ACL ACL}
       def update_object_acl(key, acl)
+        Protocol.update_object_acl(name, key, acl)
       end
 
       # 获取object的ACL
       # @param key [String] Object的名字
-      # @see Struct::ACL
-      # @return [String] object的ACL
+      # @return [String] object的{Struct::ACL ACL}
       def get_object_acl(key)
+        Protocol.get_object_acl(name, key)
       end
 
       # 获取object的CORS规则
       # @param key [String] Object的名字
-      # @see Struct::CORSRule
       # @return [Struct::CORSRule]
       def get_object_cors(key)
+        Protocol.get_object_cors(name, key)
       end
 
       ##
@@ -253,7 +330,20 @@ module Aliyun
       #  上传。
       # @raise [FileInconsistentError] 如果指定的文件与
       #  token中记录的不一致，则抛出此错误
-      def upload_file(key, file, opts = {})
+      def resumable_upload(key, file, opts = {})
+        unless resume_token = opts[:resume_token]
+          resume_token = get_resume_token_for(file)
+        end
+
+        txn_id = Protocol.begin_multipart(name, key, opts)
+        txn = Multipart::Transaction.new(
+          :id => txn_id,
+          :object_key => key,
+          :creation_time => Time.now,
+          :checkpoint_file => resume_token,
+        )
+
+        txn.upload
       end
 
       # 下载bucket中的一个object到本地文件
@@ -275,7 +365,20 @@ module Aliyun
       #  文件)找不到，则抛出此错误
       # @note 已经下载的部分会在file所在的目录创建.part文件，命名方式
       #  为file.part
-      def download_file(key, file, opts = {})
+      def resumable_download(key, file, opts = {})
+        unless resume_token = opts[:resume_token]
+          resume_token = get_resume_token_for(file)
+        end
+
+        txn_id = get_download_txn_id(name, key)
+        txn = Multipart::Transaction.new(
+          :id => txn_id,
+          :object_key => key,
+          :creation_time => Time.now,
+          :checkpoint_file => resume_token,
+        )
+
+        txn.download
       end
 
     end # Bucket

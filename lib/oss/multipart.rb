@@ -15,8 +15,21 @@ module Aliyun
 
         include Struct::Base
 
-        attrs :id, :object_key, :creation_time
+        attrs :id, :object_key, :creation_time, :checkpoint_file
 
+        def upload
+          @parts ||= []
+        end
+
+        def download
+        end
+
+        def rebuild!
+
+        end
+
+        def checkpoint!
+        end
       end # Transaction
 
       ##

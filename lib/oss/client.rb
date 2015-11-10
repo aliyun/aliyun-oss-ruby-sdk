@@ -27,7 +27,7 @@ module Aliyun
       # @option opts [String] :prefix 如果设置，则只返回以它为前缀的bucket
       # @return [Enumerator<Bucket>] Bucket的迭代器
       def list_buckets(opts = {})
-        Iterator::Buckets.new(opts).enum_for(:next)
+        Iterator::Buckets.new(opts).to_enum
       end
 
       # 获取一个Bucket对象，用于操作bucket中的objects。
