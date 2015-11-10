@@ -27,7 +27,7 @@ module Aliyun
       # @option opts [String] :prefix 如果设置，则只返回以它为前缀的bucket
       # @return [Enumerator<Bucket>] Bucket的迭代器
       def list_buckets(opts = {})
-        Protocol.list_buckets(opts)
+        Iterator::Buckets.new(opts).enum_for(:next)
       end
 
       # 获取一个Bucket对象，用于操作bucket中的objects。
@@ -39,9 +39,10 @@ module Aliyun
 
       # 通过endpoint直接连到到一个Bucket
       # @param name [String] Bucket名字
-      # @param endpoint [String] Bucket的endpoint，例如：
+      # @param endpoint [String] OSS服务的endpoint，例如：
       # @example
-      #   bucket.oss-cn-hangzhou.aliyuncs.com
+      #   oss-cn-hangzhou.aliyuncs.com
+      #   mydomain.com
       # @param access_key_id [String] access key id
       # @param access_key_secret [String] access key secret
       # @return [Bucket] Bucket对象

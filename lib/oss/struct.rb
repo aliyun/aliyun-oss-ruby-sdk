@@ -54,7 +54,7 @@ module Aliyun
           attrs.map do |attr|
             v = instance_variable_get("@#{attr}")
             "#{attr.to_s}: #{v}"
-          end.join(",")
+          end.join(", ")
         end
       end # Base
 

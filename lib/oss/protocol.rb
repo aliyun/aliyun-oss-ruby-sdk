@@ -37,13 +37,13 @@ module Aliyun
         # @option more [Boolean] :truncated whether there are more
         #  buckets to be returned
         def list_buckets(opts = {})
-          logger.info('Begin list bucket')
+          logger.info("Begin list buckets, options: #{opts}")
 
           params = {
             'prefix' => opts[:prefix],
             'marker' => opts[:marker],
             'max-keys' => opts[:limit]
-          }.select {|k, v| v}
+          }.select {|_, v| v != nil}
 
           _, body = HTTP.get( {}, {:query => params})
           doc = parse_xml(body)
@@ -57,20 +57,21 @@ module Aliyun
             )
           end
 
-          more = Hash[{
-                        :prefix => 'Prefix',
-                        :limit => 'MaxKeys',
-                        :marker => 'Marker',
-                        :next_marker => 'NextMarker',
-                        :truncated => 'IsTruncated'
-                      }.map do |k, v|
-                        [k, get_node_text(doc.root, v)]
-                      end].select {|k, v| v}
+          more = Hash[
+            {
+              :prefix => 'Prefix',
+              :limit => 'MaxKeys',
+              :marker => 'Marker',
+              :next_marker => 'NextMarker',
+              :truncated => 'IsTruncated'
+            }.map do |k, v|
+              [k, get_node_text(doc.root, v)]
+            end].select {|k, v| v != nil}
 
           more[:limit] = more[:limit].to_i if more[:limit]
           more[:truncated] = more[:truncated].to_bool if more[:truncated]
 
-          logger.info('Done list bucket')
+          logger.info("Done list buckets, buckets: #{buckets}, more: #{more}")
 
           [buckets, more]
         end
@@ -260,7 +261,7 @@ module Aliyun
 
           logger.info("Done get bucket website")
 
-          opts.select {|_, v| v}
+          opts.select {|_, v| v != nil}
         end
 
         # Delete bucket website settings
@@ -324,7 +325,7 @@ module Aliyun
 
           logger.info("Done get bucket referer")
 
-          opts.select {|_, v| v}
+          opts.select {|_, v| v != nil}
         end
 
         # Update bucket lifecycle settings
@@ -589,10 +590,7 @@ module Aliyun
         #  coincidentally the sub-directories under '/foo/'. Using
         #  delimiter we avoid list all the objects whose number may be
         #  large.
-        # @option opts [String] :encoding the encoding of object key
-        #  in the response body. Only 'url' is supported now.
-        # @return [Array<Objects>, Hash] the returned object and a
-        # hash including the next tokens
+        # @option more [String] :common_prefixes the common prefixes returned
         # @option more [String] :prefix the prefix used
         # @option more [String] :delimiter the delimiter used
         # @option more [String] :marker the marker used
@@ -600,7 +598,10 @@ module Aliyun
         # @option more [String] :next_marker marker to continue list buckets
         # @option more [Boolean] :truncated whether there are more
         #  buckets to be returned
-        # @option more [String] :encoding the object key encoding used
+        # @option opts [String] :encoding the encoding of object key
+        #  in the response body. Only 'url' is supported now.
+        # @return [Array<Objects>, Hash] the returned object and a
+        # hash including the next tokens
         def list_objects(bucket_name, opts = {})
           logger.debug("Begin list object, bucket: #{bucket_name}")
 
@@ -610,7 +611,7 @@ module Aliyun
             'marker' => opts[:marker],
             'max-keys' => opts[:limit],
             'encoding-type' => opts[:encoding]
-          }.select {|k, v| v}
+          }.select {|_, v| v != nil}
 
           _, body = HTTP.get({:bucket => bucket_name}, {:query => params})
 
@@ -639,7 +640,7 @@ module Aliyun
               :encoding => 'EncodingType'
             }.map do |k, v|
               [k, get_node_text(doc.root, v)]
-            end].select {|k, v| v}
+            end].select {|_, v| v != nil}
 
           more.update(
             :limit => wrap(more[:limit]) {|x| x.to_i},
@@ -832,7 +833,7 @@ module Aliyun
             :last_modified => get_node_text(
               doc.root, 'LastModified') {|x| Time.parse(x)},
             :etag => get_node_text(doc.root, 'ETag')
-          }.select {|k, v| v}
+          }.select {|_, v| v != nil}
 
           logger.debug("Done copy object")
 
@@ -1163,7 +1164,7 @@ module Aliyun
             'key-marker' => opts[:key_marker],
             'max-uploads' => opts[:limit],
             'encoding-type' => opts[:encoding]
-          }.select {|k, v| v}
+          }.select {|_, v| v != nil}
 
           _, body = HTTP.get(
             {:bucket => bucket_name, :sub_res => sub_res},
@@ -1194,7 +1195,7 @@ module Aliyun
               :encoding => 'EncodingType'
             }.map do |k, v|
               [k, get_node_text(doc.root, v)]
-            end].select {|k, v| v}
+            end].select {|_, v| v != nil}
 
           more.update(
             :limit => wrap(more[:limit]) {|x| x.to_i},
@@ -1233,7 +1234,7 @@ module Aliyun
             'part-number-marker' => opts[:marker],
             'max-parts' => opts[:limit],
             'encoding-type' => opts[:encoding]
-          }.select {|k, v| v}
+          }.select {|_, v| v != nil}
 
           _, body = HTTP.get(
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
@@ -1258,7 +1259,7 @@ module Aliyun
               :encoding => 'EncodingType'
             }.map do |k, v|
               [k, get_node_text(doc.root, v)]
-            end].select {|k, v| v}
+            end].select {|k, v| v != nil}
 
           more.update(
             :limit => wrap(more[:limit]) {|x| x.to_i},

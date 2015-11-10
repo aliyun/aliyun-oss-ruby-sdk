@@ -14,7 +14,8 @@ Gem::Specification.new do |spec|
   spec.description   = 'Ruby SDK for Aliyun Object Storage Service'
   spec.homepage      = 'https://gitlab.alibaba-inc.com/oss/ruby-sdk'
 
-  spec.files         = `git ls-files`.split.reject { |f| f.match(%r{^(spec|examples)}) }
+  spec.files         = `git ls-files -z`.split("\0")
+  spec.test_files    = `git ls-files -z spec/`.split("\0")
   spec.bindir        = 'bin'
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
@@ -27,4 +28,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'webmock'
+
+  spec.required_ruby_version = '>= 1.9.3'
 end
