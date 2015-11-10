@@ -12,6 +12,19 @@ class String
   end
 end
 
+class Array
+  def symbolize_keys!
+    self.each{ |v| v.symbolize_keys! if v.is_a?(Hash) or v.is_a?(Array) }
+  end
+end
+
+class Hash
+  def symbolize_keys!
+    self.keys.each{ |k| self[k.to_sym] = self.delete(k) }
+    self.values.each{ |v| v.symbolize_keys! if v.is_a?(Hash) or v.is_a?(Array) }
+  end
+end
+
 module Aliyun
   module OSS
     ##
