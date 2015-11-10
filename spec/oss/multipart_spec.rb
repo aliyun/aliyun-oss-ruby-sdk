@@ -55,7 +55,7 @@ module Aliyun
 
             multiparts.each do |m|
               xml.Upload {
-                xml.Key m.object_key
+                xml.Key m.object
                 xml.UploadId m.id
                 xml.Initiated m.creation_time.rfc822
               }
@@ -443,7 +443,8 @@ module Aliyun
           return_multiparts = (1..5).map do |i|
             Multipart::Transaction.new(
               :id => "id-#{i}",
-              :object_key => "key-#{i}",
+              :object => "key-#{i}",
+              :bucket => @bucket,
               :creation_time => Time.parse(Time.now.rfc822))
           end
 
@@ -492,14 +493,15 @@ module Aliyun
           return_multiparts = (1..5).map do |i|
             Multipart::Transaction.new(
               :id => "id-#{i}",
-              :object_key => "中国-#{i}",
+              :object => "中国-#{i}",
+              :bucket => @bucket,
               :creation_time => Time.parse(Time.now.rfc822))
           end
 
           es_multiparts = return_multiparts.map do |x|
             Multipart::Transaction.new(
               :id => x.id,
-              :object_key => CGI.escape(x.object_key),
+              :object => CGI.escape(x.object),
               :creation_time => x.creation_time)
           end
 

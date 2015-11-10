@@ -1079,7 +1079,7 @@ module Aliyun
         # @param parts [Array<Multipart::Part>] all the
         #  parts in this transaction
         def commit_multipart(bucket_name, object_name, txn_id, parts)
-          logger.info("Begin commit_multipart, txn id: #{txn_id}, parts: #{parts}")
+          logger.info("Begin commit_multipart, txn id: #{txn_id}, parts: #{parts.map(&:to_s)}")
 
           sub_res = {'uploadId' => txn_id}
 
@@ -1177,7 +1177,8 @@ module Aliyun
           txns = doc.css("Upload").map do |node|
             Multipart::Transaction.new(
               :id => get_node_text(node, "UploadId"),
-              :object_key => get_node_text(node, "Key") {|x| decode_key(x, encoding)},
+              :object => get_node_text(node, "Key") {|x| decode_key(x, encoding)},
+              :bucket => bucket_name,
               :creation_time => get_node_text(node, "Initiated") {|t| Time.parse(t)}
             )
           end

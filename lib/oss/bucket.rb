@@ -324,6 +324,8 @@ module Aliyun
       # @param opts [Hash] 上传文件的可选项
       # @option opts [String] :content_type 设置所上传的内容的
       #  Content-Type，默认是application/octet-stream
+      # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
+      #  默认为1 MB
       # @option opts [String] :resume_token 断点续传的token文件，如果
       #  指定的token文件不存在，则开始一个新的上传，在上传的过程中会更
       #  新此文件；如果指定的token文件存在，则从token文件中记录的点继续
@@ -332,18 +334,17 @@ module Aliyun
       #  token中记录的不一致，则抛出此错误
       def resumable_upload(key, file, opts = {})
         unless resume_token = opts[:resume_token]
-          resume_token = get_resume_token_for(file)
+          resume_token = get_resume_token(file)
         end
 
-        txn_id = Protocol.begin_multipart(name, key, opts)
-        txn = Multipart::Transaction.new(
-          :id => txn_id,
-          :object_key => key,
+        Multipart::Upload.new(
+          :options => opts,
+          :object => key,
+          :bucket => name,
           :creation_time => Time.now,
-          :checkpoint_file => resume_token,
-        )
-
-        txn.upload
+          :file => File.expand_path(file),
+          :resume_token => resume_token
+        ).run
       end
 
       # 下载bucket中的一个object到本地文件
@@ -367,18 +368,22 @@ module Aliyun
       #  为file.part
       def resumable_download(key, file, opts = {})
         unless resume_token = opts[:resume_token]
-          resume_token = get_resume_token_for(file)
+          resume_token = get_resume_token(file)
         end
 
-        txn_id = get_download_txn_id(name, key)
-        txn = Multipart::Transaction.new(
+        Multipart::Download.new(
           :id => txn_id,
-          :object_key => key,
+          :object => key,
+          :bucket => name,
           :creation_time => Time.now,
-          :checkpoint_file => resume_token,
-        )
+          :file => File.expand_path(file),
+          :resume_token => resume_token
+        ).run
+      end
 
-        txn.download
+      private
+      def get_resume_token(file)
+        "#{File.expand_path(file)}.token"
       end
 
     end # Bucket
