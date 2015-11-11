@@ -18,35 +18,47 @@ module Aliyun
           @parts = []
         end
 
+        # Run the download transaction, which includes 3 stages:
+        # * 1a. initiate(new downlaod) and divide parts
+        # * 1b. rebuild states(resumed download)
+        # * 2.  download each unfinished part
+        # * 3.  combine the downloaded parts into the final file
         def run
           logger.info("Begin download, file: #{@file}, checkpoint file: #{@checkpoint_file}")
 
+          # Rebuild transaction states from checkpoint file
+          # Or initiate new transaction states
           rebuild!
 
+          # Divide the target object into parts to download by ranges
           divide_parts! if @parts.empty?
 
+          # Download each part(object range)
           @parts.reject {|p| p[:done]}.each do |p|
             download_part!(p)
           end
 
+          # Combine the parts into the final file
           commit!
 
           logger.info("Done download, file: #{@file}")
         end
 
         # Checkpoint structures:
-        # status = {
-        #   :id => 'download_id',
-        #   :file => 'file',
-        #   :object_meta => {
-        #     :etag => 'xxx',
-        #     :size => 1024
-        #   },
-        #   :parts => [
-        #     {:number => 1, :range => [0, 100], :md5 => 'xxx', :done => false},
-        #     {:number => 2, :range => [100, 200], :md5 => 'yyy', :done => true}
-        #   ]
-        # }
+        # @example
+        #   status = {
+        #     :id => 'download_id',
+        #     :file => 'file',
+        #     :object_meta => {
+        #       :etag => 'xxx',
+        #       :size => 1024
+        #     },
+        #     :parts => [
+        #       {:number => 1, :range => [0, 100], :md5 => 'xxx', :done => false},
+        #       {:number => 2, :range => [100, 200], :md5 => 'yyy', :done => true}
+        #     ],
+        #     :md5 => 'status_md5'
+        #   }
         def checkpoint!
           logger.info("Begin make checkpoint")
 
@@ -69,9 +81,8 @@ module Aliyun
         end
 
         private
-        # Commit the transaction when all parts are succefully uploaded
-        # @todo handle undefined behaviors: commit succeeds in server
-        #  but return error in client
+        # Combine the downloaded parts into the final file
+        # @todo avoid copy all part files
         def commit!
           logger.info("Begin commit transaction, id: #{id}")
 

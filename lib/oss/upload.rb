@@ -19,36 +19,47 @@ module Aliyun
           @parts = []
         end
 
+        # Run the upload transaction, which includes 3 stages:
+        # * 1a. initiate(new upload) and divide parts
+        # * 1b. rebuild states(resumed upload)
+        # * 2.  upload each unfinished part
+        # * 3.  commit the multipart upload transaction
         def run
           logger.info("Begin upload, file: #{@file}, checkpoint file: #{@checkpoint_file}")
 
+          # Rebuild transaction states from checkpoint file
+          # Or initiate new transaction states
           rebuild!
 
+          # Divide the file to upload into parts to upload separately
           divide_parts! if @parts.empty?
 
+          # Upload each part
           @parts.reject {|p| p[:done]}.each do |p|
             upload_part!(p)
           end
 
+          # Commit the multipart upload transaction
           commit!
 
           logger.info("Done upload, file: #{@file}")
         end
 
         # Checkpoint structures:
-        # status = {
-        #   :id => 'upload_id',
-        #   :file => 'file',
-        #   :file_meta => {
-        #     :mtime => Time.now,
-        #     :md5 => 1024
-        #   },
-        #   :parts => [
-        #     {:number => 1, :range => [0, 100], :done => false},
-        #     {:number => 2, :range => [100, 200], :done => true}
-        #   ],
-        #   :md5 => 'checkpoint_md5'
-        # }
+        # @example
+        #   status = {
+        #     :id => 'upload_id',
+        #     :file => 'file',
+        #     :file_meta => {
+        #       :mtime => Time.now,
+        #       :md5 => 1024
+        #     },
+        #     :parts => [
+        #       {:number => 1, :range => [0, 100], :done => false},
+        #       {:number => 2, :range => [100, 200], :done => true}
+        #     ],
+        #     :md5 => 'status_md5'
+        #   }
         def checkpoint!
           logger.info("Begin make checkpoint")
 
@@ -128,10 +139,15 @@ module Aliyun
           result = nil
           File.open(@file) do |f|
             range = p[:range]
-            f.seek(range.first)
+            pos = range.first
+            f.seek(pos)
 
             result = Protocol.upload_part(bucket, object, id, p[:number]) do |sw|
-              sw << f.read(range.at(1) - range.at(0)) << HTTP::ENDS
+              if pos < range.at(1)
+                bytes = [READ_SIZE, range.at(1) - pos].min
+                sw << f.read(bytes)
+                pos += bytes
+              end
             end
           end
           p[:done] = true
