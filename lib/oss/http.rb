@@ -196,7 +196,8 @@ module Aliyun
           auth = "OSS #{Config.get(:access_id)}:#{signature}"
           headers['Authorization']  = auth
 
-          logger.debug("Send HTTP request, verb: #{verb}, resources: #{resources}, http options: #{http_options}")
+          logger.debug("Send HTTP request, verb: #{verb}, resources: \
+                        #{resources}, http options: #{http_options}")
 
           # from rest-client:
           # "Due to unfortunate choices in the original API, the params
@@ -237,7 +238,8 @@ module Aliyun
             r.return!
           end
 
-          logger.debug("Received HTTP response, code: #{r.code}, headers: #{r.headers}, body: #{r.body}")
+          logger.debug("Received HTTP response, code: #{r.code}, headers: \
+                        #{r.headers}, body: #{r.body}")
 
           [r.headers, r.body]
         end
