@@ -23,7 +23,4 @@ ruby >= 1.9
         cd ruby-sdk
         bundle install
 
-3. Fill credentials and run example. Fill your access key id and
-   access key secret in ~/.oss.yml and run the example:
-
-        ruby lib/example.rb
+3. See examples: http://gitlab.alibaba-inc.com/oss/ruby-sdk/tree/master/examples
