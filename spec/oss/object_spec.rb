@@ -174,6 +174,25 @@ module Aliyun
           expect(WebMock).to have_requested(:put, url)
             .with(:body => content, :query => {})
         end
+
+        it "should set user defined metas" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          stub_request(:put, url)
+
+          Protocol.put_object(
+            @bucket, object_name, :metas => {'year' => '2015', 'people' => 'mary'}
+          ) do |content|
+            content << 'hello world' << HTTP::ENDS
+          end
+
+          expect(WebMock).to have_requested(:put, url)
+            .with(:body => 'hello world',
+                  :headers => {
+                    'x-oss-meta-year' => '2015',
+                    'x-oss-meta-people' => 'mary'})
+        end
+
       end # put object
 
       context "Append object" do
@@ -250,6 +269,27 @@ module Aliyun
                   :query => query,
                   :headers => {'Content-Type' => 'application/ruby'})
         end
+
+        it "should set user defined metas" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          query = {'append' => '', 'position' => 0}
+
+          stub_request(:post, url).with(:query => query)
+
+          Protocol.append_object(
+            @bucket, object_name, 0, :metas => {'year' => '2015', 'people' => 'mary'}
+          ) do |content|
+            content << 'hello world' << HTTP::ENDS
+          end
+
+          expect(WebMock).to have_requested(:post, url)
+                         .with(:query => query,
+                               :body => 'hello world',
+                               :headers => {
+                                 'x-oss-meta-year' => '2015',
+                                 'x-oss-meta-people' => 'mary'})
+        end
       end # append object
 
       context "Copy object" do
@@ -311,6 +351,26 @@ module Aliyun
 
           expect(result[:last_modified]).to eq(last_modified)
           expect(result[:etag]).to eq(etag)
+        end
+
+        it "should set user defined metas" do
+          src_object = 'ruby'
+          dst_object = 'rails'
+          url = get_request_path(dst_object)
+
+          stub_request(:put, url)
+
+          Protocol.copy_object(@bucket, src_object, dst_object,
+                               :metas => {
+                                 'year' => '2015',
+                                 'people' => 'mary'
+                               })
+
+          expect(WebMock).to have_requested(:put, url)
+                         .with(:body => nil,
+                               :headers => {
+                                 'x-oss-meta-year' => '2015',
+                                 'x-oss-meta-people' => 'mary'})
         end
 
         it "should raise Exception on error" do
@@ -435,7 +495,7 @@ module Aliyun
 
       context "Get object meta" do
 
-        it "should get object meta" do
+        it "should get object meta", :focus => true do
           object_name = 'ruby'
           url = get_request_path(object_name)
 
@@ -444,7 +504,9 @@ module Aliyun
             'x-oss-object-type' => 'Normal',
             'ETag' => 'xxxyyyzzz',
             'Content-Length' => 1024,
-            'Last-Modified' => last_modified
+            'Last-Modified' => last_modified,
+            'x-oss-meta-year' => '2015',
+            'x-oss-meta-people' => 'mary'
           }
           stub_request(:head, url).to_return(:headers => return_headers)
 
@@ -458,6 +520,7 @@ module Aliyun
           expect(obj.etag).to eq('xxxyyyzzz')
           expect(obj.size).to eq(1024)
           expect(obj.last_modified.rfc822).to eq(last_modified)
+          expect(obj.metas).to eq({'year' => '2015', 'people' => 'mary'})
         end
 
         it "should set conditions" do

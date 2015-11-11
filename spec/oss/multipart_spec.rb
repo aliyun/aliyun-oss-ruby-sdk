@@ -107,10 +107,18 @@ module Aliyun
           query = {'uploads' => ''}
           stub_request(:post, request_path).with(:query => query)
 
-          Protocol.begin_multipart(@bucket, @object)
+          Protocol.begin_multipart(@bucket, @object,
+                                   :metas => {
+                                     'year' => '2015',
+                                     'people' => 'mary'
+                                   })
 
           expect(WebMock).to have_requested(:post, request_path)
-            .with(:body => nil, :query => query)
+                         .with(:body => nil, :query => query,
+                               :headers => {
+                                 'x-oss-meta-year' => '2015',
+                                 'x-oss-meta-people' => 'mary'
+                               })
         end
 
         it "should return transaction id" do

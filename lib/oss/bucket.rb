@@ -5,7 +5,7 @@ module Aliyun
     ##
     # Bucket是用户的bucket相关的操作的client，主要包括三部分功能：
     # 1. bucket相关：创建、删除bucket，设置bucket的属性（acl, logging,
-    #   website, etc）
+    #    website, etc）
     # 2. object相关：上传、下载、追加、拷贝object等
     # 3. multipart相关：断点续传、断点续载
     #
@@ -176,6 +176,9 @@ module Aliyun
       # @option opts [String] :file 设置所上传的文件
       # @option opts [String] :content_type 设置所上传的内容的
       #  Content-Type，默认是application/octet-stream
+      # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
+      #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
+      #  返回这些meta。属性的key不区分大小写。例如：{'year' => '2015'}
       # @yield [HTTP::StreamWriter] 如果调
       #  用的时候传递了block，则写入到object的数据由block指定
       # @example streaming put object
@@ -254,6 +257,9 @@ module Aliyun
       # @option opts [String] :file 指定追加的内容从文件中读取
       # @option opts [String] :content_type 设置所上传的内容的
       #  Content-Type，默认是application/octet-stream
+      # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
+      #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
+      #  返回这些meta。属性的key不区分大小写。例如：{'year' => '2015'}
       # @yield [HTTP::StreamWriter] 同 {#put_object}
       def append_object(key, pos, opts = {}, &block)
         file = opts[:file]
@@ -335,6 +341,9 @@ module Aliyun
       # @param opts [Hash] 上传文件的可选项
       # @option opts [String] :content_type 设置所上传的内容的
       #  Content-Type，默认是application/octet-stream
+      # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
+      #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
+      #  返回这些meta。属性的key不区分大小写。例如：{'year' => '2015'}
       # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
       #  默认为1 MB
       # @option opts [String] :resume_token 断点续传的token文件，如果

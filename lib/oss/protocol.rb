@@ -515,6 +515,9 @@ module Aliyun
         #  for the file, if not specified client will try to determine
         #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
         #  if it fails to do so
+        # @option opts [Hash<Symbol, String>] :metas key-value pairs
+        #  that serve as the object meta which will be stored together
+        #  with the object
         # @yield [HTTP::StreamWriter] a stream writer is
         #  yielded to the caller to which it can write chunks of data
         #  streamingly
@@ -524,13 +527,15 @@ module Aliyun
         def put_object(bucket_name, object_name, opts = {}, &block)
           raise ClientError.new('Missing block in put_object') unless block
 
-          logger.debug("Begin put object, bucket: #{bucket_name}, object:#{object_name}, \
-                        options: #{opts}")
+          logger.debug("Begin put object, bucket: #{bucket_name}, object: "\
+                       "#{object_name}, options: #{opts}")
+
+          headers = {'Content-Type' => opts[:content_type]}
+          (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
           HTTP.put(
             {:bucket => bucket_name, :object => object_name},
-            {:headers => {'Content-Type' => opts[:content_type]},
-             :body => HTTP::StreamPayload.new(block)})
+            {:headers => headers, :body => HTTP::StreamPayload.new(block)})
 
           logger.debug('Done put object')
         end
@@ -546,6 +551,9 @@ module Aliyun
         #  for the file, if not specified client will try to determine
         #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
         #  if it fails to do so
+        # @option opts [Hash<Symbol, String>] :metas key-value pairs
+        #  that serve as the object meta which will be stored together
+        #  with the object
         # @yield [HTTP::StreamWriter] a stream writer is
         #  yielded to the caller to which it can write chunks of data
         #  streamingly
@@ -560,10 +568,12 @@ module Aliyun
                         #{object_name}, position: #{position}, options: #{opts}")
 
           sub_res = {'append' => nil, 'position' => position}
+          headers = {'Content-Type' => opts[:content_type]}
+          (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+
           HTTP.post(
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-            {:headers => {'Content-Type' => opts[:content_type]},
-             :body => HTTP::StreamPayload.new(block)})
+            {:headers => headers, :body => HTTP::StreamPayload.new(block)})
 
           logger.debug('Done append object')
         end
@@ -699,7 +709,8 @@ module Aliyun
         # @yield [String] it gives the data chunks of the object to
         #  the block
         def get_object(bucket_name, object_name, opts = {}, &block)
-          logger.debug("Begin get object, bucket: #{bucket_name}, object: #{object_name}")
+          logger.debug("Begin get object, bucket: #{bucket_name}, " \
+                       "object: #{object_name}")
 
           range = opts[:range]
           conditions = opts[:condition]
@@ -753,8 +764,7 @@ module Aliyun
         # @param object_name [String] the object name
         # @param opts [Hash] options
         # @option opts [Hash] :condition preconditions to get the
-        #  object meta. The same as #get_object
-        # @see #get_object
+        #  object meta. The same as {#get_object}
         def get_object_meta(bucket_name, object_name, opts = {})
           logger.debug("Begin get object meta, bucket: #{bucket_name}, \
                         object: #{object_name}, options: #{opts}")
@@ -775,11 +785,18 @@ module Aliyun
                {:bucket => bucket_name, :object => object_name},
                {:headers => headers})
 
+          metas = {}
+          meta_prefix = 'x_oss_meta_'
+          h.select{ |k, _| k.to_s.start_with?(meta_prefix) }.each do |k, v|
+            metas[k.to_s.sub(meta_prefix, '')] = v.to_s
+          end
+
           obj = Object.new(
             :key => object_name,
             :type => h[:x_oss_object_type],
             :size => wrap(h[:content_length]) {|x| x.to_i},
             :etag => h[:etag],
+            :metas => metas,
             :last_modified => wrap(h[:last_modified]) {|x| Time.parse(x)})
 
           logger.debug("Done get object meta")
@@ -798,6 +815,13 @@ module Aliyun
         # @option opts [String] :meta_directive specify what to do
         #  with the object's meta: copy or replace. See
         #  {Struct::MetaDirective}
+        # @option opts [String] :content_type the HTTP Content-Type
+        #  for the file, if not specified client will try to determine
+        #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
+        #  if it fails to do so
+        # @option opts [Hash<Symbol, String>] :metas key-value pairs
+        #  that serve as the object meta which will be stored together
+        #  with the object
         # @option opts [Hash] :condition preconditions to get the
         #  object. See #get_object
         # @return a Hash that describes dest object
@@ -805,13 +829,15 @@ module Aliyun
         # @option return [Time] :last_modified the last modification
         #  time of the dest object
         def copy_object(bucket_name, src_object_name, dst_object_name, opts = {})
-          logger.debug("Begin copy object, bucket: #{bucket_name}, source object: \
-                        #{src_object_name}, dest object: #{dst_object_name}, options: #{opts}")
+          logger.debug("Begin copy object, bucket: #{bucket_name}, " \
+                       "source object: #{src_object_name}, dest object: " \
+                       "#{dst_object_name}, options: #{opts}")
 
           headers = {
-            'x-oss-copy-source' =>
-              HTTP.get_resource_path(bucket_name, src_object_name)
+            'x-oss-copy-source' => HTTP.get_resource_path(bucket_name, src_object_name),
+            'Content-Type' => opts[:content_type]
           }
+          (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
           {
             :acl => 'x-oss-object-acl',
@@ -986,14 +1012,25 @@ module Aliyun
         # @param bucket_name [String] the bucket name
         # @param object_name [String] the object name
         # @param opts [Hash] options
+        # @option opts [String] :content_type the HTTP Content-Type
+        #  for the file, if not specified client will try to determine
+        #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
+        #  if it fails to do so
+        # @option opts [Hash<Symbol, String>] :metas key-value pairs
+        #  that serve as the object meta which will be stored together
+        #  with the object
         # @return [String] the upload id
         def begin_multipart(bucket_name, object_name, opts = {})
           logger.info("Begin begin_multipart, bucket: #{bucket_name}, \
                        object: #{object_name}, options: #{opts}")
 
           sub_res = {'uploads' => nil}
+          headers = {'Content-Type' => opts[:content_type]}
+          (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+
           _, body = HTTP.post(
-            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res})
+               {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+               {:headers => headers})
 
           doc = parse_xml(body)
           txn_id = get_node_text(doc.root, 'UploadId')

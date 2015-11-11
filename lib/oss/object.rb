@@ -10,7 +10,7 @@ module Aliyun
 
       include Struct::Base
 
-      attrs :key, :type, :size, :etag, :last_modified
+      attrs :key, :type, :size, :etag, :metas, :last_modified
 
     end # Object
   end # OSS
