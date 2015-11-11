@@ -22,7 +22,7 @@ module Aliyun
           config.options |= Nokogiri::XML::ParseOptions::NOBLANKS
         end rescue nil
 
-        if doc
+        if doc and doc.root
           doc.root.children.each do |n|
             @attrs[n.name] = n.text
           end

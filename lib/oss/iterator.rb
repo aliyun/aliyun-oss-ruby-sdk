@@ -54,7 +54,7 @@ module Aliyun
 
         def fetch(more)
           @results, cont = Protocol.list_objects(@bucket, more)
-          @results += cont[:common_prefixes]
+          @results += cont[:common_prefixes] if cont[:common_prefixes]
           @more[:marker] = cont[:next_marker]
           @more[:truncated] = cont[:truncated] || false
         end

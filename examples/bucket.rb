@@ -3,89 +3,44 @@
 require 'yaml'
 require_relative '../lib/oss'
 
-##
-# Bucket相关的操作主要有：
-# - ListObjects 获取bucket中的objects，当bucket中的object数量较多时，
-#      可以通过prefix, delimiter等参数过滤出特定的object
-# - CreateBucket 创建bucket，可以通过参数设置bucket的acl, location等属
-#      性，也可以将bucket也用户的website关联
-# - DeleteBucket 删除bucket，要求所删除的bucket中不含object，否则会删
-#      除失败
-
 # 初始化OSS client
 Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 cred_file = "~/.oss.yml"
 cred = YAML.load(File.read(File.expand_path(cred_file)))
-oss = Aliyun::OSS::Client.new('oss.aliyuncs.com', cred["id"], cred["key"])
+client = Aliyun::OSS::Client.new('oss.aliyuncs.com', cred["id"], cred["key"])
+bucket = client.get_bucket('t-hello-world')
 
-# 创建一个bucket，默认的location为oss-cn-hangzhou
-oss.create_bucket('t-hello-world')
+# 列出当前所有的bucket
+buckets = client.list_buckets
+buckets.each{ |b| puts "Bucket: #{b.name}"}
 
-# 创建一个location为oss-cn-hangzhou的bucket
-oss.create_bucket('t-hello-hz', :location => 'oss-cn-hangzhou')
+# 创建bucket
+bucket.create!(:location => 'oss-cn-hangzhou')
+client.get_bucket('t-foo-bar').create!
 
-# 向t-hello-hz中添加一个object
-oss.put_object('t-hello-hz', 'file') do |content|
-  content.write_and_finish 'hello, world'
-end
-
-# 删除一个bucket => 失败，因为bucket不为空
-begin
-  oss.delete_bucket('t-hello-hz')
-rescue => e
-  puts "Delete bucket failed: #{e.message}"
-end
-
-# 删除这个bucket中的object，之后再删除这个bucket
-oss.delete_object('t-hello-hz', 'file')
-
-# 删除成功
-oss.delete_bucket('t-hello-hz')
-
-# 向bucket: t-hello-world中添加4个object:
+# 向bucket中添加4个空的object:
 # foo/obj1, foo/bar/obj1, foo/bar/obj2, foo/xxx/obj1
-oss.put_object('t-hello-world', 'foo/obj1') {}
-oss.put_object('t-hello-world', 'foo/bar/obj1') {}
-oss.put_object('t-hello-world', 'foo/bar/obj2') {}
-oss.put_object('t-hello-world', 'foo/xxx/obj1') {}
-oss.put_object('t-hello-world', '中国の') {}
+bucket.put_object('foo/obj1') {}
+bucket.put_object('foo/bar/obj1') {}
+bucket.put_object('foo/bar/obj2') {}
+bucket.put_object('foo/xxx/obj1') {}
+bucket.put_object('中国の') {}
 
-# list所有object
-objects, more = oss.list_objects('t-hello-world')
+# list bucket下所有objects
+objects = bucket.list_objects
 
 puts "All objects:"
 objects.each do |o|
-  puts "object: #{o.key}, type: #{o.type}, size: #{o.size}"
+  puts "Object: #{o.key}, type: #{o.type}, size: #{o.size}"
 end
 puts
 
-# list所有前缀为foo/bar/的object
-objects, more = oss.list_objects('t-hello-world', :prefix => 'foo/bar/')
+# list bucket下所有前缀为foo/bar/的object
+objects = bucket.list_objects(:prefix => 'foo/bar/')
 
-puts "All objects begin with 'foo/bar':"
+puts "All objects begin with 'foo/bar/':"
 objects.each do |o|
-  puts "object: #{o.key}, type: #{o.type}, size: #{o.size}"
-end
-puts
-
-# list所有前缀为foo/bar的object，限制一次最多返回1个
-objects, more = oss.list_objects(
-           't-hello-world', :prefix => 'foo/bar/', :limit => 1)
-
-puts "First 1 objects begin with 'foo/bar':"
-objects.each do |o|
-  puts "object: #{o.key}, type: #{o.type}, size: #{o.size}"
-end
-# more中包含了下一个object的marker
-puts "Next marker: #{more[:next_marker]}"
-
-# 从next marker开始list object，获取剩余的object
-objects, more = oss.list_objects(
-           't-hello-world',
-           :prefix => 'foo/bar/', :marker => more[:next_marker])
-puts "Remaining objects begin with 'foo/bar':"
-objects.each do |o|
-  puts "object: #{o.key}, type: #{o.type}, size: #{o.size}"
+  puts "Object: #{o.key}, type: #{o.type}, size: #{o.size}"
 end
 puts
 
@@ -102,15 +57,13 @@ puts
 # 这可以表示/foo/目录下的子目录。如果没有common prefix，你可能要遍历所
 # 有的object来找公共的前缀
 
-objects, more = oss.list_objects(
-           't-hello-world', :prefix => 'foo/', :delimiter => '/')
+objects = bucket.list_objects(:prefix => 'foo/', :delimiter => '/')
 
 puts "All objects begin with 'foo/':"
 objects.each do |o|
-  puts "object: #{o.key}, type: #{o.type}, size: #{o.size}"
+  if o.is_a?(Aliyun::OSS::Object)
+    puts "Object: #{o.key}, type: #{o.type}, size: #{o.size}"
+  else
+    puts "Common prefix: #{o}"
+  end
 end
-puts "Common prefixes with prefix = 'foo/' and delimiter = '/':"
-(more[:common_prefixes] || []).each do |p|
-  puts "common prefix: #{p}"
-end
-puts

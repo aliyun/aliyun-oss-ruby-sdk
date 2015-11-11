@@ -61,7 +61,7 @@ module Aliyun
         #     :md5 => 'states_md5'
         #   }
         def checkpoint!
-          logger.info("Begin make checkpoint")
+          logger.debug("Begin make checkpoint")
 
           ensure_file_not_changed
 
@@ -74,7 +74,7 @@ module Aliyun
 
           write_checkpoint(states, @checkpoint_file)
 
-          logger.info("Done make checkpoint, states: #{states}")
+          logger.debug("Done make checkpoint, states: #{states}")
         end
 
         private
@@ -127,7 +127,7 @@ module Aliyun
 
         # Upload a part
         def upload_part!(p)
-          logger.info("Begin upload part: #{p}")
+          logger.debug("Begin upload part: #{p}")
 
           result = nil
           File.open(@file) do |f|
@@ -148,7 +148,7 @@ module Aliyun
 
           checkpoint!
 
-          logger.info("Done upload part: #{p}")
+          logger.debug("Done upload part: #{p}")
         end
 
         # Devide the file into parts to upload

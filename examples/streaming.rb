@@ -25,13 +25,13 @@ require_relative '../lib/oss'
 Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 cred_file = "~/.oss.yml"
 cred = YAML.load(File.read(File.expand_path(cred_file)))
-oss = Aliyun::OSS::Client.new('oss.aliyuncs.com', cred["id"], cred["key"])
+bucket = Aliyun::OSS::Client.new(
+  'oss.aliyuncs.com', cred["id"], cred["key"]).get_bucket('t-hello-world')
 
 # 例子1: 归并排序
 # 有两个文件sort.1, sort.2，它们分别存了一些从小到大排列的整数，每个整
 # 数1行，现在要将它们做归并排序的结果上传到OSS中，命名为sort.all
 
-bucket = 't-hello-world'
 local_1, local_2 = 'sort.1', 'sort.2'
 result_object = 'sort.all'
 
@@ -50,7 +50,7 @@ end
 f1 = File.read(File.expand_path(local_1)).each_line
 f2 = File.read(File.expand_path(local_2)).each_line
 
-oss.put_object(bucket, result_object) do |content|
+bucket.put_object(result_object) do |content|
   v1 = f1.peek rescue nil
   v2 = f2.peek rescue nil
 
@@ -74,29 +74,28 @@ end
 puts "内容写入OSS成功，object: #{result_object}"
 
 # 将文件下载下来查看
-oss.get_object_to_file(bucket, result_object, result_object)
+bucket.get_object(result_object, :file => result_object)
 puts "文件下载成功，请查看文件：#{result_object}的内容"
 
 # 例子2: 下载进度条
 # 下载一个大文件（10M），在下载的过程中打印下载进度
 
-bucket = 't-hello-world'
 large_file = 'large_file'
 
 # 利用streaming上传，每次上传100KB，分100次完成
 i = (1..100).each
-oss.put_object(bucket, large_file) do |content|
+bucket.put_object(large_file) do |content|
   v = i.next rescue nil
   content << "x" * (100 * 1024) if v
 end
 
 # 查看object大小
-object_size = oss.get_object_meta(bucket, large_file).size
+object_size = bucket.get_object_meta(large_file).size
 puts "Object: #{large_file}的大小是：#{object_size}"
 
 # 流式下载文件，仅打印进度，不保存文件
 last_got, got = 0, 0
-oss.get_object(bucket, large_file) do |chunk|
+bucket.get_object(large_file) do |chunk|
   got += chunk.size
   # 仅在下载进度大于10%的时候打印
   if (got - last_got).to_f / object_size > 0.1

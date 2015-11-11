@@ -60,7 +60,7 @@ module Aliyun
         #     :md5 => 'states_md5'
         #   }
         def checkpoint!
-          logger.info("Begin make checkpoint")
+          logger.debug("Begin make checkpoint")
 
           ensure_object_not_changed
 
@@ -72,7 +72,7 @@ module Aliyun
           }
           write_checkpoint(states, @checkpoint_file)
 
-          logger.info("Done make checkpoint, states: #{states}")
+          logger.debug("Done make checkpoint, states: #{states}")
         end
 
         private
@@ -136,7 +136,7 @@ module Aliyun
 
         # Download a part
         def download_part!(p)
-          logger.info("Begin download part: #{p}")
+          logger.debug("Begin download part: #{p}")
 
           part_file = get_part_file(p[:number])
           File.open(part_file, 'w') do |w|
@@ -150,7 +150,7 @@ module Aliyun
 
           checkpoint!
 
-          logger.info("Done download part: #{p}")
+          logger.debug("Done download part: #{p}")
         end
 
         # Devide the object to download into parts to download

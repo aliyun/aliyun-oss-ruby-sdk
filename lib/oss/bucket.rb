@@ -196,7 +196,7 @@ module Aliyun
             end
           end
         else
-          Protocol.put_object(name, key, opts, block)
+          Protocol.put_object(name, key, opts, &block)
         end
       end
 
@@ -233,8 +233,18 @@ module Aliyun
             end
           end
         else
-          Protocol.get_object(name, key, opts, block)
+          Protocol.get_object(name, key, opts, &block)
         end
+      end
+
+      # 从Bucket中下载一个object
+      # @param key [String] Object的名字
+      # @param opts [Hash] 下载Object的选项（可选）
+      # @option opts [Hash] :condition 指定下载object需要满足的条件，
+      #  同{#get_object}
+      # @return [OSS::Object] 返回Object对象
+      def get_object_meta(key, opts = {})
+        Protocol.get_object_meta(name, key, opts)
       end
 
       # 向Bucket中的object追加内容。如果object不存在，则创建一个
@@ -256,7 +266,7 @@ module Aliyun
             end
           end
         else
-          Protocol.append_object(name, key, opts, block)
+          Protocol.append_object(name, key, pos, opts, &block)
         end
       end
 
