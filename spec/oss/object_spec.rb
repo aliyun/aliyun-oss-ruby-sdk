@@ -374,12 +374,12 @@ module Aliyun
 
           stub_request(:get, url)
 
-          Protocol.get_object(@bucket, object_name, {:range => [0, 9]}) {}
+          Protocol.get_object(@bucket, object_name, {:range => [0, 10]}) {}
 
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => {},
                   :headers => {
-                    'Range' => '0-9'
+                    'Range' => 'bytes=0-9'
                   })
         end
 

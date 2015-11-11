@@ -26,8 +26,12 @@ module Aliyun
         "#{@bucket_name}.#{@endpoint}/#{@object_key}"
       end
 
-      def mock_range(i)
+      def mock_object(i)
         i.to_s.rjust(9, '0') + "\n"
+      end
+
+      def mock_range(i)
+        "bytes=#{(i-1)*10}-#{i*10 - 1}"
       end
 
       def mock_error(code, message)
@@ -53,7 +57,7 @@ module Aliyun
 
         # get object by range
         stub_request(:get, object_url)
-          .to_return((1..10).map{ |i| {:body => mock_range(i)} })
+          .to_return((1..10).map{ |i| {:body => mock_object(i)} })
 
         @bucket.resumable_download(@object_key, @file, :part_size => 10)
 
@@ -62,11 +66,11 @@ module Aliyun
           ranges << req.headers['Range']
         }.times(10)
 
-        expect(ranges).to match_array((1..10).map{ |i| "#{(i-1)*10}-#{i*10}"})
+        expect(ranges).to match_array((1..10).map{ |i| mock_range(i) })
         expect(File.exist?("#{@file}.token")).to be false
         expect(Dir.glob("#{@file}.part.*").empty?).to be true
 
-        expect(File.read(@file)).to eq((1..10).map{ |i| mock_range(i) }.join)
+        expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
       end
 
       it "should resume when download part fails", :focus => true do
@@ -84,11 +88,11 @@ module Aliyun
         message = 'Request timeout.'
         # upload part
         stub_request(:get, object_url)
-          .to_return((1..3).map{ |i| {:body => mock_range(i)} }).then
+          .to_return((1..3).map{ |i| {:body => mock_object(i)} }).then
           .to_return(:status => 500, :body => mock_error(code, message)).times(2).then
-          .to_return((4..9).map{ |i| {:body => mock_range(i)} }).then
+          .to_return((4..9).map{ |i| {:body => mock_object(i)} }).then
           .to_return(:status => 500, :body => mock_error(code, message)).then
-          .to_return((10..10).map{ |i| {:body => mock_range(i)} })
+          .to_return((10..10).map{ |i| {:body => mock_object(i)} })
 
         loop do
           begin
@@ -104,8 +108,8 @@ module Aliyun
           ranges << req.headers['Range']
         }.times(13)
 
-        expect(ranges).to match_array((1..10).map{ |i| "#{(i-1)*10}-#{i*10}"})
-        expect(File.read(@file)).to eq((1..10).map{ |i| mock_range(i) }.join)
+        expect(ranges).to match_array((1..10).map{ |i| mock_range(i) })
+        expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
       end
 
       it "should resume when checkpoint fails" do
@@ -141,7 +145,7 @@ module Aliyun
         # get object by range
         returns = [1, 1, 1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         stub_request(:get, object_url)
-          .to_return(returns.map{ |i| {:body => mock_range(i)} })
+          .to_return(returns.map{ |i| {:body => mock_object(i)} })
 
         loop do
           begin
@@ -153,13 +157,9 @@ module Aliyun
         end
 
         expect(WebMock).to have_requested(:get, object_url).times(13)
-        expect(File.read(@file)).to eq((1..10).map{ |i| mock_range(i) }.join)
-      end
-
-      it "should resume when commit txn fails" do
+        expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
       end
 
     end # Resumable upload
-
   end # OSS
 end # Aliyun

@@ -707,7 +707,11 @@ module Aliyun
                                if range and not range.is_a?(Array) and not range.size == 2
 
           headers = {}
-          headers['Range'] = range.join('-') if range
+          if range
+            r = [range.at(0), range.at(1) - 1].join('-')
+            headers['Range'] = "bytes=#{r}"
+          end
+
           {
             :if_modified_since => 'If-Modified-Since',
             :if_unmodified_since => 'If-Unmodified-Since',

@@ -79,7 +79,7 @@ module Aliyun
           File.open(@file, 'w') do |w|
             @parts.sort{ |x, y| x[:number] <=> y[:number] }.each do |p|
               File.open(get_part_file(p[:number])) do |r|
-                w.write(r.read(READ_SIZE))
+                  w.write(r.read(READ_SIZE)) until r.eof?
               end
             end
           end
