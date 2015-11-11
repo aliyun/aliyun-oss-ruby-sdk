@@ -26,16 +26,15 @@ module Aliyun
       end
 
       def mock_location(location)
-          builder = Nokogiri::XML::Builder.new do |xml|
-            xml.CreateBucketConfiguration {
-              xml.LocationConstraint location
-            }
-          end
-          builder.to_xml
+        Nokogiri::XML::Builder.new do |xml|
+          xml.CreateBucketConfiguration {
+            xml.LocationConstraint location
+          }
+        end.to_xml
       end
 
       def mock_objects(objects, more = {})
-        builder = Nokogiri::XML::Builder.new do |xml|
+        Nokogiri::XML::Builder.new do |xml|
           xml.ListBucketResult {
             {
               :prefix => 'Prefix',
@@ -70,9 +69,7 @@ module Aliyun
               }
             end
           }
-        end
-
-        builder.to_xml
+        end.to_xml
       end
 
       def mock_acl(acl)

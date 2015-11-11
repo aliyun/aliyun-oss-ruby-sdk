@@ -164,13 +164,10 @@ module Aliyun
       # object（可能数量巨大），是用于模拟目录结构的常用做法。
       # @option opts [String] :encoding 指定返回的响应中object名字的编
       #  码方法，目前只支持'url'编码方式。
-      # @return [Enumerator<OSS::Object>, Enumerator<String>] 返回
-      #  的object迭代器和公共前缀迭代器
+      # @return [Enumerator<Object>] 其中Object可能是{OSS::Object}，也
+      #  可能是{String}，此时它是一个公共前缀
       def list_objects(opts = {})
-        objects = Iterator::Objects.new(name, opts).to_enum
-        common_prefixes = Iterator::CommonPrefixes.new(name, opts).to_enum
-
-        [objects, common_prefixes]
+        Iterator::Objects.new(name, opts).to_enum
       end
 
       # 向Bucket中上传一个object
@@ -191,6 +188,8 @@ module Aliyun
       def put_object(key, opts = {}, &block)
         file = opts[:file]
         if file
+          opts[:content_type] = get_content_type(file)
+
           File.open(File.expand_path(file)) do |f|
             Protocol.put_object(name, key, opts) do |sw|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) unless f.eof?
@@ -246,11 +245,13 @@ module Aliyun
       # @option opts [String] :content_type 设置所上传的内容的
       #  Content-Type，默认是application/octet-stream
       # @yield [HTTP::StreamWriter] 同 {#put_object}
-      def append_object(key, opts = {}, &block)
+      def append_object(key, pos, opts = {}, &block)
         file = opts[:file]
         if file
+          opts[:content_type] = get_content_type(file)
+
           File.open(File.expand_path(file)) do |f|
-            Protocol.append_object(name, key, opts) do |sw|
+            Protocol.append_object(name, key, pos, opts) do |sw|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) unless f.eof?
             end
           end
@@ -382,6 +383,18 @@ module Aliyun
       end
 
       private
+      # Infer the file's content type using MIME::Types
+      # @param file [String] the file path
+      # @return [String] the infered content type or nil if it fails
+      #  to infer the content type
+      def get_content_type(file)
+        t = MIME::Types.of(file)
+        t.first.content_type unless t.empty?
+      end
+
+      # Get the resume token file path for file
+      # @param file [String] the file path
+      # @return [String] the resume token file path
       def get_resume_token(file)
         "#{File.expand_path(file)}.token"
       end

@@ -40,8 +40,9 @@ module Aliyun
 
       class Buckets < Base
         def fetch(more)
-          @results, @more = Protocol.list_buckets(more)
-          @more[:marker] = @more.delete(:next_marker)
+          @results, cont = Protocol.list_buckets(more)
+          @more[:marker] = cont[:next_marker]
+          @more[:truncated] = cont[:truncated] || false
         end
       end # Buckets
 
@@ -52,23 +53,12 @@ module Aliyun
         end
 
         def fetch(more)
-          @results, @more = Protocol.list_objects(@bucket, more)
-          @more[:marker] = @more.delete(:next_marker)
+          @results, cont = Protocol.list_objects(@bucket, more)
+          @results += cont[:common_prefixes]
+          @more[:marker] = cont[:next_marker]
+          @more[:truncated] = cont[:truncated] || false
         end
       end # Objects
-
-      class CommonPrefixes < Base
-        def initialize(bucket_name, opts = {})
-          super(opts)
-          @bucket = bucket_name
-        end
-
-        def fetch(more)
-          _, @more = Protocol.list_objects(@bucket, more)
-          @results = @more.delete(:common_prefixes) || []
-          @more[:marker] = @more.delete(:next_marker)
-        end
-      end # CommonPrefixes
 
       class Multiparts < Base
         def initialize(bucket_name, opts = {})
@@ -77,9 +67,10 @@ module Aliyun
         end
 
         def fetch(more)
-          @results, @more = Protocol.list_multipart_transactions(@bucket, more)
-          @more[:id_marker] = @more.delete(:next_id_marker)
-          @more[:key_marker] = @more.delete(:next_key_marker)
+          @results, cont = Protocol.list_multipart_transactions(@bucket, more)
+          @more[:id_marker] = cont[:next_id_marker]
+          @more[:key_marker] = cont[:next_key_marker]
+          @more[:truncated] = cont[:truncated] || false
         end
       end # Multiparts
 

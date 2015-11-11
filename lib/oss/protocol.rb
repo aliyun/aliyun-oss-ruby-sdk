@@ -68,12 +68,14 @@ module Aliyun
               [k, get_node_text(doc.root, v)]
             end].select {|k, v| v != nil}
 
-          more[:limit] = more[:limit].to_i if more[:limit]
-          more[:truncated] = more[:truncated].to_bool if more[:truncated]
+          more.update(
+            :limit => wrap(more[:limit]) {|x| x.to_i},
+            :truncated => wrap(more[:truncated]) {|x| x.to_bool}
+          )
 
           logger.info("Done list buckets, buckets: #{buckets}, more: #{more}")
 
-          [buckets, more]
+          [buckets, more.select{ |_, v| v != nil }]
         end
 
         # Create a bucket
@@ -603,7 +605,7 @@ module Aliyun
         # @return [Array<Objects>, Hash] the returned object and a
         # hash including the next tokens
         def list_objects(bucket_name, opts = {})
-          logger.debug("Begin list object, bucket: #{bucket_name}")
+          logger.debug("Begin list object, bucket: #{bucket_name}, options: #{opts}")
 
           params = {
             'prefix' => opts[:prefix],
@@ -627,7 +629,7 @@ module Aliyun
               :etag => get_node_text(node, "ETag"),
               :last_modified => get_node_text(node, "LastModified") {|x| Time.parse(x)}
             )
-          end
+          end || []
 
           more = Hash[
             {
@@ -656,7 +658,7 @@ module Aliyun
           end
           more[:common_prefixes] = common_prefixes unless common_prefixes.empty?
 
-          logger.debug("Done list object")
+          logger.debug("Done list object. objects: #{objects}, more: #{more}")
 
           [objects, more.select {|_, v| v != nil}]
         end
@@ -1188,7 +1190,7 @@ module Aliyun
               :bucket => bucket_name,
               :creation_time => get_node_text(node, "Initiated") {|t| Time.parse(t)}
             )
-          end
+          end || []
 
           more = Hash[
             {
@@ -1256,7 +1258,7 @@ module Aliyun
               :size => get_node_text(node, 'Size') {|x| x.to_i},
               :last_modified =>
                 get_node_text(node, 'LastModified') {|x| Time.parse(x)})
-          end
+          end || []
 
           more = Hash[
             {
@@ -1302,15 +1304,6 @@ module Aliyun
           value = block.call(value) if block and value
 
           value
-        end
-
-        # Infer the file's content type using MIME::Types
-        # @param file [String] the file path
-        # @return [String] the infered content type or nil if it fails
-        #  to infer the content type
-        def get_content_type(file)
-          t = MIME::Types.of(file)
-          t.first.content_type unless t.empty?
         end
 
         # Decode object key using encoding. If encoding is nil it

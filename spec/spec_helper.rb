@@ -13,3 +13,5 @@ RSpec.configure do |config|
   end
 
 end
+
+Aliyun::OSS::Logging::set_log_level(Logger::DEBUG)
