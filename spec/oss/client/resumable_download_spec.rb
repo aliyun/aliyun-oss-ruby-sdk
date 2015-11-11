@@ -94,10 +94,9 @@ module Aliyun
           .to_return(:status => 500, :body => mock_error(code, message)).then
           .to_return((10..10).map{ |i| {:body => mock_object(i)} })
 
-        loop do
+        4.times do
           begin
             @bucket.resumable_download(@object_key, @file, :part_size => 10)
-            break
           rescue
             # pass
           end
@@ -147,10 +146,9 @@ module Aliyun
         stub_request(:get, object_url)
           .to_return(returns.map{ |i| {:body => mock_object(i)} })
 
-        loop do
+        4.times do
           begin
             @bucket.resumable_download(@object_key, @file, :part_size => 10)
-            break
           rescue
             # pass
           end

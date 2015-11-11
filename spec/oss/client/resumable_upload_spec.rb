@@ -107,10 +107,9 @@ module Aliyun
         stub_request(:put, /#{object_url}\?partNumber.*/)
         stub_request(:post, /#{object_url}\?uploadId.*/)
 
-        loop do
+        2.times do
           begin
             @bucket.resumable_upload(@object_key, @file, :part_size => 10)
-            break
           rescue
             # pass
           end
@@ -142,10 +141,9 @@ module Aliyun
           .to_return(:status => 500, :body => mock_error(code, message)).then
           .to_return(:status => 200)
 
-        loop do
+        4.times do
           begin
             @bucket.resumable_upload(@object_key, @file, :part_size => 10)
-            break
           rescue
             # pass
           end
@@ -196,10 +194,9 @@ module Aliyun
         stub_request(:put, /#{object_url}\?partNumber.*/)
         stub_request(:post, /#{object_url}\?uploadId.*/)
 
-        loop do
+        4.times do
           begin
             @bucket.resumable_upload(@object_key, @file, :part_size => 10)
-            break
           rescue
             # pass
           end
@@ -238,10 +235,9 @@ module Aliyun
           .to_return(:status => 500, :body => mock_error(code, message)).times(2).then
           .to_return(:status => 200)
 
-        loop do
+        3.times do
           begin
             @bucket.resumable_upload(@object_key, @file, :part_size => 10)
-            break
           rescue
             # pass
           end

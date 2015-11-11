@@ -66,7 +66,7 @@ module Aliyun
     class ObjectInconsistentError < ClientError; end
     class PartMissingError < ClientError; end
     class PartInconsistentError < ClientError; end
-    class TokenInconsistentError < ClientError; end
+    class TokenBrokenError < ClientError; end
 
   end # OSS
 end # Aliyun

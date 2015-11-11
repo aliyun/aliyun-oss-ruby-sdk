@@ -47,7 +47,7 @@ module Aliyun
 
         # Checkpoint structures:
         # @example
-        #   status = {
+        #   states = {
         #     :id => 'upload_id',
         #     :file => 'file',
         #     :file_meta => {
@@ -58,27 +58,23 @@ module Aliyun
         #       {:number => 1, :range => [0, 100], :done => false},
         #       {:number => 2, :range => [100, 200], :done => true}
         #     ],
-        #     :md5 => 'status_md5'
+        #     :md5 => 'states_md5'
         #   }
         def checkpoint!
           logger.info("Begin make checkpoint")
 
           ensure_file_not_changed
 
-          status = {
+          states = {
             :id => id,
             :file => @file,
             :file_meta => @file_meta,
             :parts => @parts
           }
 
-          status[:md5] = Util.get_content_md5(status.to_json)
+          write_checkpoint(states, @checkpoint_file)
 
-          File.open(@checkpoint_file, 'w') do |f|
-            f.write(status.to_json)
-          end
-
-          logger.info("Done make checkpoint, status: #{status}")
+          logger.info("Done make checkpoint, states: #{states}")
         end
 
         private
@@ -96,27 +92,24 @@ module Aliyun
           logger.info("Done commit transaction, id: #{id}")
         end
 
-        # Rebuild the status of the transaction from token file
+        # Rebuild the states of the transaction from token file
         def rebuild!
           logger.info("Begin rebuild transaction, checkpoint: #{@checkpoint_file}")
 
           if File.exists?(@checkpoint_file)
-            status = load_checkpoint
-            md5 = status.delete(:md5)
-            raise TokenInconsistentError.new("The resume token is changed.") \
-                                            if md5 != Util.get_content_md5(status.to_json)
+            states = load_checkpoint(@checkpoint_file)
 
-            file_md5 = status[:file_md5]
+            file_md5 = states[:file_md5]
             raise FileInconsistentError.new("The file to upload is changed.") \
                                            if file_md5 != @file_meta[:md5]
-            @id = status[:id]
-            @file_meta = status[:file_meta]
-            @parts = status[:parts]
+            @id = states[:id]
+            @file_meta = states[:file_meta]
+            @parts = states[:parts]
           else
             initiate!
           end
 
-          logger.info("Done rebuild transaction, status: #{status}")
+          logger.info("Done rebuild transaction, states: #{states}")
         end
 
         def initiate!
@@ -186,13 +179,6 @@ module Aliyun
           raise FileInconsistentError.new("The file to upload is changed.") \
                                          if file_md5 != @file_meta[:md5]
 
-        end
-
-        # Load transaction states from checkpoint file
-        def load_checkpoint
-          status = JSON.load(File.read(@checkpoint_file))
-          status.symbolize_keys!
-          status
         end
       end # Upload
 

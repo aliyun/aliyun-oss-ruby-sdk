@@ -46,7 +46,7 @@ module Aliyun
 
         # Checkpoint structures:
         # @example
-        #   status = {
+        #   states = {
         #     :id => 'download_id',
         #     :file => 'file',
         #     :object_meta => {
@@ -57,27 +57,22 @@ module Aliyun
         #       {:number => 1, :range => [0, 100], :md5 => 'xxx', :done => false},
         #       {:number => 2, :range => [100, 200], :md5 => 'yyy', :done => true}
         #     ],
-        #     :md5 => 'status_md5'
+        #     :md5 => 'states_md5'
         #   }
         def checkpoint!
           logger.info("Begin make checkpoint")
 
           ensure_object_not_changed
 
-          status = {
+          states = {
             :id => id,
             :file => @file,
             :object_meta => @object_meta,
             :parts => @parts
           }
+          write_checkpoint(states, @checkpoint_file)
 
-          status[:md5] = Util.get_content_md5(status.to_json)
-
-          File.open(@checkpoint_file, 'w') do |f|
-            f.write(status.to_json)
-          end
-
-          logger.info("Done make checkpoint, status: #{status}")
+          logger.info("Done make checkpoint, states: #{states}")
         end
 
         private
@@ -101,31 +96,28 @@ module Aliyun
           logger.info("Done commit transaction, id: #{id}")
         end
 
-        # Rebuild the status of the transaction from token file
+        # Rebuild the states of the transaction from token file
         def rebuild!
           logger.info("Begin rebuild transaction, checkpoint: #{@checkpoint_file}")
 
           if File.exists?(@checkpoint_file)
-            status = load_checkpoint
-            md5 = status.delete(:md5)
-            raise TokenInconsistentError.new("The resume token is changed.") \
-                    if md5 != Util.get_content_md5(status.to_json)
+            states = load_checkpoint(@checkpoint_file)
 
-            status[:parts].select{ |p| p[:done] }.each do |p|
+            states[:parts].select{ |p| p[:done] }.each do |p|
               part_file = get_part_file(p[:number])
               raise PartMissingError.new("The part file is missing.") \
                                         unless File.exist?(part_file)
               raise FileInconsistentError.new("The part file is changed.") \
                                         if p[:md5] != Digest::MD5.file(part_file).to_s
             end
-            @id = status[:id]
-            @object_meta = status[:object_meta]
-            @parts = status[:parts]
+            @id = states[:id]
+            @object_meta = states[:object_meta]
+            @parts = states[:parts]
           else
             initiate!
           end
 
-          logger.info("Done rebuild transaction, status: #{status}")
+          logger.info("Done rebuild transaction, states: #{states}")
         end
 
         def initiate!
@@ -189,19 +181,12 @@ module Aliyun
 
         end
 
-        # Load transaction states from checkpoint file
-        def load_checkpoint
-          status = JSON.load(File.read(@checkpoint_file))
-          status.symbolize_keys!
-          status
-        end
-
         # Generate a download id
         def generate_download_id
           "download_#{bucket}_#{object}_#{Time.now.to_i}"
         end
 
-        # Get part file
+        # Get name for part file
         def get_part_file(number)
           "#{@file}.part.#{number}"
         end
