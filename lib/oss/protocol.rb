@@ -1054,7 +1054,10 @@ module Aliyun
             'x-oss-copy-source' =>
               HTTP.get_resource_path(bucket_name, source_object)
           }
-          headers['Range'] = range.join('-') if range
+          if range
+            r = [range.at(0), range.at(1) - 1].join('-')
+            headers['Range'] = "bytes=#{r}"
+          end
 
           {
             :if_modified_since => 'x-oss-copy-source-if-modified-since',

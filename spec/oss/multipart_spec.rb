@@ -250,7 +250,7 @@ module Aliyun
 
           query = {'partNumber' => part_no, 'uploadId' => txn_id}
           headers = {
-            'Range' => '1-5',
+            'Range' => 'bytes=1-4',
             'x-oss-copy-source' => copy_source,
             'x-oss-copy-source-if-modified-since' => 'ms',
             'x-oss-copy-source-if-unmodified-since' => 'ums',
