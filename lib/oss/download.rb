@@ -157,8 +157,9 @@ module Aliyun
         def divide_parts!
           logger.info("Begin divide parts, object: #{@object}")
 
+          max_parts = 100
           object_size = @object_meta[:size]
-          part_size = @options[:part_size] || PART_SIZE
+          part_size = [@options[:part_size] || PART_SIZE, object_size / max_parts].max
           num_parts = (object_size - 1) / part_size + 1
           @parts = (1..num_parts).map do |i|
             {

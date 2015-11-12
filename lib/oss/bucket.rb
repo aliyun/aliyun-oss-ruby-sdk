@@ -221,22 +221,26 @@ module Aliyun
       #   * :cache_control (String) 指定返回的响应中Cache-Control的值
       #   * :content_disposition (String) 指定返回的响应中Content-Disposition的值
       #   * :content_encoding (String) 指定返回的响应中Content-Encoding的值
+      # @return [OSS::Object] 返回Object对象
       # @yield [String] 如果调用的时候传递了block，则获取到的object的数据交由block处理
       # @example streaming get object
       #   file = open_file
       #   get_object('x') {|chunk| file.write(chunk) }
       # @note 注意：如果opts中指定了:file，则block会被忽略
       def get_object(key, opts = {}, &block)
+        obj = nil
         file = opts[:file]
         if file
           File.open(File.expand_path(file), 'w') do |f|
-            Protocol.get_object(name, key, opts) do |chunk|
+            obj = Protocol.get_object(name, key, opts) do |chunk|
               f.write(chunk)
             end
           end
         else
-          Protocol.get_object(name, key, opts, &block)
+          obj = Protocol.get_object(name, key, opts, &block)
         end
+
+        obj
       end
 
       # 从Bucket中下载一个object
@@ -259,20 +263,24 @@ module Aliyun
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
       #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
+      # @return [Integer] 返回下次append的位置
       # @yield [HTTP::StreamWriter] 同 {#put_object}
       def append_object(key, pos, opts = {}, &block)
+        next_pos = -1
         file = opts[:file]
         if file
           opts[:content_type] = get_content_type(file)
 
           File.open(File.expand_path(file)) do |f|
-            Protocol.append_object(name, key, pos, opts) do |sw|
+            next_pos = Protocol.append_object(name, key, pos, opts) do |sw|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) unless f.eof?
             end
           end
         else
-          Protocol.append_object(name, key, pos, opts, &block)
+          next_pos = Protocol.append_object(name, key, pos, opts, &block)
         end
+
+        next_pos
       end
 
       # 将Bucket中的一个object拷贝成另外一个object

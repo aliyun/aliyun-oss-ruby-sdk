@@ -554,6 +554,7 @@ module Aliyun
         # @option opts [Hash<Symbol, String>] :metas key-value pairs
         #  that serve as the object meta which will be stored together
         #  with the object
+        # @return [Integer] next position to append
         # @yield [HTTP::StreamWriter] a stream writer is
         #  yielded to the caller to which it can write chunks of data
         #  streamingly
@@ -571,11 +572,13 @@ module Aliyun
           headers = {'Content-Type' => opts[:content_type]}
           (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
-          HTTP.post(
-            {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-            {:headers => headers, :body => HTTP::StreamPayload.new(block)})
+          h, _ = HTTP.post(
+               {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+               {:headers => headers, :body => HTTP::StreamPayload.new(block)})
 
           logger.debug('Done append object')
+
+          wrap(h[:x_oss_next_append_position]){ |x| x.to_i } || -1
         end
 
         # List objects in a bucket.
@@ -706,6 +709,7 @@ module Aliyun
         #   * :cache_control (String) the Cache-Control header
         #   * :content_disposition (String) the Content-Disposition header
         #   * :content_encoding (String) the Content-Encoding header
+        # @return [OSS::Object] The object meta
         # @yield [String] it gives the data chunks of the object to
         #  the block
         def get_object(bucket_name, object_name, opts = {}, &block)
@@ -747,11 +751,27 @@ module Aliyun
               rewrites[k] if rewrites and rewrites[k]
           end
 
-          HTTP.get(
-            {:bucket => bucket_name, :object => object_name},
-            {:headers => headers, :query => query}) {|chunk| yield chunk}
+          h, _ = HTTP.get(
+               {:bucket => bucket_name, :object => object_name},
+               {:headers => headers, :query => query}) {|chunk| yield chunk}
+
+          metas = {}
+          meta_prefix = 'x_oss_meta_'
+          h.select{ |k, _| k.to_s.start_with?(meta_prefix) }.each do |k, v|
+            metas[k.to_s.sub(meta_prefix, '')] = v.to_s
+          end
+
+          obj = Object.new(
+            :key => object_name,
+            :type => h[:x_oss_object_type],
+            :size => wrap(h[:content_length]) {|x| x.to_i},
+            :etag => h[:etag],
+            :metas => metas,
+            :last_modified => wrap(h[:last_modified]) {|x| Time.parse(x)})
 
           logger.debug("Done get object")
+
+          obj
         end
 
         # Get the object meta rather than the whole object.
@@ -765,6 +785,7 @@ module Aliyun
         # @param opts [Hash] options
         # @option opts [Hash] :condition preconditions to get the
         #  object meta. The same as #get_object
+        # @return [OSS::Object] The object meta
         def get_object_meta(bucket_name, object_name, opts = {})
           logger.debug("Begin get object meta, bucket: #{bucket_name}, \
                         object: #{object_name}, options: #{opts}")

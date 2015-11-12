@@ -156,8 +156,9 @@ module Aliyun
         def divide_parts!
           logger.info("Begin divide parts, file: #{@file}")
 
+          max_parts = 10000
           file_size = File.size(@file)
-          part_size = @options[:part_size] || PART_SIZE
+          part_size = [@options[:part_size] || PART_SIZE, file_size / max_parts].max
           num_parts = (file_size - 1) / part_size + 1
           @parts = (1..num_parts).map do |i|
             {

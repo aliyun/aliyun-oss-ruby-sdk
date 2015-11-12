@@ -198,15 +198,18 @@ module Aliyun
           url = get_request_path(object_name)
 
           query = {'append' => '', 'position' => 11}
+          return_headers = {'x-oss-next-append-position' => '101'}
           stub_request(:post, url).with(:query => query)
+            .to_return(:headers => return_headers)
 
           content = "hello world"
-          Protocol.append_object(@bucket, object_name, 11) do |c|
+          next_pos = Protocol.append_object(@bucket, object_name, 11) do |c|
             c << content
           end
 
           expect(WebMock).to have_requested(:post, url)
             .with(:body => content, :query => query)
+          expect(next_pos).to eq(101)
         end
 
         it "should raise Exception on error" do
@@ -405,6 +408,38 @@ module Aliyun
             .with(:body => nil, :query => {})
 
           expect(content).to eq(return_content)
+        end
+
+        it "should return object meta" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+
+          last_modified = Time.now.rfc822
+          return_headers = {
+            'x-oss-object-type' => 'Normal',
+            'ETag' => 'xxxyyyzzz',
+            'Content-Length' => 1024,
+            'Last-Modified' => last_modified,
+            'x-oss-meta-year' => '2015',
+            'x-oss-meta-people' => 'mary'
+          }
+          return_content = "hello world"
+          stub_request(:get, url)
+            .to_return(:headers => return_headers, :body => return_content)
+
+          content = ""
+          obj = Protocol.get_object(@bucket, object_name) {|c| content << c}
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {})
+
+          expect(content).to eq(return_content)
+          expect(obj.key).to eq(object_name)
+          expect(obj.type).to eq('Normal')
+          expect(obj.etag).to eq('xxxyyyzzz')
+          expect(obj.size).to eq(1024)
+          expect(obj.last_modified.rfc822).to eq(last_modified)
+          expect(obj.metas).to eq({'year' => '2015', 'people' => 'mary'})
         end
 
         it "should raise Exception on error" do
