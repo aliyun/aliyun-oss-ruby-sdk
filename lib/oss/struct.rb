@@ -57,7 +57,7 @@ module Aliyun
     # access_reader and provide additional functionalities for classes
     # that include Struct::Base :
     # * the constuctor is provided to accept options and set the
-    #  corresponding attibute automatically
+    #   corresponding attibute automatically
     # * the #to_s method is rewrite to concatenate the defined
     #   attributes keys and values
     # @example
@@ -67,6 +67,8 @@ module Aliyun
     #   end
     #
     #   x.new(:foo => 'hello', :bar => 'world')
+    #   x.foo # == "hello"
+    #   x.bar # == "world"
     #   x.to_s # == "foo: hello, bar: world"
     module Struct
       module Base
