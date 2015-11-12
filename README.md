@@ -195,8 +195,10 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 
 ## 更多
 
-请查看  
-阿里云官网文档：https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss
-SDK API文档：http://gitlab.alibaba-inc.com/oss/ruby-sdk/tree/master
+更多文档请查看：
+
+- 阿里云官网文档：https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss
+- SDK API文档：http://gitlab.alibaba-inc.com/oss/ruby-sdk/tree/master
+
 
 [1]: https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/domain-region
