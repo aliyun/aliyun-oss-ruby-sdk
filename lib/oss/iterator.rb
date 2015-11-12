@@ -8,8 +8,10 @@ module Aliyun
     #
     module Iterator
 
+      ##
+      # Iterator base that stores fetched results and fetch more if needed.
+      #
       class Base
-
         def initialize(opts = {})
           @results, @more = [], opts
         end
@@ -36,8 +38,11 @@ module Aliyun
           return if @more[:truncated] == false
           fetch(@more)
         end
-      end
+      end # Base
 
+      ##
+      # Buckets iterator
+      #
       class Buckets < Base
         def fetch(more)
           @results, cont = Protocol.list_buckets(more)
@@ -46,6 +51,9 @@ module Aliyun
         end
       end # Buckets
 
+      ##
+      # Objects iterator
+      #
       class Objects < Base
         def initialize(bucket_name, opts = {})
           super(opts)
@@ -60,6 +68,9 @@ module Aliyun
         end
       end # Objects
 
+      ##
+      # Multiparts iterator
+      #
       class Multiparts < Base
         def initialize(bucket_name, opts = {})
           super(opts)

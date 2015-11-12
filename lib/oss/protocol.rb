@@ -107,7 +107,7 @@ module Aliyun
         # Update bucket acl
         # @param name [String] the bucket name
         # @param acl [String] the bucket acl
-        # @see Struct::ACL
+        # @see OSS::ACL
         def update_bucket_acl(name, acl)
           logger.info("Begin update bucket acl, name: #{name}, acl: #{acl}")
 
@@ -332,12 +332,12 @@ module Aliyun
 
         # Update bucket lifecycle settings
         # @param name [String] the bucket name
-        # @param rules [Array<Struct::LifeCycleRule>] the
+        # @param rules [Array<OSS::LifeCycleRule>] the
         #  lifecycle rules
-        # @see Struct::LifeCycleRule
+        # @see OSS::LifeCycleRule
         def update_bucket_lifecycle(name, rules)
-          logger.info("Begin update bucket lifecycle, name: #{name}, rules: \
-                       #{rules.map {|r| r.to_s}}")
+          logger.info("Begin update bucket lifecycle, name: #{name}, rules: " \
+                       "#{rules.map {|r| r.to_s}}")
 
           sub_res = {'lifecycle' => nil}
           body = Nokogiri::XML::Builder.new do |xml|
@@ -370,8 +370,8 @@ module Aliyun
 
         # Get bucket lifecycle settings
         # @param name [String] the bucket name
-        # @return [Array<Struct::LifeCycleRule>] the
-        #  lifecycle rules. See {Struct::LifeCycleRule}
+        # @return [Array<OSS::LifeCycleRule>] the
+        #  lifecycle rules. See {OSS::LifeCycleRule}
         def get_bucket_lifecycle(name)
           logger.info("Begin get bucket lifecycle, name: #{name}")
 
@@ -386,7 +386,7 @@ module Aliyun
             raise Client.new("We can only have one of Date and Days for expiry.") \
                             if (days and date) or (not days and not date)
 
-            Struct::LifeCycleRule.new(
+            LifeCycleRule.new(
               :id => get_node_text(n, 'ID') {|x| x.to_i},
               :prefix => get_node_text(n, 'Prefix'),
               :enabled => get_node_text(n, 'Status') {|x| x == 'Enabled'},
@@ -412,12 +412,12 @@ module Aliyun
 
         # Set bucket CORS(Cross-Origin Resource Sharing) rules
         # @param name [String] the bucket name
-        # @param rules [Array<Struct::CORSRule] the CORS
+        # @param rules [Array<OSS::CORSRule] the CORS
         #  rules
-        # @see Struct::CORSRule
+        # @see OSS::CORSRule
         def set_bucket_cors(name, rules)
-          logger.info("Begin set bucket cors, bucket: #{name}, rules: \
-                       #{rules.map {|r| r.to_s}.join(';')}")
+          logger.info("Begin set bucket cors, bucket: #{name}, rules: " \
+                       "#{rules.map {|r| r.to_s}.join(';')}")
 
           sub_res = {'cors' => nil}
           body = Nokogiri::XML::Builder.new do |xml|
@@ -451,7 +451,7 @@ module Aliyun
 
         # Get bucket CORS rules
         # @param name [String] the bucket name
-        # @return [Array<Struct::CORSRule] the CORS rules
+        # @return [Array<OSS::CORSRule] the CORS rules
         def get_bucket_cors(name)
           logger.info("Begin get bucket cors, bucket: #{name}")
 
@@ -468,7 +468,7 @@ module Aliyun
             expose_headers = n.css("ExposeHeader").map {|x| x.text}
             max_age_seconds = get_node_text(n, 'MaxAgeSeconds') {|x| x.to_i}
 
-            rules << Struct::CORSRule.new(
+            rules << CORSRule.new(
               :allowed_origins => allowed_origins,
               :allowed_methods => allowed_methods,
               :allowed_headers => allowed_headers,
@@ -565,8 +565,8 @@ module Aliyun
         def append_object(bucket_name, object_name, position, opts = {}, &block)
           raise ClientError.new('Missing block in append_object') unless block
 
-          logger.debug("Begin append object, bucket: #{bucket_name}, object: \
-                        #{object_name}, position: #{position}, options: #{opts}")
+          logger.debug("Begin append object, bucket: #{bucket_name}, object: " \
+                        "#{object_name}, position: #{position}, options: #{opts}")
 
           sub_res = {'append' => nil, 'position' => position}
           headers = {'Content-Type' => opts[:content_type]}
@@ -721,7 +721,7 @@ module Aliyun
           rewrites = opts[:rewrite]
 
           raise ClientError.new("Range must be an array contains 2 int.") \
-                               if range and not range.is_a?(Array) and not range.size == 2
+                  if range and not range.is_a?(Array) and not range.size == 2
 
           headers = {}
           if range
@@ -787,8 +787,8 @@ module Aliyun
         #  object meta. The same as #get_object
         # @return [OSS::Object] The object meta
         def get_object_meta(bucket_name, object_name, opts = {})
-          logger.debug("Begin get object meta, bucket: #{bucket_name}, \
-                        object: #{object_name}, options: #{opts}")
+          logger.debug("Begin get object meta, bucket: #{bucket_name}, " \
+                       "object: #{object_name}, options: #{opts}")
 
           conditions = opts[:condition]
 
@@ -832,10 +832,10 @@ module Aliyun
         # @param dst_object_name [String] the dest object name
         # @param opts [Hash] options
         # @option opts [String] :acl specify the dest object's
-        #  ACL. See {Struct::ACL}
+        #  ACL. See {OSS::ACL}
         # @option opts [String] :meta_directive specify what to do
         #  with the object's meta: copy or replace. See
-        #  {Struct::MetaDirective}
+        #  {OSS::MetaDirective}
         # @option opts [String] :content_type the HTTP Content-Type
         #  for the file, if not specified client will try to determine
         #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
@@ -897,7 +897,8 @@ module Aliyun
         # @param bucket_name [String] the bucket name
         # @param object_name [String] the object name
         def delete_object(bucket_name, object_name)
-          logger.debug("Begin delete object, bucket: #{bucket_name}, object: #{object_name}")
+          logger.debug("Begin delete object, bucket: #{bucket_name}, " \
+                       "object:  #{object_name}")
 
           HTTP.delete({:bucket => bucket_name, :object => object_name})
 
@@ -915,8 +916,8 @@ module Aliyun
         # @return [Array<String>] object names that have been
         #  successfully deleted or empty if :quiet is true
         def batch_delete_objects(bucket_name, object_names, opts = {})
-          logger.debug("Begin batch delete object, bucket: #{bucket_name}, \
-                        objects: #{object_names}, options: #{opts}")
+          logger.debug("Begin batch delete object, bucket: #{bucket_name}, " \
+                       "objects: #{object_names}, options: #{opts}")
 
           sub_res = {'delete' => nil}
           body = Nokogiri::XML::Builder.new do |xml|
@@ -954,10 +955,10 @@ module Aliyun
         # Update object acl
         # @param bucket_name [String] the bucket name
         # @param object_name [String] the object name
-        # @param acl [String] the object's ACL. See {Struct::ACL}
+        # @param acl [String] the object's ACL. See {OSS::ACL}
         def update_object_acl(bucket_name, object_name, acl)
-          logger.debug("Begin update object acl, bucket: #{bucket_name}, \
-                        object: #{object_name}, acl: #{acl}")
+          logger.debug("Begin update object acl, bucket: #{bucket_name}, " \
+                       "object: #{object_name}, acl: #{acl}")
 
           sub_res = {'acl' => nil}
           headers = {'x-oss-acl' => acl}
@@ -972,10 +973,10 @@ module Aliyun
         # Get object acl
         # @param bucket_name [String] the bucket name
         # @param object_name [String] the object name
-        # [return] the object's acl. See {Struct::ACL}
+        # [return] the object's acl. See {OSS::ACL}
         def get_object_acl(bucket_name, object_name)
-          logger.debug("Begin get object acl, bucket: #{bucket_name}, \
-                        object: #{object_name}")
+          logger.debug("Begin get object acl, bucket: #{bucket_name}, " \
+                       "object: #{object_name}")
 
           sub_res = {'acl' => nil}
           _, body = HTTP.get(
@@ -1000,9 +1001,9 @@ module Aliyun
         #  Access-Control-Request-Headers
         # @return [CORSRule] the CORS rule of the object
         def get_object_cors(bucket_name, object_name, origin, method, headers = [])
-          logger.debug("Begin get object cors, bucket: #{bucket_name}, object: \
-                        #{object_name}, origin: #{origin}, method: #{method}, \
-                        headers: #{headers.join(',')}")
+          logger.debug("Begin get object cors, bucket: #{bucket_name}, object: " \
+                       "#{object_name}, origin: #{origin}, method: #{method}, " \
+                       "headers: #{headers.join(',')}")
 
           h = {
             'Origin' => origin,
@@ -1016,7 +1017,7 @@ module Aliyun
 
           logger.debug("Done get object cors")
 
-          Struct::CORSRule.new(
+          CORSRule.new(
             :allowed_origins => return_headers[:access_control_allow_origin],
             :allowed_methods => return_headers[:access_control_allow_methods],
             :allowed_headers => return_headers[:access_control_allow_headers],
@@ -1042,8 +1043,8 @@ module Aliyun
         #  with the object
         # @return [String] the upload id
         def begin_multipart(bucket_name, object_name, opts = {})
-          logger.info("Begin begin_multipart, bucket: #{bucket_name}, \
-                       object: #{object_name}, options: #{opts}")
+          logger.info("Begin begin_multipart, bucket: #{bucket_name}, " \
+                      "object: #{object_name}, options: #{opts}")
 
           sub_res = {'uploads' => nil}
           headers = {'Content-Type' => opts[:content_type]}
@@ -1072,8 +1073,8 @@ module Aliyun
         def upload_part(bucket_name, object_name, txn_id, part_no, &block)
           raise ClientError.new('Missing block in upload_part') unless block
 
-          logger.debug("Begin upload part, bucket: #{bucket_name}, object: \
-                        #{object_name}, txn id: #{txn_id}, part No: #{part_no}")
+          logger.debug("Begin upload part, bucket: #{bucket_name}, object: " \
+                       "#{object_name}, txn id: #{txn_id}, part No: #{part_no}")
 
           sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
           headers, _ = HTTP.put(
@@ -1100,15 +1101,15 @@ module Aliyun
         #  object. See #get_object
         def upload_part_from_object(
               bucket_name, object_name, txn_id, part_no, source_object, opts = {})
-          logger.debug("Begin upload part from object, bucket: #{bucket_name}, \
-                        object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}, \
-                        source object: #{source_object}, options: #{opts}")
+          logger.debug("Begin upload part from object, bucket: #{bucket_name}, " \
+                       "object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}, " \
+                       "source object: #{source_object}, options: #{opts}")
 
           range = opts[:range]
           conditions = opts[:condition]
 
           raise ClientError.new("Range must be an array contains 2 int.") \
-                               if range and not range.is_a?(Array) and not range.size == 2
+                  if range and not range.is_a?(Array) and not range.size == 2
 
           headers = {
             'x-oss-copy-source' =>
@@ -1146,7 +1147,8 @@ module Aliyun
         # @param parts [Array<Multipart::Part>] all the
         #  parts in this transaction
         def commit_multipart(bucket_name, object_name, txn_id, parts)
-          logger.info("Begin commit_multipart, txn id: #{txn_id}, parts: #{parts.map(&:to_s)}")
+          logger.info("Begin commit_multipart, txn id: #{txn_id}, " \
+                      "parts: #{parts.map(&:to_s)}")
 
           sub_res = {'uploadId' => txn_id}
 
@@ -1220,8 +1222,8 @@ module Aliyun
         #  buckets to be returned
         # @option more [String] :encoding the object key encoding used
         def list_multipart_transactions(bucket_name, opts = {})
-          logger.debug("Begin list_multipart_transactions, bucket: #{bucket_name}, \
-                        opts: #{opts}")
+          logger.debug("Begin list multipart transactions, bucket: #{bucket_name}, " \
+                       "opts: #{opts}")
 
           sub_res = {'uploads' => nil}
           params = {
@@ -1294,8 +1296,8 @@ module Aliyun
         # @option more [Boolean] :truncated whether there are more
         #  parts to be returned
         def list_parts(bucket_name, object_name, txn_id, opts = {})
-          logger.debug("Begin list_parts, bucket: #{bucket_name}, object: \
-                        #{object_name}, txn id: #{txn_id}, options: #{opts}")
+          logger.debug("Begin list_parts, bucket: #{bucket_name}, object: " \
+                       "#{object_name}, txn id: #{txn_id}, options: #{opts}")
 
           sub_res = {'uploadId' => txn_id}
           params = {
@@ -1373,7 +1375,7 @@ module Aliyun
           return key unless encoding
 
           raise ClientError.new("Unsupported key encoding: #{encoding}") \
-                    unless Struct::KeyEncoding.include?(encoding)
+                    unless KeyEncoding.include?(encoding)
 
           if encoding == 'url'
             return CGI.unescape(key)

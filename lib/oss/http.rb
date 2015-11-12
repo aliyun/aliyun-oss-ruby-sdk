@@ -6,23 +6,39 @@ module Aliyun
   module OSS
 
     ##
-    # 封装了基本的HTTP请求功能：GET/PUT/POST/DELETE/HEAD
-    # 也包含了streaming PUT/GET等高级特性
-    # * Set :body to HTTP::StreamPayload.new(block) to streaming
-    # request body
-    # * Pass block(chunk) to do_request to streaming response body
+    # HTTP wraps the HTTP functionalies for accessing OSS RESTful
+    # API. It handles the OSS-specific protocol elements, and
+    # rest-client details for the user, which includes:
+    # * automatically generate signature for every request
+    # * parse response headers/body
+    # * raise exceptions and capture the request id
+    # * encapsulates streaming upload/download
+    # @example simple get
+    #   headers, body = HTTP.get({:bucket => 'bucket'})
+    # @example streaming download
+    #   HTTP.get({:bucket => 'bucket', :object => 'object'}) do |chunk|
+    #     # handle chunk
+    #   end
+    # @example streaming upload
+    #   def streaming_upload(&block)
+    #     HTTP.put({:bucket => 'bucket', :object => 'object'},
+    #              {:body => HTTP::StreamPlayload.new(block)})
+    #   end
     #
+    #   streaming_upload do |stream|
+    #     stream << "hello world" << HTTP::ENDS
+    #   end
     class HTTP
 
-      # mark an stream end
+      # Mark as the stream end
       class StreamEnd; end
 
       ENDS = StreamEnd.new
       DEFAULT_CONTENT_TYPE = 'application/octet-stream'
 
       ##
-      # 实现了:read(bytes, outbuf)方法的一个stream实现，用于对HTTP请求
-      # 的body进行streaming
+      # A stream implementation
+      # A stream is any class that responses to :read(bytes, outbuf)
       #
       class StreamWriter
         def initialize(block = nil)
@@ -72,19 +88,21 @@ module Aliyun
         end
       end
 
+      # RestClient requires the payload to respones to :read(bytes)
+      # and return a stream.
+      # We are not doing the real read here, just return a
+      # readable stream for RestClient playload.rb treats it as:
+      #     def read(bytes=nil)
+      #       @stream.read(bytes)
+      #     end
+      #     alias :to_s :read
+      #     net_http_do_request(http, req, payload ? payload.to_s : nil,
+      #                     &@block_response)
       class StreamPayload
         def initialize(block)
           @stream = StreamWriter.new(block)
         end
 
-        # NOTE: We are not doing the real read here, just return a
-        # readable stream for RestClient playload.rb treats it as:
-        #     def read(bytes=nil)
-        #       @stream.read(bytes)
-        #     end
-        #     alias :to_s :read
-        #     net_http_do_request(http, req, payload ? payload.to_s : nil,
-        #                     &@block_response)
         def read(bytes = nil)
           @stream
         end
@@ -102,7 +120,6 @@ module Aliyun
 
         include Logging
 
-        # 获取请求的URL，根据操作是否指定bucket和object，URL可能不同
         def get_request_url(bucket, object)
           url = ""
           url += "#{bucket}." if bucket
@@ -112,7 +129,6 @@ module Aliyun
           url
         end
 
-        # 获取请求的资源路径
         def get_resource_path(bucket, object)
           if bucket
             res = "/#{bucket}/"
@@ -164,16 +180,17 @@ module Aliyun
         end
 
         private
-        # 进行RESTful HTTP请求
-        # [verb] HTTP动作: GET/PUT/POST/DELETE/HEAD
-        # [resources] OSS相关的资源:
-        #     [:bucket] bucket名字
-        #     [:object] object名字
-        #     [:sub_res] 子资源
-        # [http_options] HTTP相关资源：
-        #     [:headers] HTTP头
-        #     [:body] HTTP body
-        #     [:query] HTTP url参数
+        # Do HTTP reqeust
+        # @param verb [String] HTTP Verb: GET/PUT/POST/DELETE/HEAD/OPTIONS
+        # @param resources [Hash] OSS related resources
+        # @option resources [String] :bucket the bucket name
+        # @option resources [String] :object the object name
+        # @option resources [Hash] :sub_res sub-resources
+        # @param http_options [Hash] HTTP options
+        # @option http_options [Hash] :headers HTTP headers
+        # @option http_options [Hash] :query HTTP queries
+        # @option http_options [Object] :body HTTP body, may be String
+        #  or Stream
         def do_request(verb, resources = {}, http_options = {}, &block)
           bucket = resources[:bucket]
           object = resources[:object]
@@ -196,10 +213,10 @@ module Aliyun
           auth = "OSS #{Config.get(:access_id)}:#{signature}"
           headers['Authorization']  = auth
 
-          logger.debug("Send HTTP request, verb: #{verb}, resources: \
-                        #{resources}, http options: #{http_options}")
+          logger.debug("Send HTTP request, verb: #{verb}, resources: " \
+                        "#{resources}, http options: #{http_options}")
 
-          # from rest-client:
+          # From rest-client:
           # "Due to unfortunate choices in the original API, the params
           # used to populate the query string are actually taken out of
           # the headers hash."
@@ -238,8 +255,8 @@ module Aliyun
             r.return!
           end
 
-          logger.debug("Received HTTP response, code: #{r.code}, headers: \
-                        #{r.headers}, body: #{r.body}")
+          logger.debug("Received HTTP response, code: #{r.code}, headers: " \
+                        "#{r.headers}, body: #{r.body}")
 
           [r.headers, r.body]
         end

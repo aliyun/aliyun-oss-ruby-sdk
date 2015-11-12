@@ -24,7 +24,8 @@ module Aliyun
         # * 2.  download each unfinished part
         # * 3.  combine the downloaded parts into the final file
         def run
-          logger.info("Begin download, file: #{@file}, checkpoint file: #{@checkpoint_file}")
+          logger.info("Begin download, file: #{@file}, checkpoint file: " \
+                      " #{@checkpoint_file}")
 
           # Rebuild transaction states from checkpoint file
           # Or initiate new transaction states

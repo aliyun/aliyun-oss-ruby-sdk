@@ -4,12 +4,12 @@ module Aliyun
   module OSS
 
     ##
-    # Multipart uploading structures
+    # Multipart upload/download structures
     #
     module Multipart
 
       ##
-      # A multipart uploading transaction
+      # A multipart transaction. Provide the basic checkpoint methods.
       #
       class Transaction
 

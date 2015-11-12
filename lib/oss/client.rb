@@ -5,7 +5,13 @@ module Aliyun
 
     ##
     # OSS服务的客户端，用于获取bucket列表，连接到指定的bucket。
-    #
+    # @example 创建Client
+    #   endpoint = 'oss-cn-hangzhou.oss.aliyuncs.com'
+    #   client = Client.new(endpoint, 'access_key_id', 'access_key_secret')
+    #   buckets = client.list_buckets
+    #   bucket = client.get_bucket('my-bucket')
+    # @example 连接到Bucket
+    #   bucket = Client.connect_to_bucket('my-bucket', endpoint, 'access_key_id', 'access_key_secret')
     class Client
 
       include Logging

@@ -323,8 +323,8 @@ module Aliyun
 
           headers = {
             'x-oss-copy-source' => get_resource_path(src_object),
-            'x-oss-object-acl' => Struct::ACL::PRIVATE,
-            'x-oss-metadata-directive' => Struct::MetaDirective::REPLACE,
+            'x-oss-object-acl' => ACL::PRIVATE,
+            'x-oss-metadata-directive' => MetaDirective::REPLACE,
             'x-oss-copy-source-if-modified-since' => 'ms',
             'x-oss-copy-source-if-unmodified-since' => 'ums',
             'x-oss-copy-source-if-match' => 'me',
@@ -335,8 +335,8 @@ module Aliyun
 
           result = Protocol.copy_object(
             @bucket, src_object, dst_object,
-            {:acl => Struct::ACL::PRIVATE,
-             :meta_directive => Struct::MetaDirective::REPLACE,
+            {:acl => ACL::PRIVATE,
+             :meta_directive => MetaDirective::REPLACE,
              :condition => {
                :if_modified_since => 'ms',
                :if_unmodified_since => 'ums',
@@ -666,11 +666,11 @@ module Aliyun
           query = {'acl' => ''}
           stub_request(:put, url).with(:query => query)
 
-          Protocol.update_object_acl(@bucket, object_name, Struct::ACL::PUBLIC_READ)
+          Protocol.update_object_acl(@bucket, object_name, ACL::PUBLIC_READ)
 
           expect(WebMock).to have_requested(:put, url)
             .with(:query => query,
-                  :headers => {'x-oss-acl' => Struct::ACL::PUBLIC_READ},
+                  :headers => {'x-oss-acl' => ACL::PUBLIC_READ},
                   :body => nil)
         end
 
@@ -679,7 +679,7 @@ module Aliyun
           url = get_request_path(object_name)
 
           query = {'acl' => ''}
-          return_acl = Struct::ACL::PUBLIC_READ
+          return_acl = ACL::PUBLIC_READ
 
           stub_request(:get, url)
             .with(:query => query)
@@ -698,7 +698,7 @@ module Aliyun
           object_name = 'ruby'
           url = get_request_path(object_name)
 
-          return_rule = Struct::CORSRule.new(
+          return_rule = CORSRule.new(
             :allowed_origins => 'origin',
             :allowed_methods => 'PUT',
             :allowed_headers => 'Authorization',

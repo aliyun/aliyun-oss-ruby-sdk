@@ -120,7 +120,7 @@ module Aliyun
 
         it "should get acl" do
           query = {'acl' => ''}
-          return_acl = Struct::ACL::PUBLIC_READ
+          return_acl = ACL::PUBLIC_READ
 
           stub_request(:get, bucket_url)
             .with(:query => query)
@@ -138,7 +138,7 @@ module Aliyun
 
           stub_request(:put, bucket_url).with(:query => query)
 
-          @bucket.acl = Struct::ACL::PUBLIC_READ
+          @bucket.acl = ACL::PUBLIC_READ
 
           expect(WebMock).to have_requested(:put, bucket_url)
             .with(:query => query, :body => nil)

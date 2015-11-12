@@ -8,7 +8,6 @@ module Aliyun
     #    website, etc）
     # 2. object相关：上传、下载、追加、拷贝object等
     # 3. multipart相关：断点续传、断点续载
-    #
     class Bucket
 
       include Struct::Base
@@ -32,13 +31,13 @@ module Aliyun
       end
 
       # 获取Bucket的ACL
-      # @return [String] Bucket的{Struct::ACL ACL}
+      # @return [String] Bucket的{OSS::ACL ACL}
       def acl
         Protocol.get_bucket_acl(name)
       end
 
       # 设置Bucket的ACL
-      # @param acl [String] Bucket的{Struct::ACL ACL}
+      # @param acl [String] Bucket的{OSS::ACL ACL}
       def acl=(acl)
         Protocol.update_bucket_acl(name, acl)
       end
@@ -96,24 +95,21 @@ module Aliyun
       #  的请求访问Bucket
       # @option opts [Array<String>] [:referers] 设置允许访问Bucket的
       #  请求的Referer白名单
-      # @see
-      #  https://docs.aliyun.com/?spm=5176.383663.9.2.73fUTr#/pub/oss/product-documentation/function&referer-white-list
-      #  查看如何通过设置Referer来防盗链
       # @note 如果opts为空，则会删除这个bucket上的referer配置
       def referer=(opts)
         Protocol.update_bucket_referer(name, opts)
       end
 
       # 获取Bucket的生命周期配置
-      # @return [Array<Struct::LifeCycleRule>] Bucket的生命周期规则
+      # @return [Array<OSS::LifeCycleRule>] Bucket的生命周期规则
       def lifecycle
         Protocol.get_bucket_lifecycle(name)
       end
 
       # 设置Bucket的生命周期配置
-      # @param rules [Array<Struct::LifeCycleRule>] 生命
+      # @param rules [Array<OSS::LifeCycleRule>] 生命
       #  周期配置规则
-      # @see Struct::LifeCycleRule 查看如何设置生命周期规则
+      # @see OSS::LifeCycleRule 查看如何设置生命周期规则
       # @note 如果rules为空，则会删除这个bucket上的lifecycle配置
       def lifecycle=(rules)
         if rules.empty?
@@ -124,14 +120,14 @@ module Aliyun
       end
 
       # 获取Bucket的跨域资源共享(CORS)的规则
-      # @return [Array<Struct::CORSRule>] Bucket的CORS规则
+      # @return [Array<OSS::CORSRule>] Bucket的CORS规则
       def cors
         Protocol.get_bucket_cors(name)
       end
 
       # 设置Bucket的跨域资源共享(CORS)的规则
-      # @param rules [Array<Struct::CORSRule>] CORS规则
-      # @see Struct::CORSRule 查看如何设置CORS规则
+      # @param rules [Array<OSS::CORSRule>] CORS规则
+      # @see OSS::CORSRule 查看如何设置CORS规则
       # @note 如果rules为空，则会删除这个bucket上的CORS配置
       def cors=(rules)
         if rules.empty?
@@ -290,7 +286,7 @@ module Aliyun
       # @option opts [String] :acl 目标文件的acl属性，默认为private
       # @option opts [String] :meta_directive 指定是否拷贝源object的
       #  meta信息，转为为COPY：即拷贝object的时候也拷贝meta信息
-      # @see Struct::MetaDirective
+      # @see OSS::MetaDirective
       # @option opts [Hash] :condition 指定拷贝object需要满足的条件，
       #  同 {#get_object}
       def copy_object(source, dest, opts = {})
@@ -310,7 +306,7 @@ module Aliyun
       #  object
       # @option opts [String] :encoding 指定Server返回的成功删除的
       #  object的名字的编码方式，目前只支持url。See
-      #  {Struct::KeyEncoding}
+      #  {OSS::KeyEncoding}
       # @return [Array<String>] 成功删除的object的名字，如果指定
       #  了:quiet参数，则返回[]
       def batch_delete_objects(keys, opts = {})
@@ -319,21 +315,21 @@ module Aliyun
 
       # 设置object的ACL
       # @param key [String] Object的名字
-      # @param acl [String] Object的{Struct::ACL ACL}
+      # @param acl [String] Object的{OSS::ACL ACL}
       def update_object_acl(key, acl)
         Protocol.update_object_acl(name, key, acl)
       end
 
       # 获取object的ACL
       # @param key [String] Object的名字
-      # @return [String] object的{Struct::ACL ACL}
+      # @return [String] object的{OSS::ACL ACL}
       def get_object_acl(key)
         Protocol.get_object_acl(name, key)
       end
 
       # 获取object的CORS规则
       # @param key [String] Object的名字
-      # @return [Struct::CORSRule]
+      # @return [OSS::CORSRule]
       def get_object_cors(key)
         Protocol.get_object_cors(name, key)
       end

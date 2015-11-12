@@ -25,8 +25,8 @@ module Aliyun
         # * 2.  upload each unfinished part
         # * 3.  commit the multipart upload transaction
         def run
-          logger.info("Begin upload, file: #{@file}, checkpoint file: \
-                       #{@checkpoint_file}")
+          logger.info("Begin upload, file: #{@file}, checkpoint file: " \
+                      "#{@checkpoint_file}")
 
           # Rebuild transaction states from checkpoint file
           # Or initiate new transaction states
