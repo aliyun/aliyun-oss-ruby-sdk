@@ -413,7 +413,7 @@ module Aliyun
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
             'max-uploads' => 10,
-            'encoding-type' => 'url'
+            'encoding-type' => KeyEncoding::URL
           }
 
           stub_request(:get, request_path).with(:query => query)
@@ -425,7 +425,7 @@ module Aliyun
             :id_marker => 'id-marker',
             :key_marker => 'key-marker',
             :limit => 10,
-            :encoding => 'url'
+            :encoding => KeyEncoding::URL
           )
 
           expect(WebMock).to have_requested(:get, request_path)
@@ -441,7 +441,7 @@ module Aliyun
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
             'max-uploads' => 100,
-            'encoding-type' => 'url'
+            'encoding-type' => KeyEncoding::URL
           }
 
           return_multiparts = (1..5).map do |i|
@@ -473,7 +473,7 @@ module Aliyun
                   :id_marker => 'id-marker',
                   :key_marker => 'key-marker',
                   :limit => 100,
-                  :encoding => 'url')
+                  :encoding => KeyEncoding::URL)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)
@@ -491,7 +491,7 @@ module Aliyun
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
             'max-uploads' => 100,
-            'encoding-type' => 'url'
+            'encoding-type' => KeyEncoding::URL
           }
 
           return_multiparts = (1..5).map do |i|
@@ -518,7 +518,7 @@ module Aliyun
             :next_key_marker => '西湖のruby',
             :limit => 100,
             :truncated => true,
-            :encoding => 'url'
+            :encoding => KeyEncoding::URL
           }
 
           es_more = {
@@ -530,7 +530,7 @@ module Aliyun
             :next_key_marker => CGI.escape('西湖のruby'),
             :limit => 100,
             :truncated => true,
-            :encoding => 'url'
+            :encoding => KeyEncoding::URL
           }
 
           stub_request(:get, request_path)
@@ -544,7 +544,7 @@ module Aliyun
                   :id_marker => 'id-marker',
                   :key_marker => 'key-marker',
                   :limit => 100,
-                  :encoding => 'url')
+                  :encoding => KeyEncoding::URL)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)
@@ -592,7 +592,7 @@ module Aliyun
             'uploadId' => txn_id,
             'part-number-marker' => 'foo-',
             'max-parts' => 100,
-            'encoding-type' => 'url'
+            'encoding-type' => KeyEncoding::URL
           }
 
           stub_request(:get, request_path).with(:query => query)
@@ -600,7 +600,7 @@ module Aliyun
           Protocol.list_parts(@bucket, @object, txn_id,
                           :marker => 'foo-',
                           :limit => 100,
-                          :encoding => 'url')
+                          :encoding => KeyEncoding::URL)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)
@@ -612,7 +612,7 @@ module Aliyun
             'uploadId' => txn_id,
             'part-number-marker' => 'foo-',
             'max-parts' => 100,
-            'encoding-type' => 'url'
+            'encoding-type' => KeyEncoding::URL
           }
 
           return_parts = (1..5).map do |i|
@@ -637,7 +637,7 @@ module Aliyun
           parts, more = Protocol.list_parts(@bucket, @object, txn_id,
                           :marker => 'foo-',
                           :limit => 100,
-                          :encoding => 'url')
+                          :encoding => KeyEncoding::URL)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)

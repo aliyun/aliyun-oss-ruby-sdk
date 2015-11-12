@@ -238,7 +238,7 @@ module Aliyun
             :prefix => 'foo-',
             :delimiter => '-',
             :limit => 10,
-            :encoding => 'url'}
+            :encoding => KeyEncoding::URL}
 
           query = opts.clone
           query['max-keys'] = query.delete(:limit)
@@ -259,7 +259,7 @@ module Aliyun
             :prefix => 'foo-',
             :delimiter => '-',
             :limit => 10,
-            :encoding => 'url',
+            :encoding => KeyEncoding::URL,
             :next_marker => 'foo-xxx',
             :truncated => true,
             :common_prefixes => ['foo/bar/', 'foo/xxx/']
@@ -270,7 +270,7 @@ module Aliyun
             :prefix => 'foo-',
             :delimiter => '-',
             :limit => 10,
-            :encoding => 'url'
+            :encoding => KeyEncoding::URL
           }
 
           query = opts.clone
@@ -296,7 +296,7 @@ module Aliyun
             :prefix => 'foo-',
             :delimiter => '分隔のruby',
             :limit => 10,
-            :encoding => 'url',
+            :encoding => KeyEncoding::URL,
             :next_marker => '西湖のruby',
             :truncated => true,
             :common_prefixes => ['玉泉のruby', '苏堤のruby']
@@ -308,7 +308,7 @@ module Aliyun
             :prefix => 'foo-',
             :delimiter => CGI.escape('分隔のruby'),
             :limit => 10,
-            :encoding => 'url',
+            :encoding => KeyEncoding::URL,
             :next_marker => CGI.escape('西湖のruby'),
             :truncated => true,
             :common_prefixes => [CGI.escape('玉泉のruby'), CGI.escape('苏堤のruby')]

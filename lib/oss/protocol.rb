@@ -614,7 +614,8 @@ module Aliyun
         # @option more [Boolean] :truncated whether there are more
         #  buckets to be returned
         # @option opts [String] :encoding the encoding of object key
-        #  in the response body. Only 'url' is supported now.
+        #  in the response body. Only {OSS::KeyEncoding::URL} is
+        #  supported now.
         # @return [Array<Objects>, Hash] the returned object and a
         # hash including the next tokens
         def list_objects(bucket_name, opts = {})
@@ -912,7 +913,8 @@ module Aliyun
         # @option opts [Boolean] :quiet indicates whether the server
         #  should return the delete result of the objects
         # @option opts [String] :encoding-type the encoding type for
-        #  object key in the response body, only 'url' is supported now
+        #  object key in the response body, only
+        #  {OSS::KeyEncoding::URL} is supported now
         # @return [Array<String>] object names that have been
         #  successfully deleted or empty if :quiet is true
         def batch_delete_objects(bucket_name, object_names, opts = {})
@@ -1377,7 +1379,7 @@ module Aliyun
           raise ClientError.new("Unsupported key encoding: #{encoding}") \
                     unless KeyEncoding.include?(encoding)
 
-          if encoding == 'url'
+          if encoding == KeyEncoding::URL
             return CGI.unescape(key)
           end
         end

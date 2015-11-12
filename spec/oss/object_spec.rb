@@ -616,7 +616,7 @@ module Aliyun
 
         it "should batch delete objects" do
           url = get_request_path
-          query = {'delete' => '', 'encoding-type' => 'url'}
+          query = {'delete' => '', 'encoding-type' => KeyEncoding::URL}
 
           object_names = (1..5).map do |i|
             "object-#{i}"
@@ -626,7 +626,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_delete_result(object_names))
 
-          opts = {:quiet => false, :encoding => 'url'}
+          opts = {:quiet => false, :encoding => KeyEncoding::URL}
           deleted = Protocol.batch_delete_objects(@bucket, object_names, opts)
 
           expect(WebMock).to have_requested(:post, url)
@@ -636,7 +636,7 @@ module Aliyun
 
         it "should decode object key in batch delete response" do
           url = get_request_path
-          query = {'delete' => '', 'encoding-type' => 'url'}
+          query = {'delete' => '', 'encoding-type' => KeyEncoding::URL}
 
           object_names = (1..5).map do |i|
             "对象-#{i}"
@@ -644,7 +644,7 @@ module Aliyun
           es_objects = (1..5).map do |i|
             CGI.escape "对象-#{i}"
           end
-          opts = {:quiet => false, :encoding => 'url'}
+          opts = {:quiet => false, :encoding => KeyEncoding::URL}
 
           stub_request(:post, url)
             .with(:query => query)

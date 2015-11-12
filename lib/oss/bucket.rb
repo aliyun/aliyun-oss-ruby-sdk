@@ -158,7 +158,7 @@ module Aliyun
       #  录。用delimiter获取公共前缀的方法避免了查询当前bucket下的所有
       # object（可能数量巨大），是用于模拟目录结构的常用做法。
       # @option opts [String] :encoding 指定返回的响应中object名字的编
-      #  码方法，目前只支持'url'编码方式。
+      #  码方法，目前只支持{OSS::KeyEncoding::URL}编码方式。
       # @return [Enumerator<Object>] 其中Object可能是{OSS::Object}，也
       #  可能是{String}，此时它是一个公共前缀
       def list_objects(opts = {})
