@@ -764,7 +764,7 @@ module Aliyun
         # @param object_name [String] the object name
         # @param opts [Hash] options
         # @option opts [Hash] :condition preconditions to get the
-        #  object meta. The same as {#get_object}
+        #  object meta. The same as #get_object
         def get_object_meta(bucket_name, object_name, opts = {})
           logger.debug("Begin get object meta, bucket: #{bucket_name}, \
                         object: #{object_name}, options: #{opts}")

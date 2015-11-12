@@ -26,7 +26,6 @@ module Aliyun
       end
 
       # 删除一个bucket
-      # @param name [String] Bucket名字
       # @note 如果要删除的Bucket不为空（包含有object），则删除会失败
       def delete!
         Protocol.delete_bucket(name)
@@ -178,7 +177,7 @@ module Aliyun
       #  Content-Type，默认是application/octet-stream
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
       #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
-      #  返回这些meta。属性的key不区分大小写。例如：{'year' => '2015'}
+      #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @yield [HTTP::StreamWriter] 如果调
       #  用的时候传递了block，则写入到object的数据由block指定
       # @example streaming put object
@@ -259,7 +258,7 @@ module Aliyun
       #  Content-Type，默认是application/octet-stream
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
       #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
-      #  返回这些meta。属性的key不区分大小写。例如：{'year' => '2015'}
+      #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @yield [HTTP::StreamWriter] 同 {#put_object}
       def append_object(key, pos, opts = {}, &block)
         file = opts[:file]
@@ -343,7 +342,7 @@ module Aliyun
       #  Content-Type，默认是application/octet-stream
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
       #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
-      #  返回这些meta。属性的key不区分大小写。例如：{'year' => '2015'}
+      #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
       #  默认为1 MB
       # @option opts [String] :resume_token 断点续传的token文件，如果
