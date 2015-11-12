@@ -2,6 +2,9 @@ language: ruby
 default:
   prepare:
     exec:
+      - yum install ruby19
+      - export PATH=/opt/ruby19/bin:$PATH
+      - export LD_LIBRARY_PATH=/opt/ruby19/lib64
       - bundle install
   unit_test:
     exec:

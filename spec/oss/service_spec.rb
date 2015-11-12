@@ -9,13 +9,9 @@ module Aliyun
 
     describe "Service" do
       before :all do
-        creds_file = "~/.oss.yml"
-        creds = YAML.load(File.read(File.expand_path(creds_file)))
-        Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
-
-        @host = 'oss.aliyuncs.com'
-        Config.set_endpoint(@host)
-        Config.set_credentials(creds['id'], creds['key'])
+        @endpoint = 'oss.aliyuncs.com'
+        Config.set_endpoint(@endpoint)
+        Config.set_credentials('xxx', 'yyy')
 
         @all_buckets = []
         (1..10).each do |i|
@@ -61,17 +57,17 @@ module Aliyun
       context "List all buckets" do
         # 测试list_buckets正确地发送了HTTP请求
         it "should send correct request" do
-          stub_request(:get, @host)
+          stub_request(:get, @endpoint)
 
           Protocol.list_buckets
 
-          expect(WebMock).to have_requested(:get, @host).
+          expect(WebMock).to have_requested(:get, @endpoint).
                               with(:body => nil, :query => {})
         end
 
         # 测试list_buckets正确地解析了list_buckets的返回
         it "should correctly parse response" do
-          stub_request(:get, @host).to_return(
+          stub_request(:get, @endpoint).to_return(
             {:body => mock_response(@all_buckets, {})})
 
           buckets, more = Protocol.list_buckets
@@ -91,13 +87,13 @@ module Aliyun
           marker = 'rubysdk-bucket-002'
           limit = 5
 
-          stub_request(:get, @host).with(
+          stub_request(:get, @endpoint).with(
             :query => {'prefix' => prefix, 'marker' => marker, 'max-keys' => limit})
 
           Protocol.list_buckets(
             :prefix => prefix, :limit => limit, :marker => marker)
 
-          expect(WebMock).to have_requested(:get, @host).
+          expect(WebMock).to have_requested(:get, @endpoint).
             with(:body => nil,
                  :query => {'prefix' => prefix,
                             'marker' => marker,
@@ -116,7 +112,7 @@ module Aliyun
           more = {:prefix => prefix, :marker => marker, :limit => limit,
                   :next_marker => next_marker, :truncated => true}
 
-          stub_request(:get, @host).with(
+          stub_request(:get, @endpoint).with(
             :query => {'prefix' => prefix, 'marker' => marker, 'max-keys' => limit}
           ).to_return(
             {:body => mock_response(return_buckets, more)})

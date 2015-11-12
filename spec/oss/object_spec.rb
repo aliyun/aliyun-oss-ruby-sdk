@@ -12,12 +12,8 @@ module Aliyun
       before :all do
         @endpoint = 'oss.aliyuncs.com'
 
-        creds_file = "~/.oss.yml"
-        creds = YAML.load(File.read(File.expand_path(creds_file)))
-        Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
-
         Config.set_endpoint(@endpoint)
-        Config.set_credentials(creds['id'], creds['key'])
+        Config.set_credentials('xxx', 'yyy')
         @bucket = 'rubysdk-bucket'
       end
 
