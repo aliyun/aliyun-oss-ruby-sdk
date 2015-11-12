@@ -5,6 +5,7 @@ default:
       - yum install ruby19
       - export PATH=/opt/ruby19/bin:$PATH
       - export LD_LIBRARY_PATH=/opt/ruby19/lib64
+      - gem install bundler
       - bundle install
   unit_test:
     exec:
