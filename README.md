@@ -37,7 +37,7 @@ AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
 
 其中`endpoint`是OSS服务的地址，根据节点区域不同，这个地址可能不一样，例如
 杭州节点的地址是：`oss-cn-hangzhou.oss.aliyuncs.com`，其他节点的地址见：
-https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/domain-region
+[节点列表][1]
 
 `access_key_id`和`access_key_secret`是您的服务凭证，在官网的“管理控制
 台”上面可以查看。**请妥善保管您的AccessKeySecret，泄露之后可能影响您的
@@ -196,5 +196,7 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 ## 更多
 
 请查看  
-阿里云官网文档：  
-SDK API文档：
+阿里云官网文档：https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss
+SDK API文档：http://gitlab.alibaba-inc.com/oss/ruby-sdk/tree/master
+
+[1]: https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/domain-region
