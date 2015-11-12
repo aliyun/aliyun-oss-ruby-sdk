@@ -28,10 +28,6 @@ module Aliyun
         File.delete("#{@file}.token") if File.exist?("#{@file}.token")
       end
 
-      def bucket_url
-        "#{@bucket_name}.#{@endpoint}"
-      end
-
       def object_url
         "#{@bucket_name}.#{@endpoint}/#{@object_key}"
       end

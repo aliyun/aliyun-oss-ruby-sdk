@@ -261,7 +261,8 @@ module Aliyun
             :limit => 10,
             :encoding => 'url',
             :next_marker => 'foo-xxx',
-            :truncated => true
+            :truncated => true,
+            :common_prefixes => ['foo/bar/', 'foo/xxx/']
           }
 
           opts = {
@@ -297,7 +298,8 @@ module Aliyun
             :limit => 10,
             :encoding => 'url',
             :next_marker => '西湖のruby',
-            :truncated => true
+            :truncated => true,
+            :common_prefixes => ['玉泉のruby', '苏堤のruby']
           }
 
           es_objects = [CGI.escape('中国のruby'), 'world', 'foo/bar']
@@ -308,7 +310,8 @@ module Aliyun
             :limit => 10,
             :encoding => 'url',
             :next_marker => CGI.escape('西湖のruby'),
-            :truncated => true
+            :truncated => true,
+            :common_prefixes => [CGI.escape('玉泉のruby'), CGI.escape('苏堤のruby')]
           }
 
           stub_request(:get, request_path)

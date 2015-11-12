@@ -49,12 +49,6 @@ module Aliyun
 
       private
 
-      def get_node_text(node, tag)
-        n = node.at_css(tag) if node
-        value = n.text if n
-        value
-      end
-
       def get_request_id(response)
         r = response.headers[:x_oss_request_id] if response.headers
         r.to_s

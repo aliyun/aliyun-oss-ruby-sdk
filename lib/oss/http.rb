@@ -265,10 +265,6 @@ module Aliyun
           "aliyun-sdk-ruby/#{VERSION}"
         end
 
-        def get_request_id(response)
-          response.headers[:x_oss_request_id]
-        end
-
       end # self
 
     end # HTTP

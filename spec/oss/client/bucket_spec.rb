@@ -25,34 +25,6 @@ module Aliyun
         "#{@bucket_name}.#{@endpoint}/#{object}"
       end
 
-      def mock_buckets(buckets, more = {})
-        Nokogiri::XML::Builder.new do |xml|
-          xml.ListAllMyBucketsResult {
-            xml.Owner {
-              xml.ID 'owner_id'
-              xml.DisplayName 'owner_name'
-            }
-            xml.Buckets {
-              buckets.each do |b|
-                xml.Bucket {
-                  xml.Location b.location
-                  xml.Name b.name
-                  xml.CreationDate b.creation_time.to_s
-                }
-              end
-            }
-
-            unless more.empty?
-              xml.Prefix more[:prefix]
-              xml.Marker more[:marker]
-              xml.MaxKeys more[:limit].to_s
-              xml.NextMarker more[:next_marker]
-              xml.IsTruncated more[:truncated]
-            end
-          }
-        end.to_xml
-      end
-
       def mock_objects(objects, more = {})
         Nokogiri::XML::Builder.new do |xml|
           xml.ListBucketResult {
