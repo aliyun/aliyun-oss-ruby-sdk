@@ -249,6 +249,15 @@ module Aliyun
         Protocol.get_object_meta(name, key, opts)
       end
 
+      # 判断一个object是否存在
+      # @param key [String] Object的名字
+      # @return [Boolean] 如果Object存在返回true，否则返回false
+      def object_exists?(key)
+        get_object_meta(key) != nil rescue false
+      end
+
+      alias :object_exist? :object_exists?
+
       # 向Bucket中的object追加内容。如果object不存在，则创建一个
       # Appendable Object。
       # @param key [String] Object的名字

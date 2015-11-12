@@ -228,6 +228,37 @@ module Aliyun
                          .with(:query => query, :body => content,
                                :headers => {'Content-Type' => 'text/html'})
         end
+
+        it "should answer object exists?" do
+          key = 'ruby'
+
+          stub_request(:head, object_url(key))
+            .to_return(:status => 404).times(3)
+
+          expect {
+            @bucket.get_object_meta(key)
+          }.to raise_error(Exception, "InternalError")
+
+          expect(@bucket.object_exists?(key)).to be false
+          expect(@bucket.object_exist?(key)).to be false
+
+          last_modified = Time.now.rfc822
+          return_headers = {
+            'x-oss-object-type' => 'Normal',
+            'ETag' => 'xxxyyyzzz',
+            'Content-Length' => 1024,
+            'Last-Modified' => last_modified,
+            'x-oss-meta-year' => '2015',
+            'x-oss-meta-people' => 'mary'
+          }
+
+          stub_request(:head, object_url(key))
+            .to_return(:headers => return_headers).times(2)
+
+          expect(@bucket.object_exists?(key)).to be true
+          expect(@bucket.object_exist?(key)).to be true
+        end
+
       end # object operations
 
     end # Bucket
