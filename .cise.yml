@@ -10,6 +10,3 @@ default:
   unit_test:
     exec:
       - bundle exec rake spec
-  run_it:
-    exec:
-      - bundle exec rake example

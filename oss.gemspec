@@ -11,11 +11,11 @@ Gem::Specification.new do |spec|
   spec.email         = ['tianlong.wtl@alibaba-inc.com']
 
   spec.summary       = 'Aliyun OSS Ruby SDK'
-  spec.description   = 'Ruby SDK for Aliyun Object Storage Service'
+  spec.description   = 'A Ruby program to facilitate accessing Aliyun Object Storage Service'
   spec.homepage      = 'https://gitlab.alibaba-inc.com/oss/ruby-sdk'
 
-  spec.files         = `git ls-files -z`.split("\0")
-  spec.test_files    = `git ls-files -z spec/`.split("\0")
+  spec.files         = Dir.glob("lib/**/*.rb")
+  spec.test_files    = Dir.glob("spec/**/*_spec.rb")
   spec.bindir        = 'bin'
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
