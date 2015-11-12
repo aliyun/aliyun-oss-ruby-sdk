@@ -1,0 +1,11 @@
+language: ruby
+default:
+  prepare:
+    exec:
+      - bundle install
+  run_test:
+    exec:
+      - bundle exec rake spec
+  run_example:
+    exec:
+      - bundle exec rake example
