@@ -13,7 +13,7 @@ bucket = Aliyun::OSS::Client.new(
 # 上传一个object
 # 流式上传请参考：examples/streaming.rb
 bucket.put_object('files/hello') do |content|
-  content.write_and_finish 'hello world.'
+  content << 'hello world.'
 end
 
 # 上传一个文件
@@ -24,20 +24,20 @@ bucket.put_object('files/world', :file => '/tmp/x')
 # 创建一个Appendable object
 size = bucket.get_object_meta('files/appendable').size rescue 0
 bucket.append_object('files/appendable', size) do |content|
-  content.write_and_finish 'hello appendable.'
+  content << 'hello appendable.'
 end
 
 # 向files/appendable中追加内容
 # 首先要获取object当前的长度
 size = bucket.get_object_meta('files/appendable').size
 bucket.append_object('files/appendable', size) do |content|
-  content.write_and_finish 'again appendable.'
+  content << 'again appendable.'
 end
 
 # 使用错误的position进行追加会失败
 begin
   bucket.append_object('files/appendable', 0) do |content|
-    content.write_and_finish 'again appendable.'
+    content << 'again appendable.'
   end
 rescue => e
   puts "Append failed: #{e.message}"
@@ -46,7 +46,7 @@ end
 # 向一个normal object中追加内容会失败
 begin
   bucket.append_object('files/hello', 0) do |content|
-    content.write_and_finish 'hello appendable.'
+    content << 'hello appendable.'
   end
 rescue => e
   puts "Append object failed: #{e.message}"

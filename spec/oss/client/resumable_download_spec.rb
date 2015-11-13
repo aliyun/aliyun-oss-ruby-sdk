@@ -73,7 +73,7 @@ module Aliyun
         expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
       end
 
-      it "should resume when download part fails", :focus => true do
+      it "should resume when download part fails" do
         return_headers = {
           'x-oss-object-type' => 'Normal',
           'ETag' => 'xxxyyyzzz',

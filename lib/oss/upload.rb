@@ -137,7 +137,7 @@ module Aliyun
             f.seek(pos)
 
             result = Protocol.upload_part(bucket, object, id, p[:number]) do |sw|
-              if pos < range.at(1)
+              while pos < range.at(1)
                 bytes = [READ_SIZE, range.at(1) - pos].min
                 sw << f.read(bytes)
                 pos += bytes

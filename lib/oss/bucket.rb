@@ -19,7 +19,6 @@ module Aliyun
       # 创建一个bucket
       # @param opts [Hash] 创建Bucket的属性（可选）
       # @option opts [:location] [String] 指定bucket所在的区域，默认为oss-cn-hangzhou
-      #  可以到 {http://aliyun.com} 查看完整的区域列表
       def create!(opts = {})
         Protocol.create_bucket(name, opts)
       end
@@ -43,7 +42,7 @@ module Aliyun
       end
 
       # 获取Bucket的logging配置
-      # @return [Hash] Bucket的logging配置。See #logging=
+      # @return [Hash] Bucket的logging配置。见{#logging=}
       def logging
         Protocol.get_bucket_logging(name)
       end
@@ -53,7 +52,7 @@ module Aliyun
       # @option opts [Boolean] [:enable] 是否开启logging
       # @option opts [String] [:target_bucket] 用于存放日志object的bucket名字
       # @option opts [String] [:prefix] 开启日志的object的前缀，若不指
-      # 定则对bucket下的所有object都开启
+      #  定则对bucket下的所有object都开启
       # @note 如果opts为空，则会删除这个bucket上的logging配置
       def logging=(opts)
         if opts.empty?
@@ -127,7 +126,6 @@ module Aliyun
 
       # 设置Bucket的跨域资源共享(CORS)的规则
       # @param rules [Array<OSS::CORSRule>] CORS规则
-      # @see OSS::CORSRule 查看如何设置CORS规则
       # @note 如果rules为空，则会删除这个bucket上的CORS配置
       def cors=(rules)
         if rules.empty?
@@ -140,7 +138,7 @@ module Aliyun
       ### Object相关的API ###
 
 
-      # 列出bucket中的object.
+      # 列出bucket中的object
       # @param opts [Hash] 查询选项
       # @option opts [String] :prefix 返回的object的前缀，如果设置则只
       #  返回那些名字以它为前缀的object
@@ -156,11 +154,20 @@ module Aliyun
       #  用'foo/'作为前缀, '/'作为分隔符, 则得到的公共前缀是：
       #  '/foo/bar/', '/foo/xxx/'。它们恰好就是目录'/foo/'下的所有子目
       #  录。用delimiter获取公共前缀的方法避免了查询当前bucket下的所有
-      # object（可能数量巨大），是用于模拟目录结构的常用做法。
+      #   object（可能数量巨大），是用于模拟目录结构的常用做法。
       # @option opts [String] :encoding 指定返回的响应中object名字的编
       #  码方法，目前只支持{OSS::KeyEncoding::URL}编码方式。
       # @return [Enumerator<Object>] 其中Object可能是{OSS::Object}，也
       #  可能是{String}，此时它是一个公共前缀
+      # @example
+      #  all = bucket.list_objects
+      #  all.each do |i|
+      #    if i.is_a?(Object)
+      #      puts "Object: #{i.key}"
+      #    else
+      #      puts "Common prefix: #{i}"
+      #    end
+      #  end
       def list_objects(opts = {})
         Iterator::Objects.new(name, opts).to_enum
       end
@@ -176,9 +183,14 @@ module Aliyun
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @yield [HTTP::StreamWriter] 如果调
       #  用的时候传递了block，则写入到object的数据由block指定
-      # @example streaming put object
-      #   chunk = get_chunk
-      #   put_object('x') {|sw| sw.write(chunk)}
+      # @example 流式上传数据
+      #   put_object('x'){ |stream| 100.times{ |i| stream << i.to_s } }
+      #   put_object('x'){ |stream| stream << get_data }
+      # @example 上传文件
+      #   put_object('x', :file => '/tmp/x')
+      # @example 指定Content-Type和metas
+      #   put_object('x', :file => '/tmp/x', :content_type => 'text/html',
+      #              :metas => {'year' => '2015', 'people' => 'mary'})
       # @note 采用streaming的方式时，提供的数据必须是有结束标记的数据。
       #  因为put_object会不断地从StreamWriter中读取数据上传到OSS，直到
       #  它读到的数据为nil停止。
@@ -188,9 +200,9 @@ module Aliyun
         if file
           opts[:content_type] = get_content_type(file)
 
-          File.open(File.expand_path(file)) do |f|
-            Protocol.put_object(name, key, opts) do |sw|
-              sw << f.read(Protocol::STREAM_CHUNK_SIZE) unless f.eof?
+          Protocol.put_object(name, key, opts) do |sw|
+            File.open(File.expand_path(file)) do |f|
+              sw << f.read(Protocol::STREAM_CHUNK_SIZE) until f.eof?
             end
           end
         else
@@ -202,8 +214,7 @@ module Aliyun
       # @param key [String] Object的名字
       # @param opts [Hash] 下载Object的选项（可选）
       # @option opts [Array<Integer>] :range 指定下载object的部分数据，
-      #  range包含起始字节（包含）和结束字节（不包含），如[0, 200]
-      #  表示下载object的前199个字节
+      #  range应只包含两个数字，表示一个*左开右闭*的bytes range
       # @option opts [String] :file 指定将下载的object写入到文件中
       # @option opts [Hash] :condition 指定下载object需要满足的条件
       #   * :if_modified_since (Time) 指定如果object的修改时间晚于这个值，则下载
@@ -219,9 +230,14 @@ module Aliyun
       #   * :content_encoding (String) 指定返回的响应中Content-Encoding的值
       # @return [OSS::Object] 返回Object对象
       # @yield [String] 如果调用的时候传递了block，则获取到的object的数据交由block处理
-      # @example streaming get object
-      #   file = open_file
-      #   get_object('x') {|chunk| file.write(chunk) }
+      # @example 流式下载文件
+      #   get_object('x'){ |chunk| handle_chunk_data(chunk) }
+      # @example 下载到本地文件
+      #   get_object('x', :file => '/tmp/x')
+      # @example 指定检查条件
+      #   get_object('x', :file => '/tmp/x', :condition => {:if_match_etag => 'etag'})
+      # @example 指定重写响应的header信息
+      #   get_object('x', :file => '/tmp/x', :rewrite => {:content_type => 'text/html'})
       # @note 注意：如果opts中指定了:file，则block会被忽略
       def get_object(key, opts = {}, &block)
         obj = nil
@@ -239,7 +255,7 @@ module Aliyun
         obj
       end
 
-      # 从Bucket中下载一个object
+      # 获取Object的meta而不下载Object内容
       # @param key [String] Object的名字
       # @param opts [Hash] 下载Object的选项（可选）
       # @option opts [Hash] :condition 指定下载object需要满足的条件，
@@ -276,6 +292,14 @@ module Aliyun
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
       #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
+      # @example 流式上传数据
+      #   pos = append_object('x', 0){ |stream| 100.times{ |i| stream << i.to_s } }
+      #   append_object('x', pos){ |stream| stream << get_data }
+      # @example 上传文件
+      #   append_object('x', 0, :file => '/tmp/x')
+      # @example 指定Content-Type和metas
+      #   append_object('x', 0, :file => '/tmp/x', :content_type => 'text/html',
+      #                 :metas => {'year' => '2015', 'people' => 'mary'})
       # @return [Integer] 返回下次append的位置
       # @yield [HTTP::StreamWriter] 同 {#put_object}
       def append_object(key, pos, opts = {}, &block)
@@ -284,9 +308,9 @@ module Aliyun
         if file
           opts[:content_type] = get_content_type(file)
 
-          File.open(File.expand_path(file)) do |f|
-            next_pos = Protocol.append_object(name, key, pos, opts) do |sw|
-              sw << f.read(Protocol::STREAM_CHUNK_SIZE) unless f.eof?
+          next_pos = Protocol.append_object(name, key, pos, opts) do |sw|
+            File.open(File.expand_path(file)) do |f|
+              sw << f.read(Protocol::STREAM_CHUNK_SIZE) until f.eof?
             end
           end
         else
@@ -302,8 +326,13 @@ module Aliyun
       # @param opts [Hash] 拷贝object时的选项（可选）
       # @option opts [String] :acl 目标文件的acl属性，默认为private
       # @option opts [String] :meta_directive 指定是否拷贝源object的
-      #  meta信息，转为为COPY：即拷贝object的时候也拷贝meta信息
-      # @see OSS::MetaDirective
+      #  meta信息，默认为{OSS::MetaDirective::COPY}：即拷贝object的时
+      #  候也拷贝meta信息。
+      # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
+      #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
+      #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015'
+      #  }。如果:meta_directive为{OSS::MetaDirective::COPY}，则:metas
+      #  会被忽略。
       # @option opts [Hash] :condition 指定拷贝object需要满足的条件，
       #  同 {#get_object}
       def copy_object(source, dest, opts = {})
@@ -322,8 +351,7 @@ module Aliyun
       # @option opts [Boolean] :quiet 指定是否允许Server返回成功删除的
       #  object
       # @option opts [String] :encoding 指定Server返回的成功删除的
-      #  object的名字的编码方式，目前只支持url。See
-      #  {OSS::KeyEncoding}
+      #  object的名字的编码方式，目前只支持{OSS::KeyEncoding::URL}
       # @return [Array<String>] 成功删除的object的名字，如果指定
       #  了:quiet参数，则返回[]
       def batch_delete_objects(keys, opts = {})
@@ -355,7 +383,7 @@ module Aliyun
       # 断点续传相关的API
       #
 
-      # 上传一个本地文件到bucket中的一个object
+      # 上传一个本地文件到bucket中的一个object，支持断点续传。
       # @param key [String] Object的名字
       # @param file [String] 本地文件的路径
       # @param opts [Hash] 上传文件的可选项
@@ -365,7 +393,8 @@ module Aliyun
       #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
-      #  默认为1 MB
+      #  默认为1 MB。断点上传最多允许10000个分片，如果文件大于10000个
+      #  分片的大小，则每个分片的大小会大于1MB。
       # @option opts [String] :resume_token 断点续传的token文件，如果
       #  指定的token文件不存在，则开始一个新的上传，在上传的过程中会更
       #  新此文件；如果指定的token文件存在，则从token文件中记录的点继续
@@ -387,11 +416,13 @@ module Aliyun
         ).run
       end
 
-      # 下载bucket中的一个object到本地文件
+      # 下载bucket中的一个object到本地文件，支持断点续传。
       # @param key [String] Object的名字
       # @param file [String] 本地文件的路径
       # @param opts [Hash] 下载文件的可选项
-      # @option opts [Array<Integer>] :range 指定下载object的部分数据
+      # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
+      #  默认为1 MB。断点下载最多允许100个分片，如果文件大于100个分片，
+      #  则每个分片的大小会大于1MB
       # @option opts [String] :resume_token 断点继续下载的token文件，
       #  如果指定的token文件不存在，则开始一个新的上传，在上传的过程中
       #  会更新此文件；如果指定的token文件存在，则从token文件中记录的点
@@ -405,7 +436,7 @@ module Aliyun
       # @raise [PartsMissingError] 如果已下载的部分(.part
       #  文件)找不到，则抛出此错误
       # @note 已经下载的部分会在file所在的目录创建.part文件，命名方式
-      #  为file.part
+      #  为file.part.N
       def resumable_download(key, file, opts = {})
         unless resume_token = opts[:resume_token]
           resume_token = get_resume_token(file)

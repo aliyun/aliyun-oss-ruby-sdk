@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 require 'rest-client'
+require 'fiber'
 
 module Aliyun
   module OSS
@@ -26,65 +27,44 @@ module Aliyun
     #   end
     #
     #   streaming_upload do |stream|
-    #     stream << "hello world" << HTTP::ENDS
+    #     stream << "hello world"
     #   end
     class HTTP
 
-      # Mark as the stream end
-      class StreamEnd; end
-
-      ENDS = StreamEnd.new
       DEFAULT_CONTENT_TYPE = 'application/octet-stream'
 
       ##
       # A stream implementation
-      # A stream is any class that responses to :read(bytes, outbuf)
+      # A stream is any class that responds to :read(bytes, outbuf)
       #
       class StreamWriter
-        def initialize(block = nil)
-          @block = block
+        def initialize
           @chunks = []
-          @done = false
+          @producer = Fiber.new{ yield self if block_given? }
+          @producer.resume
         end
 
         def read(bytes = nil, outbuf = nil)
           # WARNING: Using outbuf = '' here DOES NOT work!
           outbuf.clear if outbuf
 
-          @block.call(self) if @chunks.empty? and @block and not closed?
-          return nil if @chunks.empty?
+          c = @chunks.shift
+          outbuf << c if outbuf and c and not c.empty?
+          @producer.resume if @producer.alive?
 
-          chunk = @chunks.shift
-          outbuf << chunk if outbuf and chunk
-
-          chunk
+          c
         end
 
         def write(chunk)
-          raise ClientError.new("Cannot write a closed stream writer") if closed?
-
-          if chunk.is_a?(StreamEnd)
-            @done = true
-            return self
-          end
-
           @chunks << chunk
+          Fiber.yield
           self
         end
 
         alias << write
 
-        def write_and_finish(chunk)
-          write(chunk)
-          close!
-        end
-
-        def close!
-          @done = true
-        end
-
         def closed?
-          @done
+          false
         end
       end
 
@@ -99,8 +79,8 @@ module Aliyun
       #     net_http_do_request(http, req, payload ? payload.to_s : nil,
       #                     &@block_response)
       class StreamPayload
-        def initialize(block)
-          @stream = StreamWriter.new(block)
+        def initialize(&block)
+          @stream = StreamWriter.new(&block)
         end
 
         def read(bytes = nil)
@@ -145,9 +125,7 @@ module Aliyun
           else
           # streaming read body on success
             r.read_body do |chunk|
-              decoded_chunk =
-                RestClient::Request.decode(r['content-encoding'], chunk)
-              block.call(decoded_chunk)
+              yield RestClient::Request.decode(r['content-encoding'], chunk)
             end
           end
         end

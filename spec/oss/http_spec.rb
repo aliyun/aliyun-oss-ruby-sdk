@@ -9,66 +9,18 @@ module Aliyun
 
       context HTTP::StreamWriter do
         it "should read out chunks that are written" do
-          sr = HTTP::StreamWriter.new
-
-          10.times do
-            sr << 'hello world'
-            bytes, outbuf = 0, ''
-            sr.read(bytes, outbuf)
-
-            expect(outbuf).to eq('hello world')
-          end
-        end
-
-        it "should call block to fetch data" do
-          called = 0
-          sr = HTTP::StreamWriter.new(lambda {|r| called += 1; r << 'hello world'})
-
-          10.times do
-            bytes, outbuf = 0, ''
-            sr.read(bytes, outbuf)
-
-            expect(outbuf).to eq('hello world')
+          s = HTTP::StreamWriter.new do |sr|
+            10.times{ |i| sr << "hello, #{i}" }
           end
 
-          expect(called).to eq(10)
-        end
-
-        it "should close when write HTTP::ENDS" do
-          sr = HTTP::StreamWriter.new
-
-          expect(sr.closed?).to be false
-
-          sr << 'hello world' << HTTP::ENDS
-
-          expect(sr.closed?).to be true
-        end
-
-        it "should raise error when write a closed stream reader" do
-          sr = HTTP::StreamWriter.new
-          sr << 'hello world' << HTTP::ENDS
-
-          expect {
-            sr << 'hello world'
-          }.to raise_error(ClientError)
-        end
-
-        it "should read all chunk before closed" do
-          sr = HTTP::StreamWriter.new
-
-          5.times {sr << 'hello world'}
-          sr.close!
-
-          5.times do
-            bytes, outbuf = 0, ""
-            sr.read(bytes, outbuf)
-
-            expect(outbuf).to eq('hello world')
+          10.times do |i|
+            bytes, outbuf = nil, ""
+            s.read(bytes, outbuf)
+            expect(outbuf).to eq("hello, #{i}")
           end
         end
-
       end # StreamWriter
-    end # HTTP
 
+    end # HTTP
   end # OSS
 end # Aliyun

@@ -133,7 +133,7 @@ module Aliyun
           stub_request(:put, url)
 
           Protocol.put_object(@bucket, object_name) do |content|
-            content << 'hello world' << HTTP::ENDS
+            content << 'hello world'
           end
 
           expect(WebMock).to have_requested(:put, url)
@@ -149,7 +149,7 @@ module Aliyun
           Protocol.put_object(
             @bucket, object_name, :content_type => 'application/ruby'
           ) do |content|
-            content << 'hello world' << HTTP::ENDS
+            content << 'hello world'
           end
 
           expect(WebMock).to have_requested(:put, url)
@@ -179,7 +179,7 @@ module Aliyun
           Protocol.put_object(
             @bucket, object_name, :metas => {'year' => '2015', 'people' => 'mary'}
           ) do |content|
-            content << 'hello world' << HTTP::ENDS
+            content << 'hello world'
           end
 
           expect(WebMock).to have_requested(:put, url)
@@ -241,7 +241,7 @@ module Aliyun
           stub_request(:post, url).with(:query => query)
 
           Protocol.append_object(@bucket, object_name, 0) do |content|
-            content << 'hello world' << HTTP::ENDS
+            content << 'hello world'
           end
 
           expect(WebMock).to have_requested(:post, url)
@@ -260,7 +260,7 @@ module Aliyun
           Protocol.append_object(
             @bucket, object_name, 0, :content_type => 'application/ruby'
           ) do |content|
-            content << 'hello world' << HTTP::ENDS
+            content << 'hello world'
           end
 
           expect(WebMock).to have_requested(:post, url)
@@ -279,7 +279,7 @@ module Aliyun
           Protocol.append_object(
             @bucket, object_name, 0, :metas => {'year' => '2015', 'people' => 'mary'}
           ) do |content|
-            content << 'hello world' << HTTP::ENDS
+            content << 'hello world'
           end
 
           expect(WebMock).to have_requested(:post, url)
@@ -526,7 +526,7 @@ module Aliyun
 
       context "Get object meta" do
 
-        it "should get object meta", :focus => true do
+        it "should get object meta" do
           object_name = 'ruby'
           url = get_request_path(object_name)
 

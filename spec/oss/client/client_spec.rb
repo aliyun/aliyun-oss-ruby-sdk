@@ -65,7 +65,7 @@ module Aliyun
       end
 
       context "list buckets" do
-        it "should paging buckets", :focus => true do
+        it "should paging buckets" do
           endpoint = 'oss.aliyuncs.com'
           id, key = 'xxx', 'yyy'
 

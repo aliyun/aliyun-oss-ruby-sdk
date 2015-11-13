@@ -213,7 +213,7 @@ module Aliyun
           expect(File.read('/tmp/x')).to eq(content)
         end
 
-        it "should append object from file", :focus => true do
+        it "should append object from file" do
           key = 'ruby'
           query = {'append' => '', 'position' => 11}
           stub_request(:post, object_url(key)).with(:query => query)

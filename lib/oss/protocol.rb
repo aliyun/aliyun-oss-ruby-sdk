@@ -535,7 +535,7 @@ module Aliyun
 
           HTTP.put(
             {:bucket => bucket_name, :object => object_name},
-            {:headers => headers, :body => HTTP::StreamPayload.new(block)})
+            {:headers => headers, :body => HTTP::StreamPayload.new(&block)})
 
           logger.debug('Done put object')
         end
@@ -574,7 +574,7 @@ module Aliyun
 
           h, _ = HTTP.post(
                {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-               {:headers => headers, :body => HTTP::StreamPayload.new(block)})
+               {:headers => headers, :body => HTTP::StreamPayload.new(&block)})
 
           logger.debug('Done append object')
 
@@ -1081,7 +1081,7 @@ module Aliyun
           sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
           headers, _ = HTTP.put(
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-            {:body => HTTP::StreamPayload.new(block)})
+            {:body => HTTP::StreamPayload.new(&block)})
 
           logger.debug("Done upload part")
 
@@ -1363,7 +1363,7 @@ module Aliyun
         def get_node_text(node, tag, &block)
           n = node.at_css(tag) if node
           value = n.text if n
-          value = block.call(value) if block and value
+          value = yield value if block and value
 
           value
         end
@@ -1389,7 +1389,7 @@ module Aliyun
         # @yield [Object] the object if given to the block
         # @return [Object] the transformed object
         def wrap(x, &block)
-          x == nil ? nil : block.call(x)
+          x == nil ? nil : yield(x)
         end
 
       end # self
