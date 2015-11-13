@@ -257,6 +257,13 @@ module Aliyun
 
           expect(@bucket.object_exists?(key)).to be true
           expect(@bucket.object_exist?(key)).to be true
+
+          stub_request(:head, object_url(key))
+            .to_return(:status => 500)
+
+          expect {
+            @bucket.object_exists?(key)
+          }.to raise_error(Exception, "InternalError")
         end
 
       end # object operations

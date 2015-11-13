@@ -253,7 +253,15 @@ module Aliyun
       # @param key [String] Object的名字
       # @return [Boolean] 如果Object存在返回true，否则返回false
       def object_exists?(key)
-        get_object_meta(key) != nil rescue false
+        begin
+          get_object_meta(key)
+          return true
+        rescue ServerError => e
+          return false if e.http_code == 404
+          raise e
+        end
+
+        false
       end
 
       alias :object_exist? :object_exists?
