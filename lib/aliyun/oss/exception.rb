@@ -101,12 +101,12 @@ module Aliyun
     class PartInconsistentError < ClientError; end
 
     ##
-    # TokenBrokenError happens in a resumable upload/download
-    # transaction, when the client finds the token file has
+    # CheckpointBrokenError happens in a resumable upload/download
+    # transaction, when the client finds the checkpoint file has
     # changed(MD5 mismatch) as it tries to resume upload/download. The
-    # process cannot go on until the token file is restored.
+    # process cannot go on until the checkpoint file is restored.
     #
-    class TokenBrokenError < ClientError; end
+    class CheckpointBrokenError < ClientError; end
 
   end # OSS
 end # Aliyun

@@ -25,7 +25,7 @@ module Aliyun
       end
 
       before :each do
-        File.delete("#{@file}.token") if File.exist?("#{@file}.token")
+        File.delete("#{@file}.cpt") if File.exist?("#{@file}.cpt")
       end
 
       def object_url
@@ -90,7 +90,7 @@ module Aliyun
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploadId.*/).times(1)
 
-        expect(File.exist?("#{@file}.token")).to be false
+        expect(File.exist?("#{@file}.cpt")).to be false
       end
 
       it "should restart when begin txn fails" do
@@ -103,14 +103,17 @@ module Aliyun
         stub_request(:put, /#{object_url}\?partNumber.*/)
         stub_request(:post, /#{object_url}\?uploadId.*/)
 
+        success = false
         2.times do
           begin
             @bucket.resumable_upload(@object_key, @file, :part_size => 10)
+            success = true
           rescue
             # pass
           end
         end
 
+        expect(success).to be true
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploads.*/).times(2)
         expect(WebMock).to have_requested(
@@ -137,13 +140,17 @@ module Aliyun
           .to_return(:status => 500, :body => mock_error(code, message)).then
           .to_return(:status => 200)
 
+        success = false
         4.times do
           begin
             @bucket.resumable_upload(@object_key, @file, :part_size => 10)
+            success = true
           rescue
             # pass
           end
         end
+
+        expect(success).to be true
 
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploads.*/).times(1)
@@ -190,13 +197,17 @@ module Aliyun
         stub_request(:put, /#{object_url}\?partNumber.*/)
         stub_request(:post, /#{object_url}\?uploadId.*/)
 
+        success = false
         4.times do
           begin
             @bucket.resumable_upload(@object_key, @file, :part_size => 10)
+            success = true
           rescue
             # pass
           end
         end
+
+        expect(success).to be true
 
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploads.*/).times(1)
@@ -231,18 +242,63 @@ module Aliyun
           .to_return(:status => 500, :body => mock_error(code, message)).times(2).then
           .to_return(:status => 200)
 
+        success = false
         3.times do
           begin
             @bucket.resumable_upload(@object_key, @file, :part_size => 10)
+            success = true
           rescue
             # pass
           end
         end
 
+        expect(success).to be true
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploads.*/).times(1)
         expect(WebMock).to have_requested(
           :put, /#{object_url}\?partNumber.*/).times(10)
+        expect(WebMock).to have_requested(
+          :post, /#{object_url}\?uploadId.*/).with{ |req|
+          query = parse_query_from_uri(req.uri)
+          query['uploadId'] == 'upload_id'
+        }.times(3)
+      end
+
+      it "should not write checkpoint when specify disable_cpt" do
+        # begin multipart
+        stub_request(:post, /#{object_url}\?uploads.*/)
+          .to_return(:body => mock_txn_id('upload_id'))
+
+        # upload part
+        stub_request(:put, /#{object_url}\?partNumber.*/)
+
+        code = 'Timeout'
+        message = 'Request timeout.'
+        # commit multipart
+        stub_request(:post, /#{object_url}\?uploadId.*/)
+          .to_return(:status => 500, :body => mock_error(code, message)).times(2).then
+          .to_return(:status => 200)
+
+        cpt_file = "#{File.expand_path(@file)}.cpt"
+        success = false
+        3.times do
+          begin
+            @bucket.resumable_upload(
+              @object_key, @file, :part_size => 10,
+              :cpt_file => cpt_file, :disable_cpt => true)
+            success = true
+          rescue
+            # pass
+          end
+
+          expect(File.exists?(cpt_file)).to be false
+        end
+
+        expect(success).to be true
+        expect(WebMock).to have_requested(
+          :post, /#{object_url}\?uploads.*/).times(3)
+        expect(WebMock).to have_requested(
+          :put, /#{object_url}\?partNumber.*/).times(30)
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploadId.*/).with{ |req|
           query = parse_query_from_uri(req.uri)

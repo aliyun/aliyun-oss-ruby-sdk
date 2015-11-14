@@ -19,7 +19,7 @@ module Aliyun
       end
 
       before :each do
-        File.delete("#{@file}.token") if File.exist?("#{@file}.token")
+        File.delete("#{@file}.cpt") if File.exist?("#{@file}.cpt")
       end
 
       def object_url
@@ -67,7 +67,7 @@ module Aliyun
         }.times(10)
 
         expect(ranges).to match_array((1..10).map{ |i| mock_range(i) })
-        expect(File.exist?("#{@file}.token")).to be false
+        expect(File.exist?("#{@file}.cpt")).to be false
         expect(Dir.glob("#{@file}.part.*").empty?).to be true
 
         expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
@@ -94,14 +94,17 @@ module Aliyun
           .to_return(:status => 500, :body => mock_error(code, message)).then
           .to_return((10..10).map{ |i| {:body => mock_object(i)} })
 
+        success = false
         4.times do
           begin
             @bucket.resumable_download(@object_key, @file, :part_size => 10)
+            success = true
           rescue
             # pass
           end
         end
 
+        expect(success).to be true
         ranges = []
         expect(WebMock).to have_requested(:get, object_url).with{ |req|
           ranges << req.headers['Range']
@@ -146,16 +149,61 @@ module Aliyun
         stub_request(:get, object_url)
           .to_return(returns.map{ |i| {:body => mock_object(i)} })
 
+        success = false
         4.times do
           begin
             @bucket.resumable_download(@object_key, @file, :part_size => 10)
+            success = true
           rescue
             # pass
           end
         end
 
+        expect(success).to be true
         expect(WebMock).to have_requested(:get, object_url).times(13)
         expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
+      end
+
+      it "should not resume when specify disable_cpt" do
+        return_headers = {
+          'x-oss-object-type' => 'Normal',
+          'ETag' => 'xxxyyyzzz',
+          'Content-Length' => 100,
+          'Last-Modified' => Time.now.rfc822
+        }
+
+        # get object meta
+        stub_request(:head, object_url).to_return(:headers => return_headers)
+
+        code = 'Timeout'
+        message = 'Request timeout.'
+        # upload part
+        stub_request(:get, object_url)
+          .to_return((1..3).map{ |i| {:body => mock_object(i)} }).then
+          .to_return(:status => 500, :body => mock_error(code, message)).times(2).then
+          .to_return((1..9).map{ |i| {:body => mock_object(i)} }).then
+          .to_return(:status => 500, :body => mock_error(code, message)).then
+          .to_return((1..10).map{ |i| {:body => mock_object(i)} })
+
+        cpt_file = "#{File.expand_path(@file)}.cpt"
+        success = false
+        4.times do
+          begin
+            @bucket.resumable_download(
+              @object_key, @file, :part_size => 10,
+              :cpt_file => cpt_file, :disable_cpt => true)
+            success = true
+          rescue
+            # pass
+          end
+
+          expect(File.exists?(cpt_file)).to be false
+        end
+
+        expect(success).to be true
+        expect(WebMock).to have_requested(:get, object_url).times(25)
+        expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
+        expect(Dir.glob("#{@file}.part.*").empty?).to be true
       end
 
     end # Resumable upload

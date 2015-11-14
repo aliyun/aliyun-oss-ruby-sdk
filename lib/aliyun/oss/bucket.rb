@@ -383,7 +383,9 @@ module Aliyun
       # 断点续传相关的API
       #
 
-      # 上传一个本地文件到bucket中的一个object，支持断点续传。
+      # 上传一个本地文件到bucket中的一个object，支持断点续传。指定的文
+      # 件会被分成多个分片进行上传，只有所有分片都上传成功整个文件才
+      # 上传成功。
       # @param key [String] Object的名字
       # @param file [String] 本地文件的路径
       # @param opts [Hash] 上传文件的可选项
@@ -395,15 +397,21 @@ module Aliyun
       # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
       #  默认为1 MB。断点上传最多允许10000个分片，如果文件大于10000个
       #  分片的大小，则每个分片的大小会大于1MB。
-      # @option opts [String] :resume_token 断点续传的token文件，如果
-      #  指定的token文件不存在，则开始一个新的上传，在上传的过程中会更
-      #  新此文件；如果指定的token文件存在，则从token文件中记录的点继续
-      #  上传。
-      # @raise [FileInconsistentError] 如果指定的文件与
-      #  token中记录的不一致，则抛出此错误
+      # @option opts [String] :cpt_file 断点续传的checkpoint文件，如果
+      #  指定的cpt文件不存在，则会在file所在目录创建一个默认的cpt文件，
+      #  命名方式为：file.cpt，其中file是用户要上传的文件。在上传的过
+      #  程中会不断更新此文件，成功完成上传后会删除此文件；如果指定的
+      #  cpt文件已存在，则从cpt文件中记录的点继续上传。
+      # @option opts [Boolean] :disable_cpt 是否禁用checkpoint功能，如
+      #  果设置为true，则在上传的过程中不会写checkpoint文件，这意味着
+      #  上传失败后不能断点续传，而只能重新上传整个文件。如果这个值为
+      #  true，则:cpt_file会被忽略。
+      # @raise [CheckpointBrokenError] 如果cpt文件被损坏，则抛出此错误
+      # @raise [FileInconsistentError] 如果指定的文件与cpt中记录的不一
+      #  致，则抛出此错误
       def resumable_upload(key, file, opts = {})
-        unless resume_token = opts[:resume_token]
-          resume_token = get_resume_token(file)
+        unless cpt_file = opts[:cpt_file]
+          cpt_file = get_cpt_file(file)
         end
 
         Multipart::Upload.new(
@@ -412,34 +420,46 @@ module Aliyun
           :bucket => name,
           :creation_time => Time.now,
           :file => File.expand_path(file),
-          :resume_token => resume_token
+          :cpt_file => cpt_file
         ).run
       end
 
-      # 下载bucket中的一个object到本地文件，支持断点续传。
+      # 下载bucket中的一个object到本地文件，支持断点续传。指定的object
+      # 会被分成多个分片进行下载，只有所有的分片都下载成功整个object才
+      # 下载成功。对于每个下载的分片，会在file所在目录建立一个临时文件
+      # file.part.N，下载成功后这些part文件会被合并成最后的file然后删
+      # 除。
       # @param key [String] Object的名字
       # @param file [String] 本地文件的路径
       # @param opts [Hash] 下载文件的可选项
       # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
       #  默认为1 MB。断点下载最多允许100个分片，如果文件大于100个分片，
       #  则每个分片的大小会大于1MB
-      # @option opts [String] :resume_token 断点继续下载的token文件，
-      #  如果指定的token文件不存在，则开始一个新的上传，在上传的过程中
-      #  会更新此文件；如果指定的token文件存在，则从token文件中记录的点
-      #  继续下载。
+      # @option opts [String] :cpt_file 断点续传的checkpoint文件，如果
+      #  指定的cpt文件不存在，则会在file所在目录创建一个默认的cpt文件，
+      #  命名方式为：file.cpt，其中file是用户要下载的文件名。在下载的过
+      #  程中会不断更新此文件，成功完成下载后会删除此文件；如果指定的
+      #  cpt文件已存在，则从cpt文件中记录的点继续下载。
+      # @option opts [Boolean] :disable_cpt 是否禁用checkpoint功能，如
+      #  果设置为true，则在下载的过程中不会写checkpoint文件，这意味着
+      #  下载失败后不能断点续传，而只能重新下载整个文件。如果这个值为true，
+      #  则:cpt_file会被忽略。
       # @option opts [Hash] :condition 指定下载object需要满足的条件，
       #  同 {#get_object}
       # @option opts [Hash] :rewrite 指定下载object时Server端返回的响
       #  应头部字段的值，同 {#get_object}
-      # @raise [ObjectInconsistentError] 如果指定的object
-      #  的etag与token中记录的不一致，则抛出错误
-      # @raise [PartsMissingError] 如果已下载的部分(.part
-      #  文件)找不到，则抛出此错误
+      # @raise [CheckpointBrokenError] 如果cpt文件被损坏，则抛出此错误
+      # @raise [ObjectInconsistentError] 如果指定的object的etag与cpt文
+      #  件中记录的不一致，则抛出错误
+      # @raise [PartsMissingError] 如果已下载的部分(.part文件)找不到，
+      #  则抛出此错误
+      # @raise [PartsInconsistentError] 如果已下载的部分(.part文件)的
+      #  MD5值与cpt文件记录的不一致，则抛出此错误
       # @note 已经下载的部分会在file所在的目录创建.part文件，命名方式
       #  为file.part.N
       def resumable_download(key, file, opts = {})
-        unless resume_token = opts[:resume_token]
-          resume_token = get_resume_token(file)
+        unless cpt_file = opts[:cpt_file]
+          cpt_file = get_cpt_file(file)
         end
 
         Multipart::Download.new(
@@ -448,7 +468,7 @@ module Aliyun
           :bucket => name,
           :creation_time => Time.now,
           :file => File.expand_path(file),
-          :resume_token => resume_token
+          :cpt_file => cpt_file
         ).run
       end
 
@@ -462,11 +482,11 @@ module Aliyun
         t.first.content_type unless t.empty?
       end
 
-      # Get the resume token file path for file
+      # Get the checkpoint file path for file
       # @param file [String] the file path
-      # @return [String] the resume token file path
-      def get_resume_token(file)
-        "#{File.expand_path(file)}.token"
+      # @return [String] the checkpoint file path
+      def get_cpt_file(file)
+        "#{File.expand_path(file)}.cpt"
       end
 
     end # Bucket

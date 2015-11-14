@@ -14,7 +14,7 @@ module Aliyun
       class Upload < Transaction
         def initialize(opts)
           super(opts)
-          @file, @checkpoint_file = opts[:file], opts[:resume_token]
+          @file, @checkpoint_file = opts[:file], opts[:cpt_file]
           @file_meta = {}
           @parts = []
         end
@@ -62,7 +62,7 @@ module Aliyun
         #     :md5 => 'states_md5'
         #   }
         def checkpoint!
-          logger.debug("Begin make checkpoint")
+          logger.debug("Begin make checkpoint, disable_cpt: #{options[:disable_cpt]}")
 
           ensure_file_not_changed
 
@@ -73,7 +73,7 @@ module Aliyun
             :parts => @parts
           }
 
-          write_checkpoint(states, @checkpoint_file)
+          write_checkpoint(states, @checkpoint_file) unless options[:disable_cpt]
 
           logger.debug("Done make checkpoint, states: #{states}")
         end
@@ -88,16 +88,16 @@ module Aliyun
           parts = @parts.map{ |p| Part.new(:number  => p[:number], :etag => p[:etag])}
           Protocol.commit_multipart(bucket, object, id, parts)
 
-          File.delete(@checkpoint_file)
+          File.delete(@checkpoint_file) unless options[:disable_cpt]
 
           logger.info("Done commit transaction, id: #{id}")
         end
 
-        # Rebuild the states of the transaction from token file
+        # Rebuild the states of the transaction from checkpoint file
         def rebuild!
           logger.info("Begin rebuild transaction, checkpoint: #{@checkpoint_file}")
 
-          if File.exists?(@checkpoint_file)
+          if File.exists?(@checkpoint_file) and not options[:disable_cpt]
             states = load_checkpoint(@checkpoint_file)
 
             file_md5 = states[:file_md5]
