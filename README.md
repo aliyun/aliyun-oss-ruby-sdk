@@ -35,29 +35,42 @@ AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
 
 ### 创建Client
 
-#### 创建通用的Client
-
-    client = Aliyun::OSS::Client.new(endpoint, access_key_id, access_key_secret)
+    client = Aliyun::OSS::Client.new(
+      :endpoint => endpoint,
+      :access_key_id => 'access_key_id',
+      :access_key_secret => 'access_key_secret')
 
 其中`endpoint`是OSS服务的地址，根据节点区域不同，这个地址可能不一样，例如
-杭州节点的地址是：`oss-cn-hangzhou.oss.aliyuncs.com`，其他节点的地址见：
+杭州节点的地址是：`http://oss-cn-hangzhou.oss.aliyuncs.com`，其他节点的地址见：
 [节点列表][1]
 
 `access_key_id`和`access_key_secret`是您的服务凭证，在官网的“管理控制
 台”上面可以查看。**请妥善保管您的AccessKeySecret，泄露之后可能影响您的
 数据安全**
 
-#### 创建指定Bucket的Client
+#### 使用用户绑定的域名作为endpoint
 
-大部分情况下您的操作都是针对一个Bucket进行，这时你可以直接创建一个指定
-Bucket的Client：
+OSS支持自定义域名绑定，允许用户将自己的域名指向阿里云OSS的服务地址
+（CNAME），这样用户迁移到OSS上时应用内资源的路径可以不用修改。绑定的域
+名指向OSS的一个bucket。绑定域名的操作只能在OSS控制台进行。更多关于自定
+义域名绑定的内容请到官网了解：[OSS自定义域名绑定][2]
 
-    bucket = Aliyun::OSS::Client.connect_to_bucket(bucket_name, endpoint, access_key_id, access_key_secret)
+用户绑定了域名后，使用SDK时指定的endpoint可以使用标准的OSS服务地址，也
+可以使用用户绑定的域名：
 
-也可以先创建`Client`再通过`get_bucket`来连接到指定的Bucket：
+    client = Aliyun::OSS::Client.new(
+      :endpoint => 'http://img.my-domain.com',
+      :access_key_id => 'access_key_id',
+      :access_key_secret => 'access_key_secret',
+      :cname => true)
 
-    client = Aliyun::OSS::Client.connect_to_bucket(endpoint, access_key_id, access_key_secret)
-    bucket = client.get_bucket(bucket_name)
+有以下几点需要注意：
+
+1. 在Client初始化时必须指定:cname为true
+2. 自定义域名绑定了OSS的一个bucket，所以用这种方式创建的client不能进行
+   list_buckets操作
+3. 在{Client#get_bucket}时仍需要指定bucket名字，并且要与域名所绑定的
+   bucket名字相同
 
 ### 列出当前所有的Bucket
 
@@ -69,11 +82,11 @@ Bucket的Client：
 
 ### 创建一个Bucket
 
-    bucket = client.get_bucket('my-bucket')
-    bucket.create!
+    bucket = client.create_bucket('my-bucket')
 
 ### 列出Bucket中所有的Object
 
+    bucket = client.get_bucket('my-bucket')
     objects = bucket.list_objects
     objects.each{ |o| puts o.key }
 
@@ -208,3 +221,4 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 
 [1]: https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/domain-region
 
+[2]: https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/function&cname

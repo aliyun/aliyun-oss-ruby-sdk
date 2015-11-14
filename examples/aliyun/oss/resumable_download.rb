@@ -8,11 +8,13 @@ require 'aliyun/oss'
 Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 cred_file = "~/.oss.yml"
 cred = YAML.load(File.read(File.expand_path(cred_file)))
-oss = Aliyun::OSS::Client.new(
-  'oss.aliyuncs.com', cred["id"], cred["key"]).get_bucket('t-hello-world')
+bucket = Aliyun::OSS::Client.new(
+  :endpoint => 'oss.aliyuncs.com',
+  :access_key_id => cred["id"],
+  :access_key_secret => cred["key"]).get_bucket('t-hello-world')
 
 # 下载一个100M的文件
-oss.resumable_download('resumable', '/tmp/y')
+bucket.resumable_download('resumable', '/tmp/y')
 
 # 测试方法：
 # 1. ruby examples/resumable_download.rb

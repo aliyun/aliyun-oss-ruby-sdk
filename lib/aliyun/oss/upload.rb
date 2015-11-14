@@ -2,16 +2,14 @@
 
 module Aliyun
   module OSS
-
-    ##
-    # Multipart uploading structures
-    #
     module Multipart
-
       ##
       # A multipart upload transaction
       #
       class Upload < Transaction
+        PART_SIZE = 4 * 1024 * 1024
+        READ_SIZE = 16 * 1024
+
         def initialize(opts)
           super(opts)
           @file, @checkpoint_file = opts[:file], opts[:cpt_file]

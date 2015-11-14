@@ -9,7 +9,7 @@ RSpec::Core::RakeTask.new(:spec) do
 end
 
 task :example do
-  FileList['examples/*.rb'].each do |f|
+  FileList['examples/**/*.rb'].each do |f|
     puts "==== Run example: #{f} ===="
     ruby f
   end

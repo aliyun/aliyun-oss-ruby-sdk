@@ -8,7 +8,10 @@ require 'aliyun/oss'
 Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 cred_file = "~/.oss.yml"
 cred = YAML.load(File.read(File.expand_path(cred_file)))
-client = Aliyun::OSS::Client.new('oss.aliyuncs.com', cred["id"], cred["key"])
+client = Aliyun::OSS::Client.new(
+  :endpoint => 'oss.aliyuncs.com',
+  :access_key_id => cred["id"],
+  :access_key_secret => cred["key"])
 bucket = client.get_bucket('t-hello-world')
 
 # 列出当前所有的bucket
@@ -16,10 +19,9 @@ buckets = client.list_buckets
 buckets.each{ |b| puts "Bucket: #{b.name}"}
 
 # 创建bucket
-bucket.create!(:location => 'oss-cn-hangzhou')
-client.get_bucket('t-foo-bar').create!
+client.create_bucket('t-foo-bar', :location => 'oss-cn-hangzhou')
 
-# 向bucket中添加4个空的object:
+# 向bucket中添加5个空的object:
 # foo/obj1, foo/bar/obj1, foo/bar/obj2, foo/xxx/obj1
 bucket.put_object('foo/obj1') {}
 bucket.put_object('foo/bar/obj1') {}

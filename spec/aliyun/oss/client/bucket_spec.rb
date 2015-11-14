@@ -11,10 +11,11 @@ module Aliyun
 
       before :all do
         @endpoint = 'oss-cn-hangzhou.aliyuncs.com'
-        id = 'xxx'
-        key = 'yyy'
         @bucket_name = 'rubysdk-bucket'
-        @bucket = Client.new(@endpoint, id, key).get_bucket(@bucket_name)
+        @bucket = Client.new(
+          :endpoint => @endpoint,
+          :access_key_id => 'xxx',
+          :access_key_secret => 'yyy').get_bucket(@bucket_name)
       end
 
       def bucket_url
@@ -81,15 +82,6 @@ module Aliyun
       end
 
       context "bucket operations" do
-        it "should create bucket" do
-          stub_request(:put, bucket_url)
-
-          @bucket.create! :location => 'oss-cn-beijing'
-
-          expect(WebMock).to have_requested(:put, bucket_url)
-                         .with(:body => mock_location('oss-cn-beijing'))
-        end
-
         it "should get acl" do
           query = {'acl' => ''}
           return_acl = ACL::PUBLIC_READ

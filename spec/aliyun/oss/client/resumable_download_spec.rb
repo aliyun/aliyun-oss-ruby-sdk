@@ -13,7 +13,10 @@ module Aliyun
         @endpoint = 'oss-cn-hangzhou.aliyuncs.com'
         @bucket_name = 'rubysdk-bucket'
         @object_key = 'resumable_file'
-        @bucket = Client.new(@endpoint, 'xxx', 'yyy').get_bucket(@bucket_name)
+        @bucket = Client.new(
+          :endpoint => @endpoint,
+          :access_key_id => 'xxx',
+          :access_key_secret => 'yyy').get_bucket(@bucket_name)
 
         @file = './download_file'
       end

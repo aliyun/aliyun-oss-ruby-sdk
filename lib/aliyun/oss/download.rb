@@ -3,14 +3,13 @@
 module Aliyun
   module OSS
     module Multipart
-
-      PART_SIZE = 1024 * 1024
-      READ_SIZE = 16 * 1024
-
       ##
       # A multipart download transaction
       #
       class Download < Transaction
+        PART_SIZE = 10 * 1024 * 1024
+        READ_SIZE = 16 * 1024
+
         def initialize(opts)
           super(opts)
           @file, @checkpoint_file = opts[:file], opts[:cpt_file]

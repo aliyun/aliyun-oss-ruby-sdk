@@ -9,7 +9,9 @@ Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 cred_file = "~/.oss.yml"
 cred = YAML.load(File.read(File.expand_path(cred_file)))
 bucket = Aliyun::OSS::Client.new(
-  'oss.aliyuncs.com', cred["id"], cred["key"]).get_bucket('t-hello-world')
+  :endpoint => 'oss.aliyuncs.com',
+  :access_key_id => cred["id"],
+  :access_key_secret => cred["key"]).get_bucket('t-hello-world')
 
 # 上传一个object
 # 流式上传请参考：examples/streaming.rb

@@ -16,19 +16,6 @@ module Aliyun
 
       ### Bucket相关的API ###
 
-      # 创建一个bucket
-      # @param opts [Hash] 创建Bucket的属性（可选）
-      # @option opts [:location] [String] 指定bucket所在的区域，默认为oss-cn-hangzhou
-      def create!(opts = {})
-        Protocol.create_bucket(name, opts)
-      end
-
-      # 删除一个bucket
-      # @note 如果要删除的Bucket不为空（包含有object），则删除会失败
-      def delete!
-        Protocol.delete_bucket(name)
-      end
-
       # 获取Bucket的ACL
       # @return [String] Bucket的{OSS::ACL ACL}
       def acl

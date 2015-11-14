@@ -66,6 +66,10 @@ module Aliyun
         def closed?
           false
         end
+
+        def inspect
+          "@chunks: " + @chunks.map{ |c| c[0, 100]}.join(';')
+        end
       end
 
       # RestClient requires the payload to respones to :read(bytes)
@@ -102,8 +106,9 @@ module Aliyun
 
         def get_request_url(bucket, object)
           url = ""
-          url += "#{bucket}." if bucket
-          url += Config.get(:endpoint)
+          url += "#{Config.get(:endpoint).scheme}://"
+          url += "#{bucket}." if bucket and not Config.get(:cname)
+          url += Config.get(:endpoint).host
           url += "/#{CGI.escape(object)}" if object
 
           url

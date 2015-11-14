@@ -23,13 +23,18 @@ module Aliyun
         end
 
         # Setup endpoint
-        def set_endpoint(endpoint)
-          @options[:endpoint] = endpoint
+        def set_endpoint(endpoint, cname = false)
+          uri = URI.parse(endpoint)
+          uri = URI.parse("http://#{endpoint}") unless uri.scheme
+
+          raise ClientError.new("Only HTTP and HTTPS endpoint are accepted.") \
+                               if uri.scheme != 'http' and uri.scheme != 'https'
+
+          @options[:endpoint] = uri
+          @options[:cname] = cname
         end
 
-      end
-
+      end # self
     end # Config
-
   end # OSS
 end # Aliyun

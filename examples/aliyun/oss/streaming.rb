@@ -27,7 +27,9 @@ Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 cred_file = "~/.oss.yml"
 cred = YAML.load(File.read(File.expand_path(cred_file)))
 bucket = Aliyun::OSS::Client.new(
-  'oss.aliyuncs.com', cred["id"], cred["key"]).get_bucket('t-hello-world')
+  :endpoint => 'oss.aliyuncs.com',
+  :access_key_id => cred["id"],
+  :access_key_secret => cred["key"]).get_bucket('t-hello-world')
 
 # 例子1: 归并排序
 # 有两个文件sort.1, sort.2，它们分别存了一些从小到大排列的整数，每个整
