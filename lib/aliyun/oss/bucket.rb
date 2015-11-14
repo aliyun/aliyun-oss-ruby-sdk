@@ -3,9 +3,8 @@
 module Aliyun
   module OSS
     ##
-    # Bucket是用户的bucket相关的操作的client，主要包括三部分功能：
-    # 1. bucket相关：创建、删除bucket，设置bucket的属性（acl, logging,
-    #    website, etc）
+    # Bucket是用户的Object相关的操作的client，主要包括三部分功能：
+    # 1. bucket相关：获取/设置bucket的属性（acl, logging,website, etc）
     # 2. object相关：上传、下载、追加、拷贝object等
     # 3. multipart相关：断点续传、断点续载
     class Bucket

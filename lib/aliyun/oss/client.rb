@@ -4,14 +4,18 @@ module Aliyun
   module OSS
 
     ##
-    # OSS服务的客户端，用于获取bucket列表，连接到指定的bucket。
+    # OSS服务的客户端，用于获取bucket列表，创建/删除bucket。Object相关
+    # 的操作请使用{OSS::Bucket}。
     # @example 创建Client
     #   endpoint = 'oss-cn-hangzhou.oss.aliyuncs.com'
-    #   client = Client.new(endpoint, 'access_key_id', 'access_key_secret')
+    #   client = Client.new(
+    #     :endpoint => endpoint,
+    #     :access_key_id => 'access_key_id',
+    #     :access_key_secret => 'access_key_secret')
     #   buckets = client.list_buckets
+    #   client.create_bucket('my-bucket')
+    #   client.delete_bucket('my-bucket')
     #   bucket = client.get_bucket('my-bucket')
-    # @example 连接到Bucket
-    #   bucket = Client.connect_to_bucket('my-bucket', endpoint, 'access_key_id', 'access_key_secret')
     class Client
 
       include Logging
