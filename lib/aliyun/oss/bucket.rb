@@ -451,9 +451,9 @@ module Aliyun
       # @raise [CheckpointBrokenError] 如果cpt文件被损坏，则抛出此错误
       # @raise [ObjectInconsistentError] 如果指定的object的etag与cpt文
       #  件中记录的不一致，则抛出错误
-      # @raise [PartsMissingError] 如果已下载的部分(.part文件)找不到，
+      # @raise [PartMissingError] 如果已下载的部分(.part文件)找不到，
       #  则抛出此错误
-      # @raise [PartsInconsistentError] 如果已下载的部分(.part文件)的
+      # @raise [PartInconsistentError] 如果已下载的部分(.part文件)的
       #  MD5值与cpt文件记录的不一致，则抛出此错误
       # @note 已经下载的部分会在file所在的目录创建.part文件，命名方式
       #  为file.part.N
