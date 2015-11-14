@@ -1,4 +1,4 @@
-source 'http://mirrors.aliyun.com/rubygems'
+source 'https://rubygems.org'
 
 gem 'nokogiri'
 gem 'rest-client'

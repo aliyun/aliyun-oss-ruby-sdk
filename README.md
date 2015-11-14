@@ -82,7 +82,7 @@ Bucket的Client：
 
 ### 在Bucket中创建一个Object
 
-    bucket.put_object(object_key){ |stream| stream.write_and_finish('hello world') }
+    bucket.put_object(object_key){ |stream| stream << 'hello world' }
 
 用户也可以通过上传本地文件创建一个Object：
 
@@ -178,7 +178,7 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 
 ### 创建一个Appendable Object
 
-    bucket.append_object(object_key, 0){ |stream| stream.write_and_finish("hello world") }
+    bucket.append_object(object_key, 0){ |stream| stream << "hello world" }
 
 第二个参数是追加的位置，对一个Object第一次追加时，这个参数为0。后续的
 追加这个参数要求是追加前Object的长度。
