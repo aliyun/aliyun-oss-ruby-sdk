@@ -7,7 +7,7 @@ module Aliyun
   module OSS
 
     ##
-    # HTTP wraps the HTTP functionalies for accessing OSS RESTful
+    # HTTP wraps the HTTP functionalities for accessing OSS RESTful
     # API. It handles the OSS-specific protocol elements, and
     # rest-client details for the user, which includes:
     # * automatically generate signature for every request
