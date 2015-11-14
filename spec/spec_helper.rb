@@ -4,7 +4,7 @@ require 'simplecov'
 SimpleCov.start
 
 require 'webmock/rspec'
-require 'oss'
+require 'aliyun/oss'
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|

@@ -1,7 +1,8 @@
 # -*- encoding: utf-8 -*-
 
+$:.unshift(File.expand_path("../../lib", __FILE__))
 require 'yaml'
-require_relative '../lib/oss'
+require 'aliyun/oss'
 
 ##
 # 一般来说用户在上传object和下载object时只需要指定文件名就可以满足需要：

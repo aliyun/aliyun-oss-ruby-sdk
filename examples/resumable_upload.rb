@@ -1,7 +1,8 @@
 # -*- encoding: utf-8 -*-
 
+$:.unshift(File.expand_path("../../lib", __FILE__))
 require 'yaml'
-require_relative '../lib/oss'
+require 'aliyun/oss'
 
 # 初始化OSS Bucket
 Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)

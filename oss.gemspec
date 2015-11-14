@@ -2,15 +2,15 @@
 
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'oss/version'
+require 'aliyun/oss/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'aliyun-oss-sdk'
+  spec.name          = 'aliyun-sdk'
   spec.version       = Aliyun::OSS::VERSION
   spec.authors       = ['Tianlong Wu']
   spec.email         = ['tianlong.wtl@alibaba-inc.com']
 
-  spec.summary       = 'Aliyun OSS Ruby SDK'
+  spec.summary       = 'Aliyun OSS SDK for Ruby'
   spec.description   = 'A Ruby program to facilitate accessing Aliyun Object Storage Service'
   spec.homepage      = 'https://gitlab.alibaba-inc.com/oss/ruby-sdk'
 

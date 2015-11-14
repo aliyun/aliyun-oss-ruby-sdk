@@ -27,7 +27,7 @@ AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
 
 ### 安装Aliyun OSS SDK for Ruby
 
-    gem install aliyun-oss-sdk
+    gem install aliyun-sdk
 
 并在你的程序中包含：
 
