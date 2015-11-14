@@ -113,11 +113,11 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 
 ### 断点上传
 
-    bucket.resumable_upload(object_key, local_file, :resume_token => token_file)
+    bucket.resumable_upload(object_key, local_file, :cpt_file => cpt_file)
 
-其中`:resume_token`指定保存上传中间状态的token文件所在的位置，如果用户
+其中`:cpt_file`指定保存上传中间状态的checkpoint文件所在的位置，如果用户
 没有指定，SDK将为用户在`local_file`所在的目录生成一个
-`local_file.token`。上传中断后，只需要提供相同的token文件，上传将会从
+`local_file.cpt`。上传中断后，只需要提供相同的cpt文件，上传将会从
 中断的点继续上传。所以典型的上传代码是：
 
     retry_times = 5
@@ -131,18 +131,18 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 
 注意：
 
-1. SDK会将上传的中间状态信息记录在token文件中，所以要确保用户对token文
+1. SDK会将上传的中间状态信息记录在cpt文件中，所以要确保用户对cpt文
    件有写权限
-2. token文件记录了上传的中间状态信息并自带了校验，用户不能去编辑它，如
-   果token文件损坏则上传无法继续。整个上传完成后token文件会被删除。
+2. cpt文件记录了上传的中间状态信息并自带了校验，用户不能去编辑它，如
+   果cpt文件损坏则上传无法继续。整个上传完成后cpt文件会被删除。
 
 ### 断点下载
 
-    bucket.resumable_download(object_key, local_file, :resume_token => token_file)
+    bucket.resumable_download(object_key, local_file, :cpt_file => cpt_file)
 
-其中`:resume_token`指定保存下载中间状态的token文件所在的位置，如果用户
+其中`:cpt_file`指定保存下载中间状态的checkpoint文件所在的位置，如果用户
 没有指定，SDK将为用户在`local_file`所在的目录生成一个
-`local_file.token`。下载中断后，只需要提供相同的token文件，下载将会从
+`local_file.cpt`。下载中断后，只需要提供相同的cpt文件，下载将会从
 中断的点继续下载。所以典型的下载代码是：
 
     retry_times = 5
@@ -159,10 +159,10 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 1. 在下载过程中，对于下载完成的每个分片，会在`local_file`所在的目录生
    成一个`local_file.part.N`的临时文件。整个下载完成后这些文件会被删除。
    用户不能去编辑或删除part文件，否则下载不能继续。
-2. SDK会将下载的中间状态信息记录在token文件中，所以要确保用户对token文
+2. SDK会将下载的中间状态信息记录在cpt文件中，所以要确保用户对cpt文
    件有写权限
-3. token文件记录了下载的中间状态信息并自带了校验，用户不能去编辑它，如
-   果token文件损坏则下载无法继续。整个下载完成后token文件会被删除。
+3. cpt文件记录了下载的中间状态信息并自带了校验，用户不能去编辑它，如
+   果cpt文件损坏则下载无法继续。整个下载完成后cpt文件会被删除。
 
 
 ## 可追加的文件
