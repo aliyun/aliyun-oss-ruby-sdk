@@ -318,6 +318,8 @@ module Aliyun
           dst_object = 'rails'
           url = get_request_path(dst_object)
 
+          modified_since = Time.now
+          unmodified_since = Time.now
           last_modified = Time.parse(Time.now.rfc822)
           etag = '0000'
 
@@ -325,8 +327,8 @@ module Aliyun
             'x-oss-copy-source' => get_resource_path(src_object),
             'x-oss-object-acl' => ACL::PRIVATE,
             'x-oss-metadata-directive' => MetaDirective::REPLACE,
-            'x-oss-copy-source-if-modified-since' => 'ms',
-            'x-oss-copy-source-if-unmodified-since' => 'ums',
+            'x-oss-copy-source-if-modified-since' => modified_since.httpdate,
+            'x-oss-copy-source-if-unmodified-since' => unmodified_since.httpdate,
             'x-oss-copy-source-if-match' => 'me',
             'x-oss-copy-source-if-none-match' => 'ume'
           }
@@ -338,8 +340,8 @@ module Aliyun
             {:acl => ACL::PRIVATE,
              :meta_directive => MetaDirective::REPLACE,
              :condition => {
-               :if_modified_since => 'ms',
-               :if_unmodified_since => 'ums',
+               :if_modified_since => modified_since,
+               :if_unmodified_since => unmodified_since,
                :if_match_etag => 'me',
                :if_unmatch_etag => 'ume'
              }
@@ -480,8 +482,8 @@ module Aliyun
 
           stub_request(:get, url)
 
-          modified_since = Util.get_date
-          unmodified_since = Util.get_date
+          modified_since = Time.now
+          unmodified_since = Time.now
           etag = 'xxxyyyzzz'
           not_etag = 'aaabbbccc'
           Protocol.get_object(
@@ -495,8 +497,8 @@ module Aliyun
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => {},
                   :headers => {
-                    'If-Modified-Since' => modified_since,
-                    'If-Unmodified-since' => unmodified_since,
+                    'If-Modified-Since' => modified_since.httpdate,
+                    'If-Unmodified-since' => unmodified_since.httpdate,
                     'If-Match' => etag,
                     'If-None-Match' => not_etag})
         end
@@ -505,15 +507,17 @@ module Aliyun
           object_name = 'ruby'
           url = get_request_path(object_name)
 
+          expires = Time.now
           rewrites = {
                :content_type => 'ct',
                :content_language => 'cl',
-               :expires => 'e',
+               :expires => expires,
                :cache_control => 'cc',
                :content_disposition => 'cd',
                :content_encoding => 'ce'
           }
           query = Hash[rewrites.map {|k, v| ["response-#{k.to_s.sub('_', '-')}", v]}]
+          query['response-expires'] = rewrites[:expires].httpdate
 
           stub_request(:get, url).with(:query => query)
 
@@ -560,8 +564,8 @@ module Aliyun
 
           stub_request(:head, url)
 
-          modified_since = Util.get_date
-          unmodified_since = Util.get_date
+          modified_since = Time.now
+          unmodified_since = Time.now
           etag = 'xxxyyyzzz'
           not_etag = 'aaabbbccc'
 
@@ -576,8 +580,8 @@ module Aliyun
           expect(WebMock).to have_requested(:head, url)
             .with(:body => nil, :query => {},
                   :headers => {
-                    'If-Modified-Since' => modified_since,
-                    'If-Unmodified-since' => unmodified_since,
+                    'If-Modified-Since' => modified_since.httpdate,
+                    'If-Unmodified-since' => unmodified_since.httpdate,
                     'If-Match' => etag,
                     'If-None-Match' => not_etag})
         end

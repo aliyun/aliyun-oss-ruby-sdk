@@ -6,28 +6,6 @@ module Aliyun
   module OSS
 
     describe Util do
-      # 测试生成的日期格式是否正确
-      it "should get GMT date" do
-        date = Util.get_date
-        pattern = ""
-        pattern += "([[:alpha:]]{3}), "
-        pattern += "([[:digit:]]{2}) "
-        pattern += "([[:alpha:]]{3}) "
-        pattern += "([[:digit:]]{4}) "
-        pattern += "([[:digit:]]{2}):([[:digit:]]{2}):([[:digit:]]{2}) "
-        pattern += "GMT"
-        m = date.match(Regexp.new(pattern))
-
-        expect(m).not_to eq(nil)
-
-        expect(%w(Sun Mon Tue Wed Thu Fri Sat)).to include(m[1])
-        expect((1..31)).to cover(m[2].to_i)
-        expect(%w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)).to include(m[3])
-        expect((0..23)).to cover(m[5].to_i)
-        expect((0..59)).to cover(m[6].to_i)
-        expect((0..59)).to cover(m[7].to_i)
-      end
-
       # 测试对body content的md5编码是否正确
       it "should get correct content md5" do
         content = ""

@@ -69,8 +69,8 @@ OSS支持自定义域名绑定，允许用户将自己的域名指向阿里云OS
 1. 在Client初始化时必须指定:cname为true
 2. 自定义域名绑定了OSS的一个bucket，所以用这种方式创建的client不能进行
    list_buckets操作
-3. 在{Client#get_bucket}时仍需要指定bucket名字，并且要与域名所绑定的
-   bucket名字相同
+3. 在{Aliyun::OSS::Client#get_bucket}时仍需要指定bucket名字，并且要与
+   域名所绑定的bucket名字相同
 
 ### 列出当前所有的Bucket
 

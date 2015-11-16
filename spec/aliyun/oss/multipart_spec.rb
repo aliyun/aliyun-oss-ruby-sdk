@@ -253,11 +253,13 @@ module Aliyun
           copy_source = "/#{@bucket}/src_obj"
 
           query = {'partNumber' => part_no, 'uploadId' => txn_id}
+          modified_since = Time.now
+          unmodified_since = Time.now
           headers = {
             'Range' => 'bytes=1-4',
             'x-oss-copy-source' => copy_source,
-            'x-oss-copy-source-if-modified-since' => 'ms',
-            'x-oss-copy-source-if-unmodified-since' => 'ums',
+            'x-oss-copy-source-if-modified-since' => modified_since.httpdate,
+            'x-oss-copy-source-if-unmodified-since' => unmodified_since.httpdate,
             'x-oss-copy-source-if-match' => 'me',
             'x-oss-copy-source-if-none-match' => 'ume'
           }
@@ -271,8 +273,8 @@ module Aliyun
             @bucket, @object, txn_id, part_no, 'src_obj',
             {:range => [1, 5],
              :condition => {
-               :if_modified_since => 'ms',
-               :if_unmodified_since => 'ums',
+               :if_modified_since => modified_since,
+               :if_unmodified_since => unmodified_since,
                :if_match_etag => 'me',
                :if_unmatch_etag => 'ume'
              }})

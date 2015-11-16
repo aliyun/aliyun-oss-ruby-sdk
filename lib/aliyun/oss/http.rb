@@ -181,7 +181,7 @@ module Aliyun
 
           headers = http_options[:headers] || {}
           headers['User-Agent'] = get_user_agent
-          headers['Date'] = Util.get_date
+          headers['Date'] = Time.now.httpdate
           headers['Content-Type'] ||= DEFAULT_CONTENT_TYPE
 
           if body = http_options[:body] and body.respond_to?(:read)

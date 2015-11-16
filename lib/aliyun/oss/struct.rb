@@ -100,7 +100,29 @@ module Aliyun
 
     ##
     # LifeCycle rule for bucket. See: {https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/function&lifecycle OSS Bucket LifeCycle}
-    #
+    # Attributes:
+    # * id [String] the unique id of a rule
+    # * enabled [Boolean] whether to enable this rule
+    # * prefix [String] the prefix objects to apply this rule
+    # * expiry [Date] or [Fixnum] the expire time of objects
+    #   * if expiry is a Date, it specifies the absolute date to
+    #     expire objects
+    #   * if expiry is a Fixnum, it specifies the relative date to
+    #     expire objects: how many days after the object's last
+    #     modification time to expire the object
+    # @example Specify expiry as Date
+    #   LifeCycleRule.new(
+    #     :id => 'rule1',
+    #     :enabled => true,
+    #     :prefix => 'foo/',
+    #     :expiry => Date.new(2016, 1, 1))
+    # @example Specify expiry as days
+    #   LifeCycleRule.new(
+    #     :id => 'rule1',
+    #     :enabled => true,
+    #     :prefix => 'foo/',
+    #     :expiry => 15)
+    # @note the expiry date is treated as UTC time
     class LifeCycleRule
 
       include Struct::Base
@@ -111,7 +133,12 @@ module Aliyun
 
     ##
     # CORS rule for bucket. See: {https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/function&referer-white-list OSS CORS}
-    #
+    # Attributes:
+    # * allowed_origins [Array<String>] the allowed origins
+    # * allowed_methods [Array<String>] the allowed methods
+    # * allowed_headers [Array<String>] the allowed headers
+    # * expose_headers [Array<String>] the expose headers
+    # * max_age_seconds [Integer] the max age seconds
     class CORSRule
 
       include Struct::Base

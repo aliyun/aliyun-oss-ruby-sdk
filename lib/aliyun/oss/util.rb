@@ -19,12 +19,6 @@ module Aliyun
 
         include Logging
 
-        # Get current time in the format: Fri, 30 Oct 2015 07:21:00 GMT
-        def get_date
-          t = Time.now.utc.rfc822
-          t.sub("-0000", "GMT")
-        end
-
         # Calculate request signatures
         def get_signature(key, verb, headers, resources)
           logger.debug("Sign, headers: #{headers}, resources: #{resources}")

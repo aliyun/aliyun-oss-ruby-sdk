@@ -29,13 +29,14 @@ module Aliyun
         # @option opts [Integer] :limit return only the first N
         #  buckets if specified
         # @return [Array<Bucket>, Hash] the returned buckets and a
-        #  hash including the next tokens.
-        # @option more [String] :prefix the prefix used
-        # @option more [String] :marker the marker used
-        # @option more [Integer] :limit the limit used
-        # @option more [String] :next_marker marker to continue list buckets
-        # @option more [Boolean] :truncated whether there are more
-        #  buckets to be returned
+        #  hash including the next tokens, which includes:
+        #  * :prefix [String] the prefix used
+        #  * :delimiter [String] the delimiter used
+        #  * :marker [String] the marker used
+        #  * :limit [Integer] the limit used
+        #  * :next_marker [String] marker to continue list buckets
+        #  * :truncated [Boolean] whether there are more buckets to
+        #    be returned
         def list_buckets(opts = {})
           logger.info("Begin list buckets, options: #{opts}")
 
@@ -346,14 +347,16 @@ module Aliyun
                 xml.Rule {
                   xml.ID r.id if r.id
                   xml.Status r.enabled ? 'Enabled' : 'Disabled'
+
                   xml.Prefix r.prefix
                   xml.Expiration {
-                    if r.expiry.is_a?(Time)
-                      xml.Date r.expiry.iso8601
+                    if r.expiry.is_a?(Date)
+                      xml.Date Time.utc(r.expiry.year, r.expiry.month, r.expiry.day)
+                                .iso8601.sub('Z', '.000Z')
                     elsif r.expiry.is_a?(Fixnum)
                       xml.Days r.expiry
                     else
-                      raise ClientError.new("Expiry must be a Time or Fixnum.")
+                      raise ClientError.new("Expiry must be a Date or Fixnum.")
                     end
                   }
                 }
@@ -387,10 +390,10 @@ module Aliyun
                             if (days and date) or (not days and not date)
 
             LifeCycleRule.new(
-              :id => get_node_text(n, 'ID') {|x| x.to_i},
+              :id => get_node_text(n, 'ID'),
               :prefix => get_node_text(n, 'Prefix'),
               :enabled => get_node_text(n, 'Status') {|x| x == 'Enabled'},
-              :expiry => days ? days.text.to_i : Time.parse(date.text)
+              :expiry => days ? days.text.to_i : Date.parse(date.text)
             )
           end
           logger.info("Done get bucket lifecycle")
@@ -593,6 +596,9 @@ module Aliyun
         #  buckets if specified
         # @option opts [String] :delimiter the delimiter to get common
         #  prefixes of all objects
+        # @option opts [String] :encoding the encoding of object key
+        #  in the response body. Only {OSS::KeyEncoding::URL} is
+        #  supported now.
         # @example
         #  Assume we have the following objects:
         #     /foo/bar/obj1
@@ -605,19 +611,16 @@ module Aliyun
         #  coincidentally the sub-directories under '/foo/'. Using
         #  delimiter we avoid list all the objects whose number may be
         #  large.
-        # @option more [String] :common_prefixes the common prefixes returned
-        # @option more [String] :prefix the prefix used
-        # @option more [String] :delimiter the delimiter used
-        # @option more [String] :marker the marker used
-        # @option more [Integer] :limit the limit used
-        # @option more [String] :next_marker marker to continue list buckets
-        # @option more [Boolean] :truncated whether there are more
-        #  buckets to be returned
-        # @option opts [String] :encoding the encoding of object key
-        #  in the response body. Only {OSS::KeyEncoding::URL} is
-        #  supported now.
         # @return [Array<Objects>, Hash] the returned object and a
-        # hash including the next tokens
+        #  hash including the next tokens, which includes:
+        #  * :common_prefixes [String] the common prefixes returned
+        #  * :prefix [String] the prefix used
+        #  * :delimiter [String] the delimiter used
+        #  * :marker [String] the marker used
+        #  * :limit [Integer] the limit used
+        #  * :next_marker [String] marker to continue list objects
+        #  * :truncated [Boolean] whether there are more objects to
+        #    be returned
         def list_objects(bucket_name, opts = {})
           logger.debug("Begin list object, bucket: #{bucket_name}, options: #{opts}")
 
@@ -721,7 +724,7 @@ module Aliyun
           conditions = opts[:condition]
           rewrites = opts[:rewrite]
 
-          raise ClientError.new("Range must be an array contains 2 int.") \
+          raise ClientError.new("Range must be an array contains 2 Integers.") \
                   if range and not range.is_a?(Array) and not range.size == 2
 
           headers = {}
@@ -730,26 +733,22 @@ module Aliyun
             headers['Range'] = "bytes=#{r}"
           end
 
-          {
-            :if_modified_since => 'If-Modified-Since',
-            :if_unmodified_since => 'If-Unmodified-Since',
-            :if_match_etag => 'If-Match',
-            :if_unmatch_etag => 'If-None-Match'
-          }.each do |k, v|
-            headers[v] = conditions[k] if conditions and conditions[k]
-          end
+          set_conditions(headers, conditions) if conditions
 
           query = {}
-          [
-            :content_type,
-            :content_language,
-            :expires,
-            :cache_control,
-            :content_disposition,
-            :content_encoding
-          ].each do |k|
-            query["response-#{k.to_s.sub('_', '-')}"] =
-              rewrites[k] if rewrites and rewrites[k]
+          if rewrites
+            [
+              :content_type,
+              :content_language,
+              :cache_control,
+              :content_disposition,
+              :content_encoding
+            ].each do |k|
+              query["response-#{k.to_s.sub('_', '-')}"] =
+                rewrites[k] if rewrites.has_key?(k)
+            end
+            query["response-expires"] =
+              rewrites[:expires].httpdate if rewrites.has_key?(:expires)
           end
 
           h, _ = HTTP.get(
@@ -791,17 +790,8 @@ module Aliyun
           logger.debug("Begin get object meta, bucket: #{bucket_name}, " \
                        "object: #{object_name}, options: #{opts}")
 
-          conditions = opts[:condition]
-
           headers = {}
-          {
-            :if_modified_since => 'If-Modified-Since',
-            :if_unmodified_since => 'If-Unmodified-Since',
-            :if_match_etag => 'If-Match',
-            :if_unmatch_etag => 'If-None-Match'
-          }.each do |k, v|
-            headers[v] = conditions[k] if conditions and conditions[k]
-          end
+          set_conditions(headers, opts[:condition]) if opts[:condition]
 
           h, _ = HTTP.head(
                {:bucket => bucket_name, :object => object_name},
@@ -846,10 +836,10 @@ module Aliyun
         #  with the object
         # @option opts [Hash] :condition preconditions to get the
         #  object. See #get_object
-        # @return a Hash that describes dest object
-        # @option return [String] :etag the etag of the dest object
-        # @option return [Time] :last_modified the last modification
-        #  time of the dest object
+        # @return [Hash] the copy result
+        #  * :etag [String] the etag of the dest object
+        #  * :last_modified [Time] the last modification time of the
+        #    dest object
         def copy_object(bucket_name, src_object_name, dst_object_name, opts = {})
           logger.debug("Begin copy object, bucket: #{bucket_name}, " \
                        "source object: #{src_object_name}, dest object: " \
@@ -868,15 +858,7 @@ module Aliyun
             headers[v] = opts[k] if opts[k]
           end
 
-          conditions = opts[:condition]
-          {
-            :if_modified_since => 'x-oss-copy-source-if-modified-since',
-            :if_unmodified_since => 'x-oss-copy-source-if-unmodified-since',
-            :if_match_etag => 'x-oss-copy-source-if-match',
-            :if_unmatch_etag => 'x-oss-copy-source-if-none-match'
-          }.each do |k, v|
-            headers[v] = conditions[k] if conditions and conditions[k]
-          end
+          set_copy_conditions(headers, opts[:condition]) if opts[:condition]
 
           _, body = HTTP.put(
             {:bucket => bucket_name, :object => dst_object_name},
@@ -1122,14 +1104,7 @@ module Aliyun
             headers['Range'] = "bytes=#{r}"
           end
 
-          {
-            :if_modified_since => 'x-oss-copy-source-if-modified-since',
-            :if_unmodified_since => 'x-oss-copy-source-if-unmodified-since',
-            :if_match_etag => 'x-oss-copy-source-if-match',
-            :if_unmatch_etag => 'x-oss-copy-source-if-none-match'
-          }.each do |k, v|
-            headers[v] = conditions[k] if conditions and conditions[k]
-          end
+          set_copy_conditions(headers, conditions) if conditions
 
           sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
 
@@ -1199,30 +1174,34 @@ module Aliyun
         #  txn id after :id_marker
         # @option opts [String] :key_marker the object key marker for
         #  a multipart upload transaction.
-        #   1. if :id_marker is not set, return only those
-        #     transactions with object key *after* :key_marker;
-        #   2. if :id_marker is set, return only thoese transactions
-        #     with object key *equals* :key_marker and txn id after
-        #     :id_marker
+        #  1. if +:id_marker+ is not set, return only those
+        #     transactions with object key *after* +:key_marker+;
+        #  2. if +:id_marker+ is set, return only thoese transactions
+        #     with object key *equals* +:key_marker+ and txn id after
+        #     +:id_marker+
         # @option opts [String] :prefix the prefix of the object key
         #  for a multipart upload transaction. if set only return
         #  those transactions with the object key prefixed with it
         # @option opts [String] :delimiter the delimiter for the
         #  object key for a multipart upload transaction.
+        # @option opts [String] :encoding the encoding of object key
+        #  in the response body. Only {OSS::KeyEncoding::URL} is
+        #  supported now.
         # @return [Array<Multipart::Transaction>, Hash]
-        #  the returned transactions and a hash including next tokens
-        # @option more [String] :prefix the prefix used
-        # @option more [String] :delimiter the delimiter used
-        # @option more [Integer] :limit the limit used
-        # @option more [String] :id_marker the upload id marker used
-        # @option more [String] :next_id_marker upload id marker to
-        #  continue list buckets
-        # @option more [String] :key_marker the object key marker used
-        # @option more [String] :next_key_marker object key marker to
-        #  continue list buckets
-        # @option more [Boolean] :truncated whether there are more
-        #  buckets to be returned
-        # @option more [String] :encoding the object key encoding used
+        #  the returned transactions and a hash including next tokens,
+        #  which includes:
+        #  * :prefix [String] the prefix used
+        #  * :delimiter [String] the delimiter used
+        #  * :limit [Integer] the limit used
+        #  * :id_marker [String] the upload id marker used
+        #  * :next_id_marker [String] upload id marker to continue list
+        #    multipart transactions
+        #  * :key_marker [String] the object key marker used
+        #  * :next_key_marker [String] object key marker to continue
+        #    list multipart transactions
+        #  * :truncated [Boolean] whether there are more transactions
+        #    to be returned
+        #  * :encoding [String] the object key encoding used
         def list_multipart_transactions(bucket_name, opts = {})
           logger.debug("Begin list multipart transactions, bucket: #{bucket_name}, " \
                        "opts: #{opts}")
@@ -1290,13 +1269,13 @@ module Aliyun
         # @option opts [Integer] :marker the part number marker after
         #  which to return parts
         # @option opts [Integer] :limit max number parts to return
-        # @return [Array<Multipart::Part, Hash] the
-        #  returned parts and a hash including next tokens
-        # @option more [Integer] :marker the marker used
-        # @option more [Integer] :limit the limit used
-        # @option more [Integer] :next_marker marker to continue list parts
-        # @option more [Boolean] :truncated whether there are more
-        #  parts to be returned
+        # @return [Array<Multipart::Part>, Hash] the returned parts and
+        #  a hash including next tokens, which includes:
+        #  * :marker [Integer] the marker used
+        #  * :limit [Integer] the limit used
+        #  * :next_marker [Integer] marker to continue list parts
+        #  * :truncated [Boolean] whether there are more parts to be
+        #    returned
         def list_parts(bucket_name, object_name, txn_id, opts = {})
           logger.debug("Begin list_parts, bucket: #{bucket_name}, object: " \
                        "#{object_name}, txn id: #{txn_id}, options: #{opts}")
@@ -1392,9 +1371,45 @@ module Aliyun
           x == nil ? nil : yield(x)
         end
 
+        # Set conditions in HTTP headers
+        # @param headers [Hash] the http headers
+        # @param conditions [Hash] the conditions
+        def set_conditions(headers, conditions)
+          {
+            :if_modified_since => 'If-Modified-Since',
+            :if_unmodified_since => 'If-Unmodified-Since',
+          }.each do |k, v|
+            headers[v] = conditions[k].httpdate if conditions.has_key?(k)
+          end
+          {
+            :if_match_etag => 'If-Match',
+            :if_unmatch_etag => 'If-None-Match'
+          }.each do |k, v|
+            headers[v] = conditions[k] if conditions.has_key?(k)
+          end
+        end
+
+        # Set copy conditions in HTTP headers
+        # @param headers [Hash] the http headers
+        # @param conditions [Hash] the conditions
+        def set_copy_conditions(headers, conditions)
+          {
+            :if_modified_since => 'x-oss-copy-source-if-modified-since',
+            :if_unmodified_since => 'x-oss-copy-source-if-unmodified-since',
+          }.each do |k, v|
+              headers[v] = conditions[k].httpdate if conditions.has_key?(k)
+          end
+
+          {
+            :if_match_etag => 'x-oss-copy-source-if-match',
+            :if_unmatch_etag => 'x-oss-copy-source-if-none-match'
+          }.each do |k, v|
+            headers[v] = conditions[k] if conditions.has_key?(k)
+          end
+        end
+
       end # self
 
     end # Protocol
-
   end # OSS
 end # Aliyun

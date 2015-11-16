@@ -133,8 +133,9 @@ module Aliyun
                 xml.Status r.enabled ? 'Enabled' : 'Disabled'
                 xml.Prefix r.prefix
                 xml.Expiration {
-                  if r.expiry.is_a?(Time)
-                    xml.Date r.expiry.iso8601
+                  if r.expiry.is_a?(Date)
+                    xml.Date Time.utc(r.expiry.year, r.expiry.month, r.expiry.day)
+                              .iso8601.sub('Z', '.000Z')
                   else
                     xml.Days r.expiry.to_i
                   end
@@ -495,7 +496,7 @@ module Aliyun
           rules = (1..5).map do |i|
             LifeCycleRule.new(
               :id => i, :enabled => i % 2 == 0, :prefix => "foo#{i}",
-              :expiry => (i % 2 == 1 ? Time.now : 10 + i))
+              :expiry => (i % 2 == 1 ? Date.today : 10 + i))
           end
 
           Protocol.update_bucket_lifecycle(@bucket, rules)
@@ -509,7 +510,7 @@ module Aliyun
           return_rules = (1..5).map do |i|
             LifeCycleRule.new(
               :id => i, :enabled => i % 2 == 0, :prefix => "foo#{i}",
-              :expiry => (i % 2 == 1 ? Time.now.iso8601 : 10 + i))
+              :expiry => (i % 2 == 1 ? Date.today : 10 + i))
           end
 
           stub_request(:get, request_path)
@@ -520,7 +521,7 @@ module Aliyun
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
-          expect(rules.map {|x| x.id}).to eq(return_rules.map {|x| x.id})
+          expect(rules.map(&:to_s)).to match_array(return_rules.map(&:to_s))
         end
 
         it "should delete lifecycle" do
@@ -568,7 +569,7 @@ module Aliyun
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
-          expect(rules.map {|r| r.to_s}.join("; ")).to eq(return_rules.map {|r| r.to_s}.join("; "))
+          expect(rules.map(&:to_s)).to match_array(return_rules.map(&:to_s))
         end
 
         it "should delete cors" do

@@ -321,6 +321,9 @@ module Aliyun
       #  会被忽略。
       # @option opts [Hash] :condition 指定拷贝object需要满足的条件，
       #  同 {#get_object}
+      # @return [Hash] 目标文件的信息
+      #  * :etag [String] 目标文件的ETag
+      #  * :last_modified [Time] 目标文件的最后修改时间
       def copy_object(source, dest, opts = {})
         Protocol.copy_object(name, source, dest, opts)
       end
