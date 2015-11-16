@@ -109,11 +109,47 @@ OSS支持自定义域名绑定，允许用户将自己的域名指向阿里云OS
 
     bucket.get_object(object_key, :file => local_file)
 
+### 拷贝Object
+
+    bucket.copy_object(from_key, to_key)
+
 ### 判断一个Object是否存在
 
     bucket.object_exists?(object_key)
 
 更多Bucket的操作请参考API文档中的{Aliyun::OSS::Bucket}
+
+## 模拟目录结构
+
+OSS是Object存储服务，本身不支持目录结构，所有的object都是“平”的。但是
+用户可以通过设置object的key为"/foo/bar/file"这样的形式来模拟目录结构。
+假设现在有以下Objects：
+
+    /foo/x
+    /foo/bar/f1
+    /foo/bar/dir/file
+    /foo/hello/file
+
+列出"/foo/"目录下的所有文件就是以"/foo/"为prefix进行`list_objects`，但
+是这样也会把"/foo/bar/"下的所有object也列出来。为此需要用到delimiter参
+数，其含义是从prefix往后遇到第一个delimiter时停止，这中间的key作为
+Object的common prefix，包含在`list_objects`的结果中。
+
+    objs = bucket.list_objects(:prefix => '/foo/', :delimiter => '/')
+    objs.each do |i|
+      if i.is_a?(Object) # a object
+        puts "object: #{i.key}"
+      else
+        puts "common prefix: #{i}"
+      end
+    end
+    # output
+    object: /foo/x
+    common prefix: /foo/bar/
+    common prefix: /foo/hello/
+
+Common prefix让用户不需要遍历所有的object（可能数量巨大）而找出前缀，
+在模拟目录结构时非常有用。
 
 ## 断点上传/下载
 
@@ -209,6 +245,29 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 后续追加时，可以根据{Aliyun::OSS::Bucket#append_object}返回的下次追加长度。
 
 注意：如果并发地`append_object`，`next_pos`并不总是对的。
+
+## Object meta信息
+
+在上传Object时，除了Object内容，OSS还允许用户为Object设置一些"meta信息
+"，这些meta信息是一个个的Key-Value对，用于标识Object特有的属性信息。这
+些meta信息会跟Object一起存储，并在`get_object`和`get_object_meta`时返
+回给用户。
+
+    bucket.put_object(object_key, :file => local_file,
+                      :metas => {
+                        'key1' => 'value1',
+                        'key2' => 'value2'})
+
+    obj = bucket.get_object(object_key, :file => localfile)
+    puts obj.metas
+
+关于meta信息有以下几点需要注意：
+1. meta信息的key和value都只能是String类型，并且总的大小不能超过8KB。
+2. meta信息设置后，可以通过`copy_object`来更改，这需要：
+    * 将dest_object设置成和source_object一样
+    * `:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
+3. Copy object时默认将拷贝源object的meta信息，如果用户不希望这么，需要
+   显式地将`:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
 
 ## 更多
 
