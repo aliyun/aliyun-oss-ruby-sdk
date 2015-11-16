@@ -266,7 +266,7 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 2. meta信息设置后，可以通过`copy_object`来更改，这需要：
     * 将dest_object设置成和source_object一样
     * `:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
-3. Copy object时默认将拷贝源object的meta信息，如果用户不希望这么，需要
+3. Copy object时默认将拷贝源object的meta信息，如果用户不希望这么做，需要
    显式地将`:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
 
 ## 更多
