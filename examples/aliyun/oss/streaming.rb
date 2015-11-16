@@ -50,28 +50,24 @@ File.open(File.expand_path(local_2), 'w') do |f|
   end
 end
 
-f1 = File.read(File.expand_path(local_1)).each_line
-f2 = File.read(File.expand_path(local_2)).each_line
-
 bucket.put_object(result_object) do |content|
-  v1 = f1.peek rescue nil
-  v2 = f2.peek rescue nil
+  f1 = File.open(File.expand_path(local_1))
+  f2 = File.open(File.expand_path(local_2))
+  v1, v2 = f1.readline, f2.readline
 
-  if v1 and v2
+  until f1.eof? or f2.eof?
     if v1.to_i < v2.to_i
       content << v1
-      f1.next
+      v1 = f1.readline
     else
       content << v2
-      f2.next
+      v2 = f2.readline
     end
-  elsif v1
-    content << v1
-    f1.next
-  elsif v2
-    content << v2
-    f2.next
   end
+
+  [v1, v2].sort.each{|i| content << i}
+  content << f1.readline until f1.eof?
+  content << f2.readline until f2.eof?
 end
 
 puts "内容写入OSS成功，object: #{result_object}"
@@ -97,13 +93,16 @@ object_size = bucket.get_object_meta(large_file).size
 puts "Object: #{large_file}的大小是：#{object_size}"
 
 # 流式下载文件，仅打印进度，不保存文件
+def to_percentile(v)
+  "#{(v * 100.0).round(2)} %"
+end
+
 last_got, got = 0, 0
 bucket.get_object(large_file) do |chunk|
   got += chunk.size
   # 仅在下载进度大于10%的时候打印
   if (got - last_got).to_f / object_size > 0.1
-    puts "下载进度：#{(got.to_f / object_size).round(2) * 100} %"
+    puts "下载进度：#{to_percentile(got.to_f / object_size)}"
     last_got = got
   end
 end
-puts "下载进度：#{(got.to_f / object_size).round(2) * 100} %"

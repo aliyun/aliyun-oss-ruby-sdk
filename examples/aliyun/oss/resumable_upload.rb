@@ -19,7 +19,10 @@ File.open('/tmp/x', 'w') do |f|
 end
 
 # 上传一个100M的文件
-bucket.resumable_upload('resumable', '/tmp/x')
+start = Time.now
+puts "Start upload..."
+bucket.resumable_upload('resumable', '/tmp/x', :cpt_file => '/tmp/x.cpt')
+puts "Upload complete. Cost: #{Time.now - start} seconds."
 
 # 测试方法：
 # 1. ruby examples/resumable_upload.rb

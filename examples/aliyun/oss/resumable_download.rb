@@ -14,7 +14,10 @@ bucket = Aliyun::OSS::Client.new(
   :access_key_secret => cred["key"]).get_bucket('t-hello-world')
 
 # 下载一个100M的文件
-bucket.resumable_download('resumable', '/tmp/y')
+start = Time.now
+puts "Start download..."
+bucket.resumable_download('resumable', '/tmp/y', :cpt_file => '/tmp/y.cpt')
+puts "Download complete. Cost: #{Time.now - start} seconds."
 
 # 测试方法：
 # 1. ruby examples/resumable_download.rb

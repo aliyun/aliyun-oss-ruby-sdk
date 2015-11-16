@@ -510,7 +510,7 @@ module Aliyun
         end
 
         # Put an object to the specified bucket, a block is required
-        # to provide the object data
+        # to provide the object data.
         # @param bucket_name [String] the bucket name
         # @param object_name [String] the object name
         # @param opts [Hash] Options
@@ -528,8 +528,6 @@ module Aliyun
         #   chunk = get_chunk
         #   put_object('bucket', 'object') { |sw| sw.write(chunk) }
         def put_object(bucket_name, object_name, opts = {}, &block)
-          raise ClientError.new('Missing block in put_object') unless block
-
           logger.debug("Begin put object, bucket: #{bucket_name}, object: "\
                        "#{object_name}, options: #{opts}")
 
@@ -566,8 +564,6 @@ module Aliyun
         #   2. The position must equal to the object's size before append
         #   3. The :content_type is only used when the object is created
         def append_object(bucket_name, object_name, position, opts = {}, &block)
-          raise ClientError.new('Missing block in append_object') unless block
-
           logger.debug("Begin append object, bucket: #{bucket_name}, object: " \
                         "#{object_name}, position: #{position}, options: #{opts}")
 
@@ -753,7 +749,7 @@ module Aliyun
 
           h, _ = HTTP.get(
                {:bucket => bucket_name, :object => object_name},
-               {:headers => headers, :query => query}) {|chunk| yield chunk}
+               {:headers => headers, :query => query}) {|chunk| yield chunk if block_given?}
 
           metas = {}
           meta_prefix = 'x_oss_meta_'
@@ -945,7 +941,7 @@ module Aliyun
                        "object: #{object_name}, acl: #{acl}")
 
           sub_res = {'acl' => nil}
-          headers = {'x-oss-acl' => acl}
+          headers = {'x-oss-object-acl' => acl}
 
           HTTP.put(
             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},

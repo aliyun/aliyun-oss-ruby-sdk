@@ -674,7 +674,7 @@ module Aliyun
 
           expect(WebMock).to have_requested(:put, url)
             .with(:query => query,
-                  :headers => {'x-oss-acl' => ACL::PUBLIC_READ},
+                  :headers => {'x-oss-object-acl' => ACL::PUBLIC_READ},
                   :body => nil)
         end
 

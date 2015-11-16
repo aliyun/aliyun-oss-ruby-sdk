@@ -70,3 +70,64 @@ objects.each do |o|
     puts "Common prefix: #{o}"
   end
 end
+
+# 获取/设置Bucket属性: ACL, Logging, Website, Referer, LifeCycle, CORS
+puts "Bucket acl before: #{bucket.acl}"
+bucket.acl = Aliyun::OSS::ACL::PUBLIC_READ
+puts "Bucket acl now: #{bucket.acl}"
+
+begin
+  puts "Bucket logging before: #{bucket.logging}"
+rescue => e
+  puts "Get bucket logging failed: #{e.message}"
+end
+bucket.logging = {:enable => true, :target_bucket => 't-hello-world', :prefix => 'foo/'}
+puts "Bucket logging now: #{bucket.logging}"
+
+begin
+  puts "Bucket website before: #{bucket.website}"
+rescue => e
+  puts "Get bucket website failed: #{e.message}"
+end
+
+bucket.website = {:index => 'default.html', :error => 'error.html'}
+puts "Bucket website now: #{bucket.website}"
+
+begin
+  puts "Bucket referer before: #{bucket.referer}"
+rescue => e
+  puts "Get bucket referer failed: #{e.message}"
+end
+
+bucket.referer = {:allow_empty => true, :referers => ['baidu.com', 'aliyun.com']}
+puts "Bucket referer now: #{bucket.referer}"
+
+begin
+  puts "Bucket lifecycle before: #{bucket.lifecycle.map(&:to_s)}"
+rescue => e
+  puts "Get bucket lifecycle failed: #{e.message}"
+end
+
+bucket.lifecycle = [
+  Aliyun::OSS::LifeCycleRule.new(
+    :id => 'rule1', :enabled => true, :prefix => 'foo/', :expiry => 1),
+  Aliyun::OSS::LifeCycleRule.new(
+    :id => 'rule2', :enabled => false, :prefix => 'bar/', :expiry => Date.new(2016, 1, 1))
+]
+puts "Bucket lifecycle now: #{bucket.lifecycle.map(&:to_s)}"
+
+begin
+  puts "Bucket cors before: #{bucket.cors.map(&:to_s)}"
+rescue => e
+  puts "Get bucket cors failed: #{e.message}"
+end
+
+bucket.cors = [
+    Aliyun::OSS::CORSRule.new(
+      :allowed_origins => ['aliyun.com', 'http://www.taobao.com'],
+      :allowed_methods => ['PUT', 'POST', 'GET'],
+      :allowed_headers => ['Authorization'],
+      :expose_headers => ['x-oss-test'],
+      :max_age_seconds => 100)
+]
+puts "Bucket cors now: #{bucket.cors.map(&:to_s)}"

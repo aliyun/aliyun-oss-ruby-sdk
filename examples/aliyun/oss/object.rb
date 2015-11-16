@@ -88,3 +88,50 @@ end
 # 这意味着delete_object是幂等的，在删除失败的时候可以不断重试，直到成
 # 功，成功意味着object已经不存在
 bucket.delete_object('non-existent-object')
+
+# 设置Object metas
+bucket.put_object(
+  'files/hello',
+  :metas => {'year' => '2015', 'people' => 'mary'}
+) do |content|
+  content << 'hello world.'
+end
+
+o = bucket.get_object('files/hello', :file => '/tmp/x')
+puts "Get object: #{o.to_s}"
+
+# 通过copy_object修改metas
+bucket.copy_object('files/hello', 'files/hello',
+                   :meta_directive => Aliyun::OSS::MetaDirective::REPLACE,
+                   :metas => {'year' => '2016', 'people' => 'jack'})
+o = bucket.get_object_meta('files/hello')
+puts "Meta changed: #{o.to_s}"
+
+# 设置Object的ACL
+puts "Object acl before: #{bucket.get_object_acl('files/hello')}"
+bucket.set_object_acl('files/hello', Aliyun::OSS::ACL::PUBLIC_READ)
+puts "Object acl now: #{bucket.get_object_acl('files/hello')}"
+
+# 指定条件get_object
+o = bucket.get_object_meta('files/hello')
+old_etag = o.etag
+
+begin
+  o = bucket.get_object('files/hello',
+                        :condition => {:if_unmatch_etag => old_etag})
+rescue Aliyun::OSS::ServerError => e
+  puts "Get object failed: #{e.message}, #{e.http_code}"
+end
+
+begin
+  o = bucket.get_object('files/hello',
+                        :condition => {:if_modified_since => Time.now})
+rescue Aliyun::OSS::ServerError => e
+  puts "Get object failed: #{e.message}, #{e.http_code}"
+end
+
+o = bucket.get_object('files/hello',
+                      :condition => {
+                        :if_match_etag => old_etag,
+                        :if_unmodified_since => Time.now})
+puts "Get object: #{o.to_s}"

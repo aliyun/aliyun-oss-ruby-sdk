@@ -187,7 +187,7 @@ module Aliyun
           opts[:content_type] = get_content_type(file)
 
           Protocol.put_object(name, key, opts) do |sw|
-            File.open(File.expand_path(file)) do |f|
+            File.open(File.expand_path(file), 'rb') do |f|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) until f.eof?
             end
           end
@@ -229,7 +229,7 @@ module Aliyun
         obj = nil
         file = opts[:file]
         if file
-          File.open(File.expand_path(file), 'w') do |f|
+          File.open(File.expand_path(file), 'wb') do |f|
             obj = Protocol.get_object(name, key, opts) do |chunk|
               f.write(chunk)
             end
@@ -295,7 +295,7 @@ module Aliyun
           opts[:content_type] = get_content_type(file)
 
           next_pos = Protocol.append_object(name, key, pos, opts) do |sw|
-            File.open(File.expand_path(file)) do |f|
+            File.open(File.expand_path(file), 'rb') do |f|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) until f.eof?
             end
           end
@@ -350,7 +350,7 @@ module Aliyun
       # 设置object的ACL
       # @param key [String] Object的名字
       # @param acl [String] Object的{OSS::ACL ACL}
-      def update_object_acl(key, acl)
+      def set_object_acl(key, acl)
         Protocol.update_object_acl(name, key, acl)
       end
 
