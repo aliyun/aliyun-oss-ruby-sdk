@@ -10,15 +10,16 @@ module Aliyun
     describe Client do
 
       context "construct" do
-        it "should setup endpoint and a/k" do
+        it "should setup endpoint and a/k", :focus => true do
           endpoint = 'oss-cn-hangzhou.aliyuncs.com'
-          Client.new(:endpoint => endpoint,
-                     :access_key_id => 'xxx',
-                     :access_key_secret => 'yyy')
+          client = Client.new(
+            :endpoint => endpoint,
+            :access_key_id => 'xxx', :access_key_secret => 'yyy')
 
-          expect(Config.get(:endpoint).to_s).to eq("http://#{endpoint}")
-          expect(Config.get(:access_id)).to eq('xxx')
-          expect(Config.get(:access_key)).to eq('yyy')
+          config = client.instance_variable_get('@config')
+          expect(config.endpoint.to_s).to eq("http://#{endpoint}")
+          expect(config.access_key_id).to eq('xxx')
+          expect(config.access_key_secret).to eq('yyy')
         end
 
         it "should not set Authorization with anonymous client" do
@@ -34,6 +35,28 @@ module Aliyun
           expect(WebMock)
             .to have_requested(:get, "#{bucket}.#{endpoint}/#{object}")
             .with{ |req| not req.headers.has_key?('Authorization') }
+        end
+
+        it "should construct different client" do
+          bucket = 'rubysdk-bucket'
+          object = 'rubysdk-object'
+          ep1 = 'oss-cn-hangzhou.aliyuncs.com'
+          c1 = Client.new(
+            :endpoint => ep1,
+            :access_key_id => 'xxx', :access_key_secret => 'yyy')
+          ep2 = 'oss-cn-beijing.aliyuncs.com'
+          c2 = Client.new(
+            :endpoint => ep2,
+            :access_key_id => 'aaa', :access_key_secret => 'bbb')
+
+          stub_request(:get, "#{bucket}.#{ep1}/#{object}")
+          stub_request(:put, "#{bucket}.#{ep2}/#{object}")
+
+          c1.get_bucket(bucket).get_object(object)
+          c2.get_bucket(bucket).put_object(object)
+
+          expect(WebMock).to have_requested(:get, "#{bucket}.#{ep1}/#{object}")
+          expect(WebMock).to have_requested(:put, "#{bucket}.#{ep2}/#{object}")
         end
       end # construct
 
@@ -101,7 +124,7 @@ module Aliyun
         it "should delete bucket" do
           stub_request(:delete, bucket_url)
 
-          Protocol.delete_bucket(@bucket)
+          @client.delete_bucket(@bucket)
 
           expect(WebMock).to have_requested(:delete, bucket_url)
             .with(:body => nil, :query => {})

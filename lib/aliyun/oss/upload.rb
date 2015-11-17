@@ -10,8 +10,9 @@ module Aliyun
         PART_SIZE = 4 * 1024 * 1024
         READ_SIZE = 16 * 1024
 
-        def initialize(opts)
+        def initialize(protocol, opts)
           super(opts)
+          @protocol = protocol
           @file, @checkpoint_file = opts[:file], opts[:cpt_file]
           @file_meta = {}
           @parts = []
@@ -84,7 +85,7 @@ module Aliyun
           logger.info("Begin commit transaction, id: #{id}")
 
           parts = @parts.map{ |p| Part.new(:number  => p[:number], :etag => p[:etag])}
-          Protocol.commit_multipart(bucket, object, id, parts)
+          @protocol.commit_multipart(bucket, object, id, parts)
 
           File.delete(@checkpoint_file) unless options[:disable_cpt]
 
@@ -114,7 +115,7 @@ module Aliyun
         def initiate!
           logger.info("Begin initiate transaction")
 
-          @id = Protocol.begin_multipart(bucket, object, options)
+          @id = @protocol.begin_multipart(bucket, object, options)
           @file_meta = {
             :mtime => File.mtime(@file),
             :md5 => Digest::MD5.file(@file).to_s
@@ -134,7 +135,7 @@ module Aliyun
             pos = range.first
             f.seek(pos)
 
-            result = Protocol.upload_part(bucket, object, id, p[:number]) do |sw|
+            result = @protocol.upload_part(bucket, object, id, p[:number]) do |sw|
               while pos < range.at(1)
                 bytes = [READ_SIZE, range.at(1) - pos].min
                 sw << f.read(bytes)

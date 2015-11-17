@@ -10,8 +10,9 @@ module Aliyun
     describe "Service" do
       before :all do
         @endpoint = 'oss.aliyuncs.com'
-        Config.set_endpoint(@endpoint)
-        Config.set_credentials('xxx', 'yyy')
+        @protocol = Protocol.new(
+          Config.new(:endpoint => @endpoint,
+                     :access_key_id => 'xxx', :access_key_secret => 'yyy'))
 
         @all_buckets = []
         (1..10).each do |i|
@@ -59,7 +60,7 @@ module Aliyun
         it "should send correct request" do
           stub_request(:get, @endpoint)
 
-          Protocol.list_buckets
+          @protocol.list_buckets
 
           expect(WebMock).to have_requested(:get, @endpoint).
                               with(:body => nil, :query => {})
@@ -70,7 +71,7 @@ module Aliyun
           stub_request(:get, @endpoint).to_return(
             {:body => mock_response(@all_buckets, {})})
 
-          buckets, more = Protocol.list_buckets
+          buckets, more = @protocol.list_buckets
           bucket_names = buckets.map {|b| b.name}
 
           all_bucket_names = @all_buckets.map {|b| b.name}
@@ -90,7 +91,7 @@ module Aliyun
           stub_request(:get, @endpoint).with(
             :query => {'prefix' => prefix, 'marker' => marker, 'max-keys' => limit})
 
-          Protocol.list_buckets(
+          @protocol.list_buckets(
             :prefix => prefix, :limit => limit, :marker => marker)
 
           expect(WebMock).to have_requested(:get, @endpoint).
@@ -117,7 +118,7 @@ module Aliyun
           ).to_return(
             {:body => mock_response(return_buckets, more)})
 
-          buckets, more = Protocol.list_buckets(
+          buckets, more = @protocol.list_buckets(
                      :prefix => prefix,
                      :limit => limit,
                      :marker => marker)

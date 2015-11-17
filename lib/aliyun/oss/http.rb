@@ -15,14 +15,14 @@ module Aliyun
     # * raise exceptions and capture the request id
     # * encapsulates streaming upload/download
     # @example simple get
-    #   headers, body = HTTP.get({:bucket => 'bucket'})
+    #   headers, body = http.get({:bucket => 'bucket'})
     # @example streaming download
-    #   HTTP.get({:bucket => 'bucket', :object => 'object'}) do |chunk|
+    #   http.get({:bucket => 'bucket', :object => 'object'}) do |chunk|
     #     # handle chunk
     #   end
     # @example streaming upload
     #   def streaming_upload(&block)
-    #     HTTP.put({:bucket => 'bucket', :object => 'object'},
+    #     http.put({:bucket => 'bucket', :object => 'object'},
     #              {:body => HTTP::StreamPlayload.new(block)})
     #   end
     #
@@ -100,160 +100,159 @@ module Aliyun
 
       end
 
-      class << self
+      include Logging
 
-        include Logging
+      def initialize(config)
+        @config = config
+      end
 
-        def get_request_url(bucket, object)
-          url = ""
-          url += "#{Config.get(:endpoint).scheme}://"
-          url += "#{bucket}." if bucket and not Config.get(:cname)
-          url += Config.get(:endpoint).host
-          url += "/#{CGI.escape(object)}" if object
+      def get_request_url(bucket, object)
+        url = ""
+        url += "#{@config.endpoint.scheme}://"
+        url += "#{bucket}." if bucket and not @config.cname
+        url += @config.endpoint.host
+        url += "/#{CGI.escape(object)}" if object
 
-          url
+        url
+      end
+
+      def get_resource_path(bucket, object)
+        if bucket
+          res = "/#{bucket}/"
+          res += "#{object}" if object
+          res
         end
+      end
 
-        def get_resource_path(bucket, object)
-          if bucket
-            res = "/#{bucket}/"
-            res += "#{object}" if object
-            res
+      # Handle Net::HTTPRespoonse
+      def handle_response(r, &block)
+        # read all body on error
+        if r.code.to_i >= 300
+          r.read_body
+        else
+        # streaming read body on success
+          r.read_body do |chunk|
+            yield RestClient::Request.decode(r['content-encoding'], chunk)
           end
         end
+      end
 
-        # Handle Net::HTTPRespoonse
-        def handle_response(r, &block)
-          # read all body on error
-          if r.code.to_i >= 300
-            r.read_body
+      ##
+      # helper methods
+      #
+      def get(resources = {}, http_options = {}, &block)
+        do_request('GET', resources, http_options, &block)
+      end
+
+      def put(resources = {}, http_options = {}, &block)
+        do_request('PUT', resources, http_options, &block)
+      end
+
+      def post(resources = {}, http_options = {}, &block)
+        do_request('POST', resources, http_options, &block)
+      end
+
+      def delete(resources = {}, http_options = {}, &block)
+        do_request('DELETE', resources, http_options, &block)
+      end
+
+      def head(resources = {}, http_options = {}, &block)
+        do_request('HEAD', resources, http_options, &block)
+      end
+
+      def options(resources = {}, http_options = {}, &block)
+        do_request('OPTIONS', resources, http_options, &block)
+      end
+
+      private
+      # Do HTTP reqeust
+      # @param verb [String] HTTP Verb: GET/PUT/POST/DELETE/HEAD/OPTIONS
+      # @param resources [Hash] OSS related resources
+      # @option resources [String] :bucket the bucket name
+      # @option resources [String] :object the object name
+      # @option resources [Hash] :sub_res sub-resources
+      # @param http_options [Hash] HTTP options
+      # @option http_options [Hash] :headers HTTP headers
+      # @option http_options [Hash] :query HTTP queries
+      # @option http_options [Object] :body HTTP body, may be String
+      #  or Stream
+      def do_request(verb, resources = {}, http_options = {}, &block)
+        bucket = resources[:bucket]
+        object = resources[:object]
+        sub_res = resources[:sub_res]
+
+        headers = http_options[:headers] || {}
+        headers['User-Agent'] = get_user_agent
+        headers['Date'] = Time.now.httpdate
+        headers['Content-Type'] ||= DEFAULT_CONTENT_TYPE
+
+        if body = http_options[:body] and body.respond_to?(:read)
+          headers['Transfer-Encoding'] = 'chunked'
+        end
+
+        res = {
+          :path => get_resource_path(bucket, object),
+          :sub_res => sub_res,
+        }
+
+        if @config.access_key_id and @config.access_key_secret
+          sig = Util.get_signature(@config.access_key_secret, verb, headers, res)
+          headers['Authorization'] = "OSS #{@config.access_key_id}:#{sig}"
+        end
+
+        logger.debug("Send HTTP request, verb: #{verb}, resources: " \
+                      "#{resources}, http options: #{http_options}")
+
+        # From rest-client:
+        # "Due to unfortunate choices in the original API, the params
+        # used to populate the query string are actually taken out of
+        # the headers hash."
+        headers[:params] = (sub_res || {}).merge(http_options[:query] || {})
+
+        block_response = lambda {|r| handle_response(r, &block) } if block
+        r = RestClient::Request.execute(
+          :method => verb,
+          :url => get_request_url(bucket, object),
+          :headers => headers,
+          :payload => http_options[:body],
+          :block_response =>  block_response
+        ) do |response, request, result, &blk|
+
+          if response.code >= 400
+            e = ServerError.new(response)
+            logger.error(e.to_s)
+            raise e
           else
-          # streaming read body on success
-            r.read_body do |chunk|
-              yield RestClient::Request.decode(r['content-encoding'], chunk)
-            end
+            response.return!(request, result, &blk)
           end
         end
 
-        ##
-        # helper methods
-        #
-        def get(resources = {}, http_options = {}, &block)
-          do_request('GET', resources, http_options, &block)
-        end
-
-        def put(resources = {}, http_options = {}, &block)
-          do_request('PUT', resources, http_options, &block)
-        end
-
-        def post(resources = {}, http_options = {}, &block)
-          do_request('POST', resources, http_options, &block)
-        end
-
-        def delete(resources = {}, http_options = {}, &block)
-          do_request('DELETE', resources, http_options, &block)
-        end
-
-        def head(resources = {}, http_options = {}, &block)
-          do_request('HEAD', resources, http_options, &block)
-        end
-
-        def options(resources = {}, http_options = {}, &block)
-          do_request('OPTIONS', resources, http_options, &block)
-        end
-
-        private
-        # Do HTTP reqeust
-        # @param verb [String] HTTP Verb: GET/PUT/POST/DELETE/HEAD/OPTIONS
-        # @param resources [Hash] OSS related resources
-        # @option resources [String] :bucket the bucket name
-        # @option resources [String] :object the object name
-        # @option resources [Hash] :sub_res sub-resources
-        # @param http_options [Hash] HTTP options
-        # @option http_options [Hash] :headers HTTP headers
-        # @option http_options [Hash] :query HTTP queries
-        # @option http_options [Object] :body HTTP body, may be String
-        #  or Stream
-        def do_request(verb, resources = {}, http_options = {}, &block)
-          bucket = resources[:bucket]
-          object = resources[:object]
-          sub_res = resources[:sub_res]
-
-          headers = http_options[:headers] || {}
-          headers['User-Agent'] = get_user_agent
-          headers['Date'] = Time.now.httpdate
-          headers['Content-Type'] ||= DEFAULT_CONTENT_TYPE
-
-          if body = http_options[:body] and body.respond_to?(:read)
-            headers['Transfer-Encoding'] = 'chunked'
+        # If streaming read_body is used, we need to create the
+        # RestClient::Response ourselves
+        unless r.is_a?(RestClient::Response)
+          if r.code.to_i >= 300
+            r = RestClient::Response.create(
+              RestClient::Request.decode(r['content-encoding'], r.body),
+              r, nil, nil)
+            e = ServerError.new(r)
+            logger.error(e.to_s)
+            raise e
           end
-
-          res = {
-            :path => get_resource_path(bucket, object),
-            :sub_res => sub_res,
-          }
-
-          if Config.get(:access_id) and Config.get(:access_key)
-            sig = Util.get_signature(Config.get(:access_key), verb, headers, res)
-            headers['Authorization'] = "OSS #{Config.get(:access_id)}:#{sig}"
-          end
-
-          logger.debug("Send HTTP request, verb: #{verb}, resources: " \
-                        "#{resources}, http options: #{http_options}")
-
-          # From rest-client:
-          # "Due to unfortunate choices in the original API, the params
-          # used to populate the query string are actually taken out of
-          # the headers hash."
-          headers[:params] = (sub_res || {}).merge(http_options[:query] || {})
-
-          block_response = lambda {|r| handle_response(r, &block) } if block
-          r = RestClient::Request.execute(
-            :method => verb,
-            :url => get_request_url(bucket, object),
-            :headers => headers,
-            :payload => http_options[:body],
-            :block_response =>  block_response
-          ) do |response, request, result, &blk|
-
-            if response.code >= 400
-              e = ServerError.new(response)
-              logger.error(e.to_s)
-              raise e
-            else
-              response.return!(request, result, &blk)
-            end
-          end
-
-          # If streaming read_body is used, we need to create the
-          # RestClient::Response ourselves
-          unless r.is_a?(RestClient::Response)
-            if r.code.to_i >= 300
-              r = RestClient::Response.create(
-                RestClient::Request.decode(r['content-encoding'], r.body),
-                r, nil, nil)
-              e = ServerError.new(r)
-              logger.error(e.to_s)
-              raise e
-            end
-            r = RestClient::Response.create(nil, r, nil, nil)
-            r.return!
-          end
-
-          logger.debug("Received HTTP response, code: #{r.code}, headers: " \
-                        "#{r.headers}, body: #{r.body}")
-
-          [r.headers, r.body]
+          r = RestClient::Response.create(nil, r, nil, nil)
+          r.return!
         end
 
-        def get_user_agent
-          "aliyun-sdk-ruby/#{VERSION}"
-        end
+        logger.debug("Received HTTP response, code: #{r.code}, headers: " \
+                      "#{r.headers}, body: #{r.body}")
 
-      end # self
+        [r.headers, r.body]
+      end
+
+      def get_user_agent
+        "aliyun-sdk-ruby/#{VERSION}"
+      end
 
     end # HTTP
-
   end # OSS
 end # Aliyun
 

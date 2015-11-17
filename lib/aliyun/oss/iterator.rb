@@ -12,7 +12,8 @@ module Aliyun
       # Iterator base that stores fetched results and fetch more if needed.
       #
       class Base
-        def initialize(opts = {})
+        def initialize(protocol, opts = {})
+          @protocol = protocol
           @results, @more = [], opts
         end
 
@@ -45,7 +46,7 @@ module Aliyun
       #
       class Buckets < Base
         def fetch(more)
-          @results, cont = Protocol.list_buckets(more)
+          @results, cont = @protocol.list_buckets(more)
           @more[:marker] = cont[:next_marker]
           @more[:truncated] = cont[:truncated] || false
         end
@@ -55,35 +56,18 @@ module Aliyun
       # Objects iterator
       #
       class Objects < Base
-        def initialize(bucket_name, opts = {})
-          super(opts)
+        def initialize(protocol, bucket_name, opts = {})
+          super(protocol, opts)
           @bucket = bucket_name
         end
 
         def fetch(more)
-          @results, cont = Protocol.list_objects(@bucket, more)
+          @results, cont = @protocol.list_objects(@bucket, more)
           @results += cont[:common_prefixes] if cont[:common_prefixes]
           @more[:marker] = cont[:next_marker]
           @more[:truncated] = cont[:truncated] || false
         end
       end # Objects
-
-      ##
-      # Multiparts iterator
-      #
-      class Multiparts < Base
-        def initialize(bucket_name, opts = {})
-          super(opts)
-          @bucket = bucket_name
-        end
-
-        def fetch(more)
-          @results, cont = Protocol.list_multipart_transactions(@bucket, more)
-          @more[:id_marker] = cont[:next_id_marker]
-          @more[:key_marker] = cont[:next_key_marker]
-          @more[:truncated] = cont[:truncated] || false
-        end
-      end # Multiparts
 
     end # Iterator
   end # OSS

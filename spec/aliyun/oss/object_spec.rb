@@ -11,9 +11,9 @@ module Aliyun
 
       before :all do
         @endpoint = 'oss.aliyuncs.com'
-
-        Config.set_endpoint(@endpoint)
-        Config.set_credentials('xxx', 'yyy')
+        @protocol = Protocol.new(
+          Config.new(:endpoint => @endpoint,
+                     :access_key_id => 'xxx', :access_key_secret => 'yyy'))
         @bucket = 'rubysdk-bucket'
       end
 
@@ -99,7 +99,7 @@ module Aliyun
           stub_request(:put, url)
 
           content = "hello world"
-          Protocol.put_object(@bucket, object_name) do |c|
+          @protocol.put_object(@bucket, object_name) do |c|
             c << content
           end
 
@@ -118,7 +118,7 @@ module Aliyun
 
           content = "hello world"
           expect {
-            Protocol.put_object(@bucket, object_name) do |c|
+            @protocol.put_object(@bucket, object_name) do |c|
               c << content
             end
           }.to raise_error(Exception, message)
@@ -132,7 +132,7 @@ module Aliyun
           url = get_request_path(object_name)
           stub_request(:put, url)
 
-          Protocol.put_object(@bucket, object_name) do |content|
+          @protocol.put_object(@bucket, object_name) do |content|
             content << 'hello world'
           end
 
@@ -146,7 +146,7 @@ module Aliyun
           url = get_request_path(object_name)
           stub_request(:put, url)
 
-          Protocol.put_object(
+          @protocol.put_object(
             @bucket, object_name, :content_type => 'application/ruby'
           ) do |content|
             content << 'hello world'
@@ -163,7 +163,7 @@ module Aliyun
           stub_request(:put, url)
 
           content = "hello world"
-          Protocol.put_object(@bucket, object_name) do |c|
+          @protocol.put_object(@bucket, object_name) do |c|
             c << content
           end
 
@@ -176,7 +176,7 @@ module Aliyun
           url = get_request_path(object_name)
           stub_request(:put, url)
 
-          Protocol.put_object(
+          @protocol.put_object(
             @bucket, object_name, :metas => {'year' => '2015', 'people' => 'mary'}
           ) do |content|
             content << 'hello world'
@@ -203,7 +203,7 @@ module Aliyun
             .to_return(:headers => return_headers)
 
           content = "hello world"
-          next_pos = Protocol.append_object(@bucket, object_name, 11) do |c|
+          next_pos = @protocol.append_object(@bucket, object_name, 11) do |c|
             c << content
           end
 
@@ -224,7 +224,7 @@ module Aliyun
 
           content = "hello world"
           expect {
-            Protocol.append_object(@bucket, object_name, 11) do |c|
+            @protocol.append_object(@bucket, object_name, 11) do |c|
               c << content
             end
           }.to raise_error(Exception, message)
@@ -240,7 +240,7 @@ module Aliyun
 
           stub_request(:post, url).with(:query => query)
 
-          Protocol.append_object(@bucket, object_name, 0) do |content|
+          @protocol.append_object(@bucket, object_name, 0) do |content|
             content << 'hello world'
           end
 
@@ -257,7 +257,7 @@ module Aliyun
 
           stub_request(:post, url).with(:query => query)
 
-          Protocol.append_object(
+          @protocol.append_object(
             @bucket, object_name, 0, :content_type => 'application/ruby'
           ) do |content|
             content << 'hello world'
@@ -276,7 +276,7 @@ module Aliyun
 
           stub_request(:post, url).with(:query => query)
 
-          Protocol.append_object(
+          @protocol.append_object(
             @bucket, object_name, 0, :metas => {'year' => '2015', 'people' => 'mary'}
           ) do |content|
             content << 'hello world'
@@ -303,7 +303,7 @@ module Aliyun
           stub_request(:put, url).to_return(
             :body => mock_copy_object(last_modified, etag))
 
-          result = Protocol.copy_object(@bucket, src_object, dst_object)
+          result = @protocol.copy_object(@bucket, src_object, dst_object)
 
           expect(WebMock).to have_requested(:put, url)
             .with(:body => nil, :headers => {
@@ -335,7 +335,7 @@ module Aliyun
           stub_request(:put, url).to_return(
             :body => mock_copy_object(last_modified, etag))
 
-          result = Protocol.copy_object(
+          result = @protocol.copy_object(
             @bucket, src_object, dst_object,
             {:acl => ACL::PRIVATE,
              :meta_directive => MetaDirective::REPLACE,
@@ -361,7 +361,7 @@ module Aliyun
 
           stub_request(:put, url)
 
-          Protocol.copy_object(@bucket, src_object, dst_object,
+          @protocol.copy_object(@bucket, src_object, dst_object,
                                :metas => {
                                  'year' => '2015',
                                  'people' => 'mary'
@@ -385,7 +385,7 @@ module Aliyun
             :status => 400, :body => mock_error(code, message))
 
           expect {
-            Protocol.copy_object(@bucket, src_object, dst_object)
+            @protocol.copy_object(@bucket, src_object, dst_object)
           }.to raise_error(Exception, message)
 
           expect(WebMock).to have_requested(:put, url)
@@ -404,7 +404,7 @@ module Aliyun
           stub_request(:get, url).to_return(:body => return_content)
 
           content = ""
-          Protocol.get_object(@bucket, object_name) {|c| content << c}
+          @protocol.get_object(@bucket, object_name) {|c| content << c}
 
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => {})
@@ -430,7 +430,7 @@ module Aliyun
             .to_return(:headers => return_headers, :body => return_content)
 
           content = ""
-          obj = Protocol.get_object(@bucket, object_name) {|c| content << c}
+          obj = @protocol.get_object(@bucket, object_name) {|c| content << c}
 
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => {})
@@ -454,7 +454,7 @@ module Aliyun
             :status => 404, :body => mock_error(code, message))
 
           expect {
-            Protocol.get_object(@bucket, object_name) {|c| true}
+            @protocol.get_object(@bucket, object_name) {|c| true}
           }.to raise_error(Exception, message)
 
           expect(WebMock).to have_requested(:get, url)
@@ -467,7 +467,7 @@ module Aliyun
 
           stub_request(:get, url)
 
-          Protocol.get_object(@bucket, object_name, {:range => [0, 10]}) {}
+          @protocol.get_object(@bucket, object_name, {:range => [0, 10]}) {}
 
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => {},
@@ -486,7 +486,7 @@ module Aliyun
           unmodified_since = Time.now
           etag = 'xxxyyyzzz'
           not_etag = 'aaabbbccc'
-          Protocol.get_object(
+          @protocol.get_object(
             @bucket, object_name,
             {:condition => {
                :if_modified_since => modified_since,
@@ -521,7 +521,7 @@ module Aliyun
 
           stub_request(:get, url).with(:query => query)
 
-          Protocol.get_object(@bucket, object_name, :rewrite => rewrites) {}
+          @protocol.get_object(@bucket, object_name, :rewrite => rewrites) {}
 
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => query)
@@ -545,7 +545,7 @@ module Aliyun
           }
           stub_request(:head, url).to_return(:headers => return_headers)
 
-          obj = Protocol.get_object_meta(@bucket, object_name)
+          obj = @protocol.get_object_meta(@bucket, object_name)
 
           expect(WebMock).to have_requested(:head, url)
             .with(:body => nil, :query => {})
@@ -569,7 +569,7 @@ module Aliyun
           etag = 'xxxyyyzzz'
           not_etag = 'aaabbbccc'
 
-          Protocol.get_object_meta(
+          @protocol.get_object_meta(
             @bucket, object_name,
             :condition => {
               :if_modified_since => modified_since,
@@ -595,7 +595,7 @@ module Aliyun
 
           stub_request(:delete, url)
 
-          Protocol.delete_object(@bucket, object_name)
+          @protocol.delete_object(@bucket, object_name)
 
           expect(WebMock).to have_requested(:delete, url)
             .with(:body => nil, :query => {})
@@ -611,7 +611,7 @@ module Aliyun
             :status => 404, :body => mock_error(code, message))
 
           expect {
-            Protocol.delete_object(@bucket, object_name)
+            @protocol.delete_object(@bucket, object_name)
           }.to raise_error(Exception, message)
 
           expect(WebMock).to have_requested(:delete, url)
@@ -631,7 +631,7 @@ module Aliyun
             .to_return(:body => mock_delete_result(object_names))
 
           opts = {:quiet => false, :encoding => KeyEncoding::URL}
-          deleted = Protocol.batch_delete_objects(@bucket, object_names, opts)
+          deleted = @protocol.batch_delete_objects(@bucket, object_names, opts)
 
           expect(WebMock).to have_requested(:post, url)
             .with(:query => query, :body => mock_delete(object_names, opts))
@@ -654,7 +654,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_delete_result(es_objects, opts))
 
-          deleted = Protocol.batch_delete_objects(@bucket, object_names, opts)
+          deleted = @protocol.batch_delete_objects(@bucket, object_names, opts)
 
           expect(WebMock).to have_requested(:post, url)
             .with(:query => query, :body => mock_delete(object_names, opts))
@@ -670,7 +670,7 @@ module Aliyun
           query = {'acl' => ''}
           stub_request(:put, url).with(:query => query)
 
-          Protocol.update_object_acl(@bucket, object_name, ACL::PUBLIC_READ)
+          @protocol.update_object_acl(@bucket, object_name, ACL::PUBLIC_READ)
 
           expect(WebMock).to have_requested(:put, url)
             .with(:query => query,
@@ -689,7 +689,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_acl(return_acl))
 
-          acl = Protocol.get_object_acl(@bucket, object_name)
+          acl = @protocol.get_object_acl(@bucket, object_name)
 
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => query)
@@ -719,7 +719,7 @@ module Aliyun
             }
           )
 
-          rule = Protocol.get_object_cors(
+          rule = @protocol.get_object_cors(
             @bucket, object_name, 'origin', 'PUT', ['Authorization'])
 
           expect(WebMock).to have_requested(:options, url)

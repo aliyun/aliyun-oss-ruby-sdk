@@ -11,9 +11,9 @@ module Aliyun
 
       before :all do
         @endpoint = 'oss.aliyuncs.com'
-
-        Config.set_endpoint(@endpoint)
-        Config.set_credentials('xxx', 'yyy')
+        @protocol = Protocol.new(
+          Config.new(:endpoint => @endpoint,
+                     :access_key_id => 'xxx', :access_key_secret => 'yyy'))
         @bucket = 'rubysdk-bucket'
       end
 
@@ -187,7 +187,7 @@ module Aliyun
         it "should PUT to create bucket" do
           stub_request(:put, request_path)
 
-          Protocol.create_bucket(@bucket)
+          @protocol.create_bucket(@bucket)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:body => nil, :query => {})
@@ -198,7 +198,7 @@ module Aliyun
 
           stub_request(:put, request_path).with(:body => mock_location(location))
 
-          Protocol.create_bucket(@bucket, :location => 'oss-cn-hangzhou')
+          @protocol.create_bucket(@bucket, :location => 'oss-cn-hangzhou')
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:body => mock_location(location), :query => {})
@@ -210,7 +210,7 @@ module Aliyun
         it "should list all objects" do
           stub_request(:get, request_path)
 
-          Protocol.list_objects(@bucket)
+          @protocol.list_objects(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => {})
@@ -221,7 +221,7 @@ module Aliyun
           stub_request(:get, request_path)
             .to_return(:body => mock_objects(return_objects))
 
-          objects, more = Protocol.list_objects(@bucket)
+          objects, more = @protocol.list_objects(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => {})
@@ -247,7 +247,7 @@ module Aliyun
 
           stub_request(:get, request_path).with(:query => query)
 
-          Protocol.list_objects(@bucket, opts)
+          @protocol.list_objects(@bucket, opts)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => "", :query => query)
@@ -281,7 +281,7 @@ module Aliyun
           stub_request(:get, request_path).with(:query => query).
             to_return(:body => mock_objects(return_objects, return_more))
 
-          objects, more = Protocol.list_objects(@bucket, opts)
+          objects, more = @protocol.list_objects(@bucket, opts)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)
@@ -318,7 +318,7 @@ module Aliyun
           stub_request(:get, request_path)
             .to_return(:body => mock_objects(es_objects, es_more))
 
-          objects, more = Protocol.list_objects(@bucket)
+          objects, more = @protocol.list_objects(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => {})
@@ -333,7 +333,7 @@ module Aliyun
         it "should send DELETE reqeust" do
           stub_request(:delete, request_path)
 
-          Protocol.delete_bucket(@bucket)
+          @protocol.delete_bucket(@bucket)
 
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:body => nil, :query => {})
@@ -347,7 +347,7 @@ module Aliyun
             :status => 404, :body => mock_error(code, message))
 
           expect {
-            Protocol.delete_bucket(@bucket)
+            @protocol.delete_bucket(@bucket)
           }.to raise_error(Exception, message)
         end
       end # delete bucket
@@ -357,7 +357,7 @@ module Aliyun
           query = {'acl' => ''}
           stub_request(:put, request_path).with(:query => query)
 
-          Protocol.update_bucket_acl(@bucket, ACL::PUBLIC_READ)
+          @protocol.update_bucket_acl(@bucket, ACL::PUBLIC_READ)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => nil)
@@ -370,7 +370,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_acl(return_acl))
 
-          acl = Protocol.get_bucket_acl(@bucket)
+          acl = @protocol.get_bucket_acl(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
@@ -384,7 +384,7 @@ module Aliyun
           logging_opts = {
             :enable => true, :target_bucket => 'target-bucket', :prefix => 'foo'
           }
-          Protocol.update_bucket_logging(@bucket, logging_opts)
+          @protocol.update_bucket_logging(@bucket, logging_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_logging(logging_opts))
@@ -395,7 +395,7 @@ module Aliyun
           stub_request(:put, request_path).with(:query => query)
 
           logging_opts = {:enable => false}
-          Protocol.update_bucket_logging(@bucket, logging_opts)
+          @protocol.update_bucket_logging(@bucket, logging_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_logging(logging_opts))
@@ -410,7 +410,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_logging(logging_opts))
 
-          opts = Protocol.get_bucket_logging(@bucket)
+          opts = @protocol.get_bucket_logging(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
@@ -421,7 +421,7 @@ module Aliyun
           query = {'logging' => ''}
           stub_request(:delete, request_path).with(:query => query)
 
-          Protocol.delete_bucket_logging(@bucket)
+          @protocol.delete_bucket_logging(@bucket)
 
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:query => query, :body => nil)
@@ -432,7 +432,7 @@ module Aliyun
           stub_request(:put, request_path).with(:query => query)
 
           website_opts = {:index => 'index.html', :error => 'error.html'}
-          Protocol.update_bucket_website(@bucket, website_opts)
+          @protocol.update_bucket_website(@bucket, website_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_website(website_opts))
@@ -446,7 +446,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_website(website_opts))
 
-          opts = Protocol.get_bucket_website(@bucket)
+          opts = @protocol.get_bucket_website(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
@@ -457,7 +457,7 @@ module Aliyun
           query = {'website' => ''}
           stub_request(:delete, request_path).with(:query => query)
 
-          Protocol.delete_bucket_website(@bucket)
+          @protocol.delete_bucket_website(@bucket)
 
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:query => query, :body => nil)
@@ -468,7 +468,7 @@ module Aliyun
           stub_request(:put, request_path).with(:query => query)
 
           referer_opts = {:allow_empty => true, :referers => ['xxx', 'yyy']}
-          Protocol.update_bucket_referer(@bucket, referer_opts)
+          @protocol.update_bucket_referer(@bucket, referer_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_referer(referer_opts))
@@ -482,7 +482,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_referer(referer_opts))
 
-          opts = Protocol.get_bucket_referer(@bucket)
+          opts = @protocol.get_bucket_referer(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
@@ -499,7 +499,7 @@ module Aliyun
               :expiry => (i % 2 == 1 ? Date.today : 10 + i))
           end
 
-          Protocol.update_bucket_lifecycle(@bucket, rules)
+          @protocol.update_bucket_lifecycle(@bucket, rules)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_lifecycle(rules))
@@ -517,7 +517,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_lifecycle(return_rules))
 
-          rules = Protocol.get_bucket_lifecycle(@bucket)
+          rules = @protocol.get_bucket_lifecycle(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
@@ -528,7 +528,7 @@ module Aliyun
           query = {'lifecycle' => ''}
           stub_request(:delete, request_path).with(:query => query)
 
-          Protocol.delete_bucket_lifecycle(@bucket)
+          @protocol.delete_bucket_lifecycle(@bucket)
 
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:query => query, :body => nil)
@@ -545,7 +545,7 @@ module Aliyun
               :allowed_headers => (1..3).map {|x| "header-#{x}"},
               :expose_headers => (1..3).map {|x| "header-#{x}"})
           end
-          Protocol.set_bucket_cors(@bucket, rules)
+          @protocol.set_bucket_cors(@bucket, rules)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_cors(rules))
@@ -565,7 +565,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_cors(return_rules))
 
-          rules = Protocol.get_bucket_cors(@bucket)
+          rules = @protocol.get_bucket_cors(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
@@ -577,7 +577,7 @@ module Aliyun
 
           stub_request(:delete, request_path).with(:query => query)
 
-          Protocol.delete_bucket_cors(@bucket)
+          @protocol.delete_bucket_cors(@bucket)
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:query => query, :body => nil)
         end

@@ -7,30 +7,33 @@ module Aliyun
     # 1. bucket相关：获取/设置bucket的属性（acl, logging,website, etc）
     # 2. object相关：上传、下载、追加、拷贝object等
     # 3. multipart相关：断点续传、断点续载
-    class Bucket
-
-      include Struct::Base
+    class Bucket < Struct::Base
 
       attrs :name, :location, :creation_time
+
+      def initialize(opts = {}, protocol = nil)
+        super(opts)
+        @protocol = protocol
+      end
 
       ### Bucket相关的API ###
 
       # 获取Bucket的ACL
       # @return [String] Bucket的{OSS::ACL ACL}
       def acl
-        Protocol.get_bucket_acl(name)
+        @protocol.get_bucket_acl(name)
       end
 
       # 设置Bucket的ACL
       # @param acl [String] Bucket的{OSS::ACL ACL}
       def acl=(acl)
-        Protocol.update_bucket_acl(name, acl)
+        @protocol.update_bucket_acl(name, acl)
       end
 
       # 获取Bucket的logging配置
       # @return [Hash] Bucket的logging配置。见{#logging=}
       def logging
-        Protocol.get_bucket_logging(name)
+        @protocol.get_bucket_logging(name)
       end
 
       # 设置Bucket的logging配置
@@ -42,16 +45,16 @@ module Aliyun
       # @note 如果opts为空，则会删除这个bucket上的logging配置
       def logging=(opts)
         if opts.empty?
-          Protocol.delete_bucket_logging(name)
+          @protocol.delete_bucket_logging(name)
         else
-          Protocol.update_bucket_logging(name, opts)
+          @protocol.update_bucket_logging(name, opts)
         end
       end
 
       # 获取Bucket的website配置
       # @return [Hash] Bucket的website配置。See #website=
       def website
-        Protocol.get_bucket_website(name)
+        @protocol.get_bucket_website(name)
       end
 
       # 设置Bucket的website配置
@@ -62,16 +65,16 @@ module Aliyun
       # @note 如果opts为空，则会删除这个bucket上的website配置
       def website=(opts)
         if opts.empty?
-          Protocol.delete_bucket_website(name)
+          @protocol.delete_bucket_website(name)
         else
-          Protocol.update_bucket_website(name, opts)
+          @protocol.update_bucket_website(name, opts)
         end
       end
 
       # 获取Bucket的Referer配置
       # @return [Hash] Bucket的Referer配置。See #referer=
       def referer
-        Protocol.get_bucket_referer(name)
+        @protocol.get_bucket_referer(name)
       end
 
       # 设置Bucket的Referer配置
@@ -82,13 +85,13 @@ module Aliyun
       #  请求的Referer白名单
       # @note 如果opts为空，则会删除这个bucket上的referer配置
       def referer=(opts)
-        Protocol.update_bucket_referer(name, opts)
+        @protocol.update_bucket_referer(name, opts)
       end
 
       # 获取Bucket的生命周期配置
       # @return [Array<OSS::LifeCycleRule>] Bucket的生命周期规则
       def lifecycle
-        Protocol.get_bucket_lifecycle(name)
+        @protocol.get_bucket_lifecycle(name)
       end
 
       # 设置Bucket的生命周期配置
@@ -98,16 +101,16 @@ module Aliyun
       # @note 如果rules为空，则会删除这个bucket上的lifecycle配置
       def lifecycle=(rules)
         if rules.empty?
-          Protocol.delete_bucket_lifecycle(name)
+          @protocol.delete_bucket_lifecycle(name)
         else
-          Protocol.update_bucket_lifecycle(name, rules)
+          @protocol.update_bucket_lifecycle(name, rules)
         end
       end
 
       # 获取Bucket的跨域资源共享(CORS)的规则
       # @return [Array<OSS::CORSRule>] Bucket的CORS规则
       def cors
-        Protocol.get_bucket_cors(name)
+        @protocol.get_bucket_cors(name)
       end
 
       # 设置Bucket的跨域资源共享(CORS)的规则
@@ -115,9 +118,9 @@ module Aliyun
       # @note 如果rules为空，则会删除这个bucket上的CORS配置
       def cors=(rules)
         if rules.empty?
-          Protocol.delete_bucket_cors(name)
+          @protocol.delete_bucket_cors(name)
         else
-          Protocol.set_bucket_cors(name, rules)
+          @protocol.set_bucket_cors(name, rules)
         end
       end
 
@@ -155,7 +158,7 @@ module Aliyun
       #    end
       #  end
       def list_objects(opts = {})
-        Iterator::Objects.new(name, opts).to_enum
+        Iterator::Objects.new(@protocol, name, opts).to_enum
       end
 
       # 向Bucket中上传一个object
@@ -186,13 +189,13 @@ module Aliyun
         if file
           opts[:content_type] = get_content_type(file)
 
-          Protocol.put_object(name, key, opts) do |sw|
+          @protocol.put_object(name, key, opts) do |sw|
             File.open(File.expand_path(file), 'rb') do |f|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) until f.eof?
             end
           end
         else
-          Protocol.put_object(name, key, opts, &block)
+          @protocol.put_object(name, key, opts, &block)
         end
       end
 
@@ -230,12 +233,12 @@ module Aliyun
         file = opts[:file]
         if file
           File.open(File.expand_path(file), 'wb') do |f|
-            obj = Protocol.get_object(name, key, opts) do |chunk|
+            obj = @protocol.get_object(name, key, opts) do |chunk|
               f.write(chunk)
             end
           end
         else
-          obj = Protocol.get_object(name, key, opts, &block)
+          obj = @protocol.get_object(name, key, opts, &block)
         end
 
         obj
@@ -248,7 +251,7 @@ module Aliyun
       #  同{#get_object}
       # @return [OSS::Object] 返回Object对象
       def get_object_meta(key, opts = {})
-        Protocol.get_object_meta(name, key, opts)
+        @protocol.get_object_meta(name, key, opts)
       end
 
       # 判断一个object是否存在
@@ -294,13 +297,13 @@ module Aliyun
         if file
           opts[:content_type] = get_content_type(file)
 
-          next_pos = Protocol.append_object(name, key, pos, opts) do |sw|
+          next_pos = @protocol.append_object(name, key, pos, opts) do |sw|
             File.open(File.expand_path(file), 'rb') do |f|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) until f.eof?
             end
           end
         else
-          next_pos = Protocol.append_object(name, key, pos, opts, &block)
+          next_pos = @protocol.append_object(name, key, pos, opts, &block)
         end
 
         next_pos
@@ -325,13 +328,13 @@ module Aliyun
       #  * :etag [String] 目标文件的ETag
       #  * :last_modified [Time] 目标文件的最后修改时间
       def copy_object(source, dest, opts = {})
-        Protocol.copy_object(name, source, dest, opts)
+        @protocol.copy_object(name, source, dest, opts)
       end
 
       # 删除一个object
       # @param key [String] Object的名字
       def delete_object(key)
-        Protocol.delete_object(name, key)
+        @protocol.delete_object(name, key)
       end
 
       # 批量删除object
@@ -344,28 +347,28 @@ module Aliyun
       # @return [Array<String>] 成功删除的object的名字，如果指定
       #  了:quiet参数，则返回[]
       def batch_delete_objects(keys, opts = {})
-        Protocol.batch_delete_objects(name, keys, opts)
+        @protocol.batch_delete_objects(name, keys, opts)
       end
 
       # 设置object的ACL
       # @param key [String] Object的名字
       # @param acl [String] Object的{OSS::ACL ACL}
       def set_object_acl(key, acl)
-        Protocol.update_object_acl(name, key, acl)
+        @protocol.update_object_acl(name, key, acl)
       end
 
       # 获取object的ACL
       # @param key [String] Object的名字
       # @return [String] object的{OSS::ACL ACL}
       def get_object_acl(key)
-        Protocol.get_object_acl(name, key)
+        @protocol.get_object_acl(name, key)
       end
 
       # 获取object的CORS规则
       # @param key [String] Object的名字
       # @return [OSS::CORSRule]
       def get_object_cors(key)
-        Protocol.get_object_cors(name, key)
+        @protocol.get_object_cors(name, key)
       end
 
       ##
@@ -404,6 +407,7 @@ module Aliyun
         end
 
         Multipart::Upload.new(
+          @protocol,
           :options => opts,
           :object => key,
           :bucket => name,
@@ -452,6 +456,7 @@ module Aliyun
         end
 
         Multipart::Download.new(
+          @protocol,
           :options => opts,
           :object => key,
           :bucket => name,

@@ -11,10 +11,9 @@ module Aliyun
       ##
       # A multipart transaction. Provide the basic checkpoint methods.
       #
-      class Transaction
+      class Transaction < Struct::Base
 
         include Logging
-        include Struct::Base
 
         attrs :id, :object, :bucket, :creation_time, :options
 
@@ -40,9 +39,7 @@ module Aliyun
       ##
       # A part in a multipart uploading transaction
       #
-      class Part
-
-        include Struct::Base
+      class Part < Struct::Base
 
         attrs :number, :etag, :size, :last_modified
 

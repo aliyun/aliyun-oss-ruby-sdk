@@ -54,15 +54,14 @@ module Aliyun
     ##
     # Common structs used. It provides a 'attrs' helper method for
     # subclass to define its attributes. 'attrs' is based on
-    # access_reader and provide additional functionalities for classes
-    # that include Struct::Base :
+    # attr_reader and provide additional functionalities for classes
+    # that inherits Struct::Base :
     # * the constuctor is provided to accept options and set the
     #   corresponding attibute automatically
     # * the #to_s method is rewrite to concatenate the defined
     #   attributes keys and values
     # @example
-    #   class X
-    #     include Struct::Base
+    #   class X < Struct::Base
     #     attrs :foo, :bar
     #   end
     #
@@ -71,17 +70,15 @@ module Aliyun
     #   x.bar # == "world"
     #   x.to_s # == "foo: hello, bar: world"
     module Struct
-      module Base
-        def self.included(base)
-          base.extend(AttrHelper)
-        end
-
+      class Base
         module AttrHelper
           def attrs(*s)
             define_method(:attrs) {s}
             attr_reader(*s)
           end
         end
+
+        extend AttrHelper
 
         def initialize(opts = {})
           attrs.each do |attr|
@@ -123,9 +120,7 @@ module Aliyun
     #     :prefix => 'foo/',
     #     :expiry => 15)
     # @note the expiry date is treated as UTC time
-    class LifeCycleRule
-
-      include Struct::Base
+    class LifeCycleRule < Struct::Base
 
       attrs :id, :enabled, :prefix, :expiry
 
@@ -139,9 +134,7 @@ module Aliyun
     # * allowed_headers [Array<String>] the allowed headers
     # * expose_headers [Array<String>] the expose headers
     # * max_age_seconds [Integer] the max age seconds
-    class CORSRule
-
-      include Struct::Base
+    class CORSRule < Struct::Base
 
       attrs :allowed_origins, :allowed_methods, :allowed_headers,
             :expose_headers, :max_age_seconds

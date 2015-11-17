@@ -7,34 +7,27 @@ module Aliyun
     # A place to store various configurations: credentials, api
     # timeout, retry mechanism, etc
     #
-    class Config
-      @options = {}
+    class Config < Struct::Base
 
-      class << self
-        def get(key)
-          @options[key]
-        end
+      attrs :endpoint, :cname, :access_key_id, :access_key_secret
 
-        # Setup access key id and access key secret
-        def set_credentials(access_id, access_key)
-          @options.update(
-            { :access_id => access_id,
-              :access_key => access_key })
-        end
+      def initialize(opts = {})
+        super(opts)
+        parse_endpoint if endpoint
+      end
 
-        # Setup endpoint
-        def set_endpoint(endpoint, cname = false)
-          uri = URI.parse(endpoint)
-          uri = URI.parse("http://#{endpoint}") unless uri.scheme
+      private
 
-          raise ClientError.new("Only HTTP and HTTPS endpoint are accepted.") \
-                               if uri.scheme != 'http' and uri.scheme != 'https'
+      def parse_endpoint
+        uri = URI.parse(endpoint)
+        uri = URI.parse("http://#{endpoint}") unless uri.scheme
 
-          @options[:endpoint] = uri
-          @options[:cname] = cname
-        end
+        raise ClientError.new("Only HTTP and HTTPS endpoint are accepted.") \
+                             if uri.scheme != 'http' and uri.scheme != 'https'
 
-      end # self
+        @endpoint = uri
+      end
+
     end # Config
   end # OSS
 end # Aliyun

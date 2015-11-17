@@ -10,8 +10,9 @@ module Aliyun
         PART_SIZE = 10 * 1024 * 1024
         READ_SIZE = 16 * 1024
 
-        def initialize(opts)
+        def initialize(protocol, opts)
           super(opts)
+          @protocol = protocol
           @file, @checkpoint_file = opts[:file], opts[:cpt_file]
           @object_meta = {}
           @parts = []
@@ -125,7 +126,7 @@ module Aliyun
           logger.info("Begin initiate transaction")
 
           @id = generate_download_id
-          obj = Protocol.get_object_meta(bucket, object)
+          obj = @protocol.get_object_meta(bucket, object)
           @object_meta = {
             :etag => obj.etag,
             :size => obj.size
@@ -141,7 +142,7 @@ module Aliyun
 
           part_file = get_part_file(p[:number])
           File.open(part_file, 'w') do |w|
-            Protocol.get_object(bucket, object, :range => p[:range]) do |chunk|
+            @protocol.get_object(bucket, object, :range => p[:range]) do |chunk|
               w.write(chunk)
             end
           end
@@ -177,7 +178,7 @@ module Aliyun
 
         # Ensure file not changed during uploading
         def ensure_object_not_changed
-          obj = Protocol.get_object_meta(bucket, object)
+          obj = @protocol.get_object_meta(bucket, object)
           raise ObjectInconsistentError.new("The object to download is changed.") \
                                            unless obj.etag == @object_meta[:etag]
 
