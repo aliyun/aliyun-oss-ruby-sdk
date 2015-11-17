@@ -269,6 +269,46 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 3. Copy object时默认将拷贝源object的meta信息，如果用户不希望这么做，需要
    显式地将`:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
 
+## 权限控制
+
+OSS允许用户对Bucket和Object分别设置访问权限，方便用户控制自己的资源可
+以被如何访问。对于Bucket，有三种访问权限：
+
+- public-read-write 允许匿名用户向该Bucket中创建/获取/删除Object
+- public-read 允许匿名用户获取该Bucket中的Object
+- private 不允许匿名访问，所有的访问都要经过签名
+
+创建Bucket时，默认是private权限。之后用户可以通过`bucket.acl=`来设置
+Bucket的权限。
+
+    bucket.acl = Aliyun::OSS::ACL::PUBLIC_READ
+    puts bucket.acl # public-read
+
+对于Object，有四种访问权限：
+
+- default 继承所属的Bucket的访问权限，即与所属Bucket的权限值一样
+- public-read-write 允许匿名用户读写该Object
+- public-read 允许匿名用户读该Object
+- private 不允许匿名访问，所有的访问都要经过签名
+
+创建Object时，默认为default权限。之后用户可以通过
+`bucket.set_object_acl`来设置Object的权限。
+
+    acl = bucket.get_object_acl(object_key)
+    puts acl # default
+    bucket.set_object_acl(object_key, Aliyun::OSS::ACL::PUBLIC_READ)
+    acl = bucket.get_object_acl(object_key)
+    puts acl # public-read
+
+需要注意的是：
+
+1. 如果设置了Object的权限，则访问该Object时进行权限认证时会优先判断
+   Object的权限，而Bucket的权限设置会被忽略。
+2. 允许匿名访问时（设置了public-read或者public-read-write权限），用户
+   可以直接通过浏览器访问，例如：
+
+        http://bucket-name.oss-cn-hangzhou.aliyuncs.com/object.jpg
+
 ## 更多
 
 更多文档请查看：
