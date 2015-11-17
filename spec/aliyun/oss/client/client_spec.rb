@@ -20,6 +20,21 @@ module Aliyun
           expect(Config.get(:access_id)).to eq('xxx')
           expect(Config.get(:access_key)).to eq('yyy')
         end
+
+        it "should not set Authorization with anonymous client" do
+          endpoint = 'oss-cn-hangzhou.aliyuncs.com'
+          bucket = 'rubysdk-bucket'
+          object = 'rubysdk-object'
+          client = Client.new(:endpoint => endpoint)
+
+          stub_request(:get, "#{bucket}.#{endpoint}/#{object}")
+
+          client.get_bucket(bucket).get_object(object)
+
+          expect(WebMock)
+            .to have_requested(:get, "#{bucket}.#{endpoint}/#{object}")
+            .with{ |req| not req.headers.has_key?('Authorization') }
+        end
       end # construct
 
       def mock_buckets(buckets, more = {})

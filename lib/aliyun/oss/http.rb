@@ -192,9 +192,11 @@ module Aliyun
             :path => get_resource_path(bucket, object),
             :sub_res => sub_res,
           }
-          signature = Util.get_signature(Config.get(:access_key), verb, headers, res)
-          auth = "OSS #{Config.get(:access_id)}:#{signature}"
-          headers['Authorization']  = auth
+
+          if Config.get(:access_id) and Config.get(:access_key)
+            sig = Util.get_signature(Config.get(:access_key), verb, headers, res)
+            headers['Authorization'] = "OSS #{Config.get(:access_id)}:#{sig}"
+          end
 
           logger.debug("Send HTTP request, verb: #{verb}, resources: " \
                         "#{resources}, http options: #{http_options}")

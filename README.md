@@ -309,6 +309,14 @@ Bucket的权限。
 
         http://bucket-name.oss-cn-hangzhou.aliyuncs.com/object.jpg
 
+3. 访问具有public权限的Bucket/Object时，也可以通过创建匿名的Client来进行：
+
+        # 不填access_key_id和access_key_secret，将创建匿名Client，只能访问
+        # 具有public权限的Bucket/Object
+        client = Client.new(:endpoint => 'oss-cn-hangzhou.aliyuncs.com')
+        bucket = client.get_bucket('public-bucket')
+        obj = bucket.get_object('public-object', :file => local_file)
+
 ## 更多
 
 更多文档请查看：

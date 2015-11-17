@@ -24,9 +24,10 @@ module Aliyun
       # @param opts [Hash] 构造Client时的参数选项
       # @option opts [String] :endpoint [必填]OSS服务的地址，可以是以
       #  oss.aliyuncs.com的标准域名，也可以是用户绑定的域名
-      # @option opts [String] :access_key_id [必填]用户的ACCESS KEY ID
-      # @option opts [String] :access_key_secret [必填]用户的ACCESS
-      #  KEY SECRET
+      # @option opts [String] :access_key_id [可选]用户的ACCESS KEY ID，
+      #  如果不填则会尝试匿名访问
+      # @option opts [String] :access_key_secret [可选]用户的ACCESS
+      #  KEY SECRET，如果不填则会尝试匿名访问
       # @option opts [Boolean] :cname [可选] 指定endpoint是否是用户绑
       #  定的域名
       # @example 标准endpoint
@@ -36,7 +37,7 @@ module Aliyun
       #   my-domain.com
       #   foo.bar.com
       def initialize(opts)
-        missing_args = [:endpoint, :access_key_id, :access_key_secret] - opts.keys
+        missing_args = [:endpoint] - opts.keys
         raise ClientError.new("Missing arguments: #{missing_args.join(', ')}") \
                              unless missing_args.empty?
 
