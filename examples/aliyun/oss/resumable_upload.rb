@@ -9,7 +9,8 @@ Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 conf_file = '~/.oss.yml'
 conf = YAML.load(File.read(File.expand_path(conf_file)))
 bucket = Aliyun::OSS::Client.new(
-  :endpoint => 'oss.aliyuncs.com',
+  :endpoint => conf['endpoint'],
+  :cname => conf['cname'],
   :access_key_id => conf['id'],
   :access_key_secret => conf['key']).get_bucket(conf['bucket'])
 

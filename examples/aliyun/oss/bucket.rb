@@ -9,7 +9,8 @@ Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
 conf_file = '~/.oss.yml'
 conf = YAML.load(File.read(File.expand_path(conf_file)))
 client = Aliyun::OSS::Client.new(
-  :endpoint => 'oss.aliyuncs.com',
+  :endpoint => conf['endpoint'],
+  :cname => conf['cname'],
   :access_key_id => conf['id'],
   :access_key_secret => conf['key'])
 bucket = client.get_bucket(conf['bucket'])
@@ -19,7 +20,13 @@ buckets = client.list_buckets
 buckets.each{ |b| puts "Bucket: #{b.name}"}
 
 # 创建bucket
-client.create_bucket('t-foo-bar', :location => 'oss-cn-hangzhou')
+begin
+  bucket_name = 't-foo-bar'
+  client.create_bucket(bucket_name, :location => 'oss-cn-hangzhou')
+  puts "Create bucket success: #{bucket_name}"
+rescue => e
+  puts "Create bucket failed: #{e.message}"
+end
 
 # 向bucket中添加5个空的object:
 # foo/obj1, foo/bar/obj1, foo/bar/obj2, foo/xxx/obj1

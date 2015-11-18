@@ -332,8 +332,10 @@ Bucket的权限。
 
 SDK的examples/目录下有一些展示SDK功能的示例程序，用户稍加配置就可以直
 接运行。examples需要的权限信息和bucket信息从用户`HOME`目录下的配置文件
-`~/.oss.yml`中读取，其中应该包含三个字段：
+`~/.oss.yml`中读取，其中应该包含以下字段：
 
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    cname: false
     id: ACCESS KEY ID
     key: ACCESS KEY SECRET
     bucket: BUCKET NAME

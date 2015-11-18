@@ -37,9 +37,7 @@ module Aliyun
       #   my-domain.com
       #   foo.bar.com
       def initialize(opts)
-        missing_args = [:endpoint] - opts.keys
-        raise ClientError.new("Missing arguments: #{missing_args.join(', ')}") \
-                             unless missing_args.empty?
+        raise ClientError, "Endpoint must be provided" unless opts[:endpoint]
 
         @config = Config.new(opts)
         @protocol = Protocol.new(@config)
