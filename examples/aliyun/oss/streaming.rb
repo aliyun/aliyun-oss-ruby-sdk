@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-$:.unshift(File.expand_path("../../../../lib", __FILE__))
+$LOAD_PATH.unshift(File.expand_path("../../../../lib", __FILE__))
 require 'yaml'
 require 'aliyun/oss'
 
@@ -24,12 +24,12 @@ require 'aliyun/oss'
 
 # 初始化OSS client
 Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
-cred_file = "~/.oss.yml"
-cred = YAML.load(File.read(File.expand_path(cred_file)))
+conf_file = '~/.oss.yml'
+conf = YAML.load(File.read(File.expand_path(conf_file)))
 bucket = Aliyun::OSS::Client.new(
   :endpoint => 'oss.aliyuncs.com',
-  :access_key_id => cred["id"],
-  :access_key_secret => cred["key"]).get_bucket('t-hello-world')
+  :access_key_id => conf['id'],
+  :access_key_secret => conf['key']).get_bucket(conf['bucket'])
 
 # 例子1: 归并排序
 # 有两个文件sort.1, sort.2，它们分别存了一些从小到大排列的整数，每个整

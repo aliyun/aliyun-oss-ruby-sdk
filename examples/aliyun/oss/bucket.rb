@@ -1,18 +1,18 @@
 # -*- encoding: utf-8 -*-
 
-$:.unshift(File.expand_path("../../../../lib", __FILE__))
+$LOAD_PATH.unshift(File.expand_path("../../../../lib", __FILE__))
 require 'yaml'
 require 'aliyun/oss'
 
 # 初始化OSS client
 Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
-cred_file = "~/.oss.yml"
-cred = YAML.load(File.read(File.expand_path(cred_file)))
+conf_file = '~/.oss.yml'
+conf = YAML.load(File.read(File.expand_path(conf_file)))
 client = Aliyun::OSS::Client.new(
   :endpoint => 'oss.aliyuncs.com',
-  :access_key_id => cred["id"],
-  :access_key_secret => cred["key"])
-bucket = client.get_bucket('t-hello-world')
+  :access_key_id => conf['id'],
+  :access_key_secret => conf['key'])
+bucket = client.get_bucket(conf['bucket'])
 
 # 列出当前所有的bucket
 buckets = client.list_buckets

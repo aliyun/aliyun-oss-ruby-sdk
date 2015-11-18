@@ -328,11 +328,24 @@ Bucket的权限。
         bucket = client.get_bucket('public-bucket')
         obj = bucket.get_object('public-object', :file => local_file)
 
+## 运行examples
+
+SDK的examples/目录下有一些展示SDK功能的示例程序，用户稍加配置就可以直
+接运行。examples需要的权限信息和bucket信息从用户`HOME`目录下的配置文件
+`~/.oss.yml`中读取，其中应该包含三个字段：
+
+    id: ACCESS KEY ID
+    key: ACCESS KEY SECRET
+    bucket: BUCKET NAME
+
+用户需要创建（如果不存在）或者修改其中的内容，然后运行：
+
+    ruby examples/aliyun/oss/bucket.rb
+
 ## 更多
 
 更多文档请查看：
 
-- examples目录，里面包含了更多的代码样例
 - 阿里云官网文档：https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss
 - SDK API文档：http://10.101.168.94/d/aliyun-oss-sdk-doc/
 
