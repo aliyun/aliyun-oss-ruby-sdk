@@ -13,17 +13,18 @@ module Aliyun
 
       def initialize(opts = {})
         super(opts)
-        parse_endpoint if endpoint
+        normalize_endpoint if endpoint
       end
 
       private
 
-      def parse_endpoint
+      def normalize_endpoint
         uri = URI.parse(endpoint)
         uri = URI.parse("http://#{endpoint}") unless uri.scheme
 
-        raise ClientError.new("Only HTTP and HTTPS endpoint are accepted.") \
-                             if uri.scheme != 'http' and uri.scheme != 'https'
+        if uri.scheme != 'http' and uri.scheme != 'https'
+          fail ClientError, "Only HTTP and HTTPS endpoint are accepted."
+        end
 
         @endpoint = uri
       end

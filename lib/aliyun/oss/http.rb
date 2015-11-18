@@ -40,7 +40,7 @@ module Aliyun
       class StreamWriter
         def initialize
           @chunks = []
-          @producer = Fiber.new{ yield self if block_given? }
+          @producer = Fiber.new { yield self if block_given? }
           @producer.resume
         end
 
@@ -68,7 +68,7 @@ module Aliyun
         end
 
         def inspect
-          "@chunks: " + @chunks.map{ |c| c[0, 100]}.join(';')
+          "@chunks: " + @chunks.map { |c| c[0, 100] }.join(';')
         end
       end
 
@@ -209,7 +209,7 @@ module Aliyun
         # the headers hash."
         headers[:params] = (sub_res || {}).merge(http_options[:query] || {})
 
-        block_response = lambda {|r| handle_response(r, &block) } if block
+        block_response = ->(r) { handle_response(r, &block) } if block
         r = RestClient::Request.execute(
           :method => verb,
           :url => get_request_url(bucket, object),

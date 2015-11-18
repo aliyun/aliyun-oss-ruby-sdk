@@ -178,20 +178,20 @@ module Aliyun
       it "should resume when checkpoint fails" do
         # Monkey patch to inject failures
         class ::Aliyun::OSS::Multipart::Upload
-          alias :old_checkpoint! :checkpoint!
+          alias :old_checkpoint :checkpoint
 
           def checkpoint_fails
             @@fail_injections ||= [false, false, true, true, false, true, false]
             @@fail_injections.shift
           end
 
-          def checkpoint!
+          def checkpoint
             t = checkpoint_fails
             if t == true
               raise ClientError.new("fail injection")
             end
 
-            old_checkpoint!
+            old_checkpoint
           end
         end
 

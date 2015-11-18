@@ -37,7 +37,7 @@ module Aliyun
       #   my-domain.com
       #   foo.bar.com
       def initialize(opts)
-        raise ClientError, "Endpoint must be provided" unless opts[:endpoint]
+        fail ClientError, "Endpoint must be provided" unless opts[:endpoint]
 
         @config = Config.new(opts)
         @protocol = Protocol.new(@config)
@@ -48,8 +48,10 @@ module Aliyun
       # @option opts [String] :prefix 如果设置，则只返回以它为前缀的bucket
       # @return [Enumerator<Bucket>] Bucket的迭代器
       def list_buckets(opts = {})
-        raise ClientError.new("Cannot list buckets for a CNAME endpoint") \
-                             if @config.cname
+        if @config.cname
+          fail ClientError, "Cannot list buckets for a CNAME endpoint."
+        end
+
         Iterator::Buckets.new(@protocol, opts).to_enum
       end
 

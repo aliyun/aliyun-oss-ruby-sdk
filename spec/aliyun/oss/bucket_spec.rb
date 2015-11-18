@@ -357,7 +357,7 @@ module Aliyun
           query = {'acl' => ''}
           stub_request(:put, request_path).with(:query => query)
 
-          @protocol.update_bucket_acl(@bucket, ACL::PUBLIC_READ)
+          @protocol.put_bucket_acl(@bucket, ACL::PUBLIC_READ)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => nil)
@@ -384,7 +384,7 @@ module Aliyun
           logging_opts = {
             :enable => true, :target_bucket => 'target-bucket', :prefix => 'foo'
           }
-          @protocol.update_bucket_logging(@bucket, logging_opts)
+          @protocol.put_bucket_logging(@bucket, logging_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_logging(logging_opts))
@@ -395,7 +395,7 @@ module Aliyun
           stub_request(:put, request_path).with(:query => query)
 
           logging_opts = {:enable => false}
-          @protocol.update_bucket_logging(@bucket, logging_opts)
+          @protocol.put_bucket_logging(@bucket, logging_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_logging(logging_opts))
@@ -432,7 +432,7 @@ module Aliyun
           stub_request(:put, request_path).with(:query => query)
 
           website_opts = {:index => 'index.html', :error => 'error.html'}
-          @protocol.update_bucket_website(@bucket, website_opts)
+          @protocol.put_bucket_website(@bucket, website_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_website(website_opts))
@@ -468,7 +468,7 @@ module Aliyun
           stub_request(:put, request_path).with(:query => query)
 
           referer_opts = {:allow_empty => true, :referers => ['xxx', 'yyy']}
-          @protocol.update_bucket_referer(@bucket, referer_opts)
+          @protocol.put_bucket_referer(@bucket, referer_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_referer(referer_opts))
@@ -499,7 +499,7 @@ module Aliyun
               :expiry => (i % 2 == 1 ? Date.today : 10 + i))
           end
 
-          @protocol.update_bucket_lifecycle(@bucket, rules)
+          @protocol.put_bucket_lifecycle(@bucket, rules)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_lifecycle(rules))

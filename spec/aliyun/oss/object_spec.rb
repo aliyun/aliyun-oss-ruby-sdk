@@ -670,7 +670,7 @@ module Aliyun
           query = {'acl' => ''}
           stub_request(:put, url).with(:query => query)
 
-          @protocol.update_object_acl(@bucket, object_name, ACL::PUBLIC_READ)
+          @protocol.put_object_acl(@bucket, object_name, ACL::PUBLIC_READ)
 
           expect(WebMock).to have_requested(:put, url)
             .with(:query => query,

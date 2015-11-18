@@ -28,7 +28,7 @@ module Aliyun
       # 设置Bucket的ACL
       # @param acl [String] Bucket的{OSS::ACL ACL}
       def acl=(acl)
-        @protocol.update_bucket_acl(name, acl)
+        @protocol.put_bucket_acl(name, acl)
       end
 
       # 获取Bucket的logging配置
@@ -48,7 +48,7 @@ module Aliyun
         if opts.empty?
           @protocol.delete_bucket_logging(name)
         else
-          @protocol.update_bucket_logging(name, opts)
+          @protocol.put_bucket_logging(name, opts)
         end
       end
 
@@ -76,7 +76,7 @@ module Aliyun
         if opts.empty?
           @protocol.delete_bucket_website(name)
         else
-          @protocol.update_bucket_website(name, opts)
+          @protocol.put_bucket_website(name, opts)
         end
       end
 
@@ -94,7 +94,7 @@ module Aliyun
       #  请求的Referer白名单
       # @note 如果:referers为空，则会删除这个bucket上的referer list
       def referer=(opts)
-        @protocol.update_bucket_referer(name, opts)
+        @protocol.put_bucket_referer(name, opts)
       end
 
       # 获取Bucket的生命周期配置
@@ -120,7 +120,7 @@ module Aliyun
         if rules.empty?
           @protocol.delete_bucket_lifecycle(name)
         else
-          @protocol.update_bucket_lifecycle(name, rules)
+          @protocol.put_bucket_lifecycle(name, rules)
         end
       end
 
@@ -198,7 +198,7 @@ module Aliyun
       # @yield [HTTP::StreamWriter] 如果调
       #  用的时候传递了block，则写入到object的数据由block指定
       # @example 流式上传数据
-      #   put_object('x'){ |stream| 100.times{ |i| stream << i.to_s } }
+      #   put_object('x'){ |stream| 100.times { |i| stream << i.to_s } }
       #   put_object('x'){ |stream| stream << get_data }
       # @example 上传文件
       #   put_object('x', :file => '/tmp/x')
@@ -307,7 +307,7 @@ module Aliyun
       #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @example 流式上传数据
-      #   pos = append_object('x', 0){ |stream| 100.times{ |i| stream << i.to_s } }
+      #   pos = append_object('x', 0){ |stream| 100.times { |i| stream << i.to_s } }
       #   append_object('x', pos){ |stream| stream << get_data }
       # @example 上传文件
       #   append_object('x', 0, :file => '/tmp/x')
@@ -379,7 +379,7 @@ module Aliyun
       # @param key [String] Object的名字
       # @param acl [String] Object的{OSS::ACL ACL}
       def set_object_acl(key, acl)
-        @protocol.update_object_acl(name, key, acl)
+        @protocol.put_object_acl(name, key, acl)
       end
 
       # 获取object的ACL

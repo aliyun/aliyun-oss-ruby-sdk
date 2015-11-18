@@ -29,11 +29,19 @@ module Aliyun
           states = JSON.load(File.read(file))
           states.symbolize_keys!
           md5 = states.delete(:md5)
-          raise CheckpointBrokenError.new("Missing :md5 in checkpoint.") unless md5
-          raise CheckpointBrokenError.new("Unmatched checkpoint MD5.") \
-                                    unless md5 == Util.get_content_md5(states.to_json)
+
+          fail CheckpointBrokenError, "Missing MD5 in checkpoint." unless md5
+          unless md5 == Util.get_content_md5(states.to_json)
+            fail CheckpointBrokenError, "Unmatched checkpoint MD5."
+          end
+
           states
         end
+
+        def get_file_md5(file)
+          Digest::MD5.file(file).to_s
+        end
+
       end # Transaction
 
       ##

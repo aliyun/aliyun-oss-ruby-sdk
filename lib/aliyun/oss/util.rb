@@ -27,18 +27,13 @@ module Aliyun
           content_type = headers['Content-Type'] || ""
           date = headers['Date']
 
-          cano_headers = headers.select do |k, v|
-            k.start_with?(HEADER_PREFIX)
-          end.map do |k, v|
-            [k.downcase.strip, v.strip]
-          end.sort.map do |k, v|
-            [k, v].join(":") + "\n"
-          end.join
+          cano_headers = headers.select { |k, v| k.start_with?(HEADER_PREFIX) }
+                         .map { |k, v| [k.downcase.strip, v.strip] }
+                         .sort.map { |k, v| [k, v].join(":") + "\n" }.join
 
           cano_res = resources[:path] || "/"
-          sub_res = (resources[:sub_res] || {}).sort.map do |k, v|
-            v ? [k, v].join("=") : k
-          end.join("&")
+          sub_res = (resources[:sub_res] || {})
+                    .sort.map { |k, v| v ? [k, v].join("=") : k }.join("&")
           cano_res += "?#{sub_res}" unless sub_res.empty?
 
           string_to_sign =
@@ -72,14 +67,14 @@ end
 # Monkey patch to support #symbolize_keys!
 class Array
   def symbolize_keys!
-    self.each{ |v| v.symbolize_keys! if v.is_a?(Hash) or v.is_a?(Array) }
+    self.each { |v| v.symbolize_keys! if v.is_a?(Hash) or v.is_a?(Array) }
   end
 end
 
 # Monkey patch to support #symbolize_keys!
 class Hash
   def symbolize_keys!
-    self.keys.each{ |k| self[k.to_sym] = self.delete(k) }
-    self.values.each{ |v| v.symbolize_keys! if v.is_a?(Hash) or v.is_a?(Array) }
+    self.keys.each { |k| self[k.to_sym] = self.delete(k) }
+    self.values.each { |v| v.symbolize_keys! if v.is_a?(Hash) or v.is_a?(Array) }
   end
 end

@@ -24,23 +24,21 @@ module Aliyun
         # * 2.  download each unfinished part
         # * 3.  combine the downloaded parts into the final file
         def run
-          logger.info("Begin download, file: #{@file}, checkpoint file: " \
-                      " #{@checkpoint_file}")
+          logger.info("Begin download, file: #{@file}, checkpoint file: "\
+                      "#{@checkpoint_file}")
 
           # Rebuild transaction states from checkpoint file
           # Or initiate new transaction states
-          rebuild!
+          rebuild
 
           # Divide the target object into parts to download by ranges
-          divide_parts! if @parts.empty?
+          divide_parts if @parts.empty?
 
           # Download each part(object range)
-          @parts.reject {|p| p[:done]}.each do |p|
-            download_part!(p)
-          end
+          @parts.reject { |p| p[:done]}.each { |p| download_part(p) }
 
           # Combine the parts into the final file
-          commit!
+          commit
 
           logger.info("Done download, file: #{@file}")
         end
@@ -60,8 +58,9 @@ module Aliyun
         #     ],
         #     :md5 => 'states_md5'
         #   }
-        def checkpoint!
-          logger.debug("Begin make checkpoint, disable_cpt: #{options[:disable_cpt]}")
+        def checkpoint
+          logger.debug("Begin make checkpoint, "\
+                       "disable_cpt: #{options[:disable_cpt]}")
 
           ensure_object_not_changed
 
@@ -80,7 +79,7 @@ module Aliyun
         private
         # Combine the downloaded parts into the final file
         # @todo avoid copy all part files
-        def commit!
+        def commit
           logger.info("Begin commit transaction, id: #{id}")
 
           # concat all part files into the target file
@@ -99,30 +98,37 @@ module Aliyun
         end
 
         # Rebuild the states of the transaction from checkpoint file
-        def rebuild!
-          logger.info("Begin rebuild transaction, checkpoint: #{@checkpoint_file}")
+        def rebuild
+          logger.info("Begin rebuild transaction, "\
+                      "checkpoint: #{@checkpoint_file}")
 
           if File.exists?(@checkpoint_file) and not options[:disable_cpt]
             states = load_checkpoint(@checkpoint_file)
 
             states[:parts].select{ |p| p[:done] }.each do |p|
               part_file = get_part_file(p[:number])
-              raise PartMissingError.new("The part file is missing.") \
-                                        unless File.exist?(part_file)
-              raise FileInconsistentError.new("The part file is changed.") \
-                                        if p[:md5] != Digest::MD5.file(part_file).to_s
+
+              unless File.exist?(part_file)
+                fail PartMissingError, "The part file is missing: #{part_file}."
+              end
+
+              if p[:md5] != get_file_md5(part_file)
+                fail FileInconsistentError,
+                     "The part file is changed: #{part_file}."
+              end
             end
+
             @id = states[:id]
             @object_meta = states[:object_meta]
             @parts = states[:parts]
           else
-            initiate!
+            initiate
           end
 
           logger.info("Done rebuild transaction, states: #{states}")
         end
 
-        def initiate!
+        def initiate
           logger.info("Begin initiate transaction")
 
           @id = generate_download_id
@@ -131,47 +137,47 @@ module Aliyun
             :etag => obj.etag,
             :size => obj.size
           }
-          checkpoint!
+          checkpoint
 
           logger.info("Done initiate transaction, id: #{id}")
         end
 
         # Download a part
-        def download_part!(p)
+        def download_part(p)
           logger.debug("Begin download part: #{p}")
 
           part_file = get_part_file(p[:number])
           File.open(part_file, 'w') do |w|
-            @protocol.get_object(bucket, object, :range => p[:range]) do |chunk|
-              w.write(chunk)
-            end
+            @protocol.get_object(
+              bucket, object, :range => p[:range]) { |chunk| w.write(chunk) }
           end
 
           p[:done] = true
-          p[:md5] = Digest::MD5::file(part_file).to_s
+          p[:md5] = get_file_md5(part_file)
 
-          checkpoint!
+          checkpoint
 
           logger.debug("Done download part: #{p}")
         end
 
         # Devide the object to download into parts to download
-        def divide_parts!
+        def divide_parts
           logger.info("Begin divide parts, object: #{@object}")
 
           max_parts = 100
           object_size = @object_meta[:size]
-          part_size = [@options[:part_size] || PART_SIZE, object_size / max_parts].max
+          part_size =
+            [@options[:part_size] || PART_SIZE, object_size / max_parts].max
           num_parts = (object_size - 1) / part_size + 1
           @parts = (1..num_parts).map do |i|
             {
               :number => i,
-              :range => [(i-1) * part_size, [i * part_size, object_size].min],
+              :range => [(i - 1) * part_size, [i * part_size, object_size].min],
               :done => false
             }
           end
 
-          checkpoint!
+          checkpoint
 
           logger.info("Done divide parts, parts: #{@parts}")
         end
@@ -179,9 +185,10 @@ module Aliyun
         # Ensure file not changed during uploading
         def ensure_object_not_changed
           obj = @protocol.get_object_meta(bucket, object)
-          raise ObjectInconsistentError.new("The object to download is changed.") \
-                                           unless obj.etag == @object_meta[:etag]
-
+          unless obj.etag == @object_meta[:etag]
+            fail ObjectInconsistentError,
+                 "The object to download is changed: #{object}."
+          end
         end
 
         # Generate a download id

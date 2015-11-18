@@ -58,14 +58,6 @@ module Aliyun
         end.to_xml
       end
 
-      def mock_location(location)
-        Nokogiri::XML::Builder.new do |xml|
-          xml.CreateBucketConfiguration {
-            xml.LocationConstraint location
-          }
-        end.to_xml
-      end
-
       def mock_acl(acl)
         Nokogiri::XML::Builder.new do |xml|
           xml.AccessControlPolicy {

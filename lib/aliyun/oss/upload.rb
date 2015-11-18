@@ -29,18 +29,16 @@ module Aliyun
 
           # Rebuild transaction states from checkpoint file
           # Or initiate new transaction states
-          rebuild!
+          rebuild
 
           # Divide the file to upload into parts to upload separately
-          divide_parts! if @parts.empty?
+          divide_parts if @parts.empty?
 
           # Upload each part
-          @parts.reject {|p| p[:done]}.each do |p|
-            upload_part!(p)
-          end
+          @parts.reject { |p| p[:done] }.each { |p| upload_part(p) }
 
           # Commit the multipart upload transaction
-          commit!
+          commit
 
           logger.info("Done upload, file: #{@file}")
         end
@@ -60,7 +58,7 @@ module Aliyun
         #     ],
         #     :md5 => 'states_md5'
         #   }
-        def checkpoint!
+        def checkpoint
           logger.debug("Begin make checkpoint, disable_cpt: #{options[:disable_cpt]}")
 
           ensure_file_not_changed
@@ -81,11 +79,11 @@ module Aliyun
         # Commit the transaction when all parts are succefully uploaded
         # @todo handle undefined behaviors: commit succeeds in server
         #  but return error in client
-        def commit!
+        def commit
           logger.info("Begin commit transaction, id: #{id}")
 
           parts = @parts.map{ |p| Part.new(:number  => p[:number], :etag => p[:etag])}
-          @protocol.commit_multipart(bucket, object, id, parts)
+          @protocol.complete_multipart_upload(bucket, object, id, parts)
 
           File.delete(@checkpoint_file) unless options[:disable_cpt]
 
@@ -93,40 +91,41 @@ module Aliyun
         end
 
         # Rebuild the states of the transaction from checkpoint file
-        def rebuild!
+        def rebuild
           logger.info("Begin rebuild transaction, checkpoint: #{@checkpoint_file}")
 
           if File.exists?(@checkpoint_file) and not options[:disable_cpt]
             states = load_checkpoint(@checkpoint_file)
 
-            file_md5 = states[:file_md5]
-            raise FileInconsistentError.new("The file to upload is changed.") \
-                                           if file_md5 != @file_meta[:md5]
+            if states[:file_md5] != @file_meta[:md5]
+              fail FileInconsistentError.new("The file to upload is changed.")
+            end
+
             @id = states[:id]
             @file_meta = states[:file_meta]
             @parts = states[:parts]
           else
-            initiate!
+            initiate
           end
 
           logger.info("Done rebuild transaction, states: #{states}")
         end
 
-        def initiate!
+        def initiate
           logger.info("Begin initiate transaction")
 
-          @id = @protocol.begin_multipart(bucket, object, options)
+          @id = @protocol.initiate_multipart_upload(bucket, object, options)
           @file_meta = {
             :mtime => File.mtime(@file),
-            :md5 => Digest::MD5.file(@file).to_s
+            :md5 => get_file_md5(@file)
           }
-          checkpoint!
+          checkpoint
 
           logger.info("Done initiate transaction, id: #{id}")
         end
 
         # Upload a part
-        def upload_part!(p)
+        def upload_part(p)
           logger.debug("Begin upload part: #{p}")
 
           result = nil
@@ -146,13 +145,13 @@ module Aliyun
           p[:done] = true
           p[:etag] = result.etag
 
-          checkpoint!
+          checkpoint
 
           logger.debug("Done upload part: #{p}")
         end
 
         # Devide the file into parts to upload
-        def divide_parts!
+        def divide_parts
           logger.info("Begin divide parts, file: #{@file}")
 
           max_parts = 10000
@@ -167,7 +166,7 @@ module Aliyun
             }
           end
 
-          checkpoint!
+          checkpoint
 
           logger.info("Done divide parts, parts: #{@parts}")
         end
@@ -176,10 +175,9 @@ module Aliyun
         def ensure_file_not_changed
           return if File.mtime(@file) == @file_meta[:mtime]
 
-          file_md5 = Digest::MD5.file(@file)
-          raise FileInconsistentError.new("The file to upload is changed.") \
-                                         if file_md5 != @file_meta[:md5]
-
+          if @file_meta[:md5] != get_file_md5(@file)
+            fail FileInconsistentError, "The file to upload is changed."
+          end
         end
       end # Upload
 

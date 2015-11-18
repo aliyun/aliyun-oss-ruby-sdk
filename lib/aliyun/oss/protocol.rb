@@ -46,7 +46,7 @@ module Aliyun
           'prefix' => opts[:prefix],
           'marker' => opts[:marker],
           'max-keys' => opts[:limit]
-        }.select {|_, v| v != nil}
+        }.reject { |_, v| v.nil? }
 
         _, body = @http.get( {}, {:query => params})
         doc = parse_xml(body)
@@ -57,30 +57,32 @@ module Aliyun
               :name => get_node_text(node, "Name"),
               :location => get_node_text(node, "Location"),
               :creation_time =>
-                get_node_text(node, "CreationDate") {|t| Time.parse(t)}
+                get_node_text(node, "CreationDate") { |t| Time.parse(t) }
             }, self
           )
         end
 
-        more = Hash[
-          {
-            :prefix => 'Prefix',
-            :limit => 'MaxKeys',
-            :marker => 'Marker',
-            :next_marker => 'NextMarker',
-            :truncated => 'IsTruncated'
-          }.map do |k, v|
-            [k, get_node_text(doc.root, v)]
-          end].select {|k, v| v != nil}
+        more = {
+          :prefix => 'Prefix',
+          :limit => 'MaxKeys',
+          :marker => 'Marker',
+          :next_marker => 'NextMarker',
+          :truncated => 'IsTruncated'
+        }.reduce({}) { |h, (k, v)|
+          value = get_node_text(doc.root, v)
+          value.nil?? h : h.merge(k => value)
+        }
 
-        more.update(
-          :limit => wrap(more[:limit]) {|x| x.to_i},
-          :truncated => wrap(more[:truncated]) {|x| x.to_bool}
+        update_if_exists(
+          more, {
+            :limit => ->(x) { x.to_i },
+            :truncated => ->(x) { x.to_bool }
+          }
         )
 
         logger.info("Done list buckets, buckets: #{buckets}, more: #{more}")
 
-        [buckets, more.select{ |_, v| v != nil }]
+        [buckets, more]
       end
 
       # Create a bucket
@@ -109,12 +111,12 @@ module Aliyun
         logger.info("Done create bucket")
       end
 
-      # Update bucket acl
+      # Put bucket acl
       # @param name [String] the bucket name
       # @param acl [String] the bucket acl
       # @see OSS::ACL
-      def update_bucket_acl(name, acl)
-        logger.info("Begin update bucket acl, name: #{name}, acl: #{acl}")
+      def put_bucket_acl(name, acl)
+        logger.info("Begin put bucket acl, name: #{name}, acl: #{acl}")
 
         sub_res = {'acl' => nil}
         headers = {'x-oss-acl' => acl}
@@ -122,7 +124,7 @@ module Aliyun
           {:bucket => name, :sub_res => sub_res},
           {:headers => headers, :body => nil})
 
-        logger.info("Done update bucket acl")
+        logger.info("Done put bucket acl")
       end
 
       # Get bucket acl
@@ -141,7 +143,7 @@ module Aliyun
         acl
       end
 
-      # Update bucket logging settings
+      # Put bucket logging settings
       # @param name [String] the bucket name
       # @param opts [Hash] logging options
       # @option opts [Boolean] :enable whether to enable logging
@@ -149,15 +151,21 @@ module Aliyun
       #  store logging objects
       # @option opts [String] :prefix only turn on logging for those
       #  objects prefixed with it if specified
-      def update_bucket_logging(name, opts)
-        logger.info("Begin update bucket logging, name: #{name}, options: #{opts}")
+      def put_bucket_logging(name, opts)
+        logger.info("Begin put bucket logging, name: #{name}, options: #{opts}")
 
-        raise ClientError.new("Must specify :enabled when update bucket logging.") \
-                             unless opts.has_key?(:enable)
-        raise ClientError.new("Must specify target bucket when enabling bucket logging.") \
-                             if opts[:enable] and not opts.has_key?(:target_bucket)
-        raise ClientError.new("Unexpected extra options when update bucket logging.") \
-                             if (opts.size > 1 and not opts[:enable])
+        unless opts.has_key?(:enable)
+          fail ClientError, "Must specify :enabled when put bucket logging."
+        end
+
+        if opts[:enable] && !opts.has_key?(:target_bucket)
+          fail ClientError,
+               "Must specify target bucket when enabling bucket logging."
+        end
+
+        if (opts.size > 1 && !opts[:enable])
+          fail ClientError, "Unexpected extra options when put bucket logging."
+        end
 
         sub_res = {'logging' => nil}
         body = Nokogiri::XML::Builder.new do |xml|
@@ -175,7 +183,7 @@ module Aliyun
           {:bucket => name, :sub_res => sub_res},
           {:body => body})
 
-        logger.info("Done update bucket logging")
+        logger.info("Done put bucket logging")
       end
 
       # Get bucket logging settings
@@ -200,7 +208,7 @@ module Aliyun
 
         logger.info("Done get bucket logging")
 
-        opts.select {|_, v| v != nil}
+        opts.reject { |_, v| v.nil? }
       end
 
       # Delete bucket logging settings, a.k.a. disable bucket logging
@@ -214,18 +222,19 @@ module Aliyun
         logger.info("Done delete bucket logging")
       end
 
-      # Update bucket website settings
+      # Put bucket website settings
       # @param name [String] the bucket name
       # @param opts [Hash] the bucket website options
       # @option opts [String] :index the object name to serve as the
       #  index page of website
       # @option opts [String] :error the object name to serve as the
       #  error page of website
-      def update_bucket_website(name, opts)
-        logger.info("Begin update bucket website, name: #{name}, options: #{opts}")
+      def put_bucket_website(name, opts)
+        logger.info("Begin put bucket website, name: #{name}, options: #{opts}")
 
-        raise ClientError.new("Must specify :index to update bucket website") \
-                             unless opts.has_key?(:index)
+        unless opts.has_key?(:index)
+          fail ClientError, "Must specify :index to put bucket website."
+        end
 
         sub_res = {'website' => nil}
         body = Nokogiri::XML::Builder.new do |xml|
@@ -245,7 +254,7 @@ module Aliyun
           {:bucket => name, :sub_res => sub_res},
           {:body => body})
 
-        logger.info("Done update bucket website")
+        logger.info("Done put bucket website")
       end
 
       # Get bucket website settings
@@ -267,7 +276,7 @@ module Aliyun
 
         logger.info("Done get bucket website")
 
-        opts.select {|_, v| v != nil}
+        opts.reject { |_, v| v.nil? }
       end
 
       # Delete bucket website settings
@@ -281,18 +290,19 @@ module Aliyun
         logger.info("Done delete bucket website")
       end
 
-      # Update bucket referer
+      # Put bucket referer
       # @param name [String] the bucket name
       # @param opts [Hash] the bucket referer options
       # @option opts [Boolean] :allow_empty whether to allow empty
       #  referer
       # @option opts [Array<String>] :referers the referer white
       #  list to allow access to this bucket
-      def update_bucket_referer(name, opts)
-        logger.info("Begin update bucket referer, name: #{name}, options: #{opts}")
+      def put_bucket_referer(name, opts)
+        logger.info("Begin put bucket referer, name: #{name}, options: #{opts}")
 
-        raise ClientError.new("Must specify :allow_empty to update bucket referer.") \
-                             unless opts.has_key?(:allow_empty)
+        unless opts.has_key?(:allow_empty)
+          fail ClientError, "Must specify :allow_empty to put bucket referer."
+        end
 
         sub_res = {'referer' => nil}
         body = Nokogiri::XML::Builder.new do |xml|
@@ -310,7 +320,7 @@ module Aliyun
           {:bucket => name, :sub_res => sub_res},
           {:body => body})
 
-        logger.info("Done update bucket referer")
+        logger.info("Done put bucket referer")
       end
 
       # Get bucket referer
@@ -325,23 +335,24 @@ module Aliyun
 
         doc = parse_xml(body)
         opts = {
-          :allow_empty => get_node_text(doc.root, 'AllowEmptyReferer') {|x| x.to_bool},
-          :referers => doc.css("RefererList Referer").map {|n| n.text}
+          :allow_empty =>
+            get_node_text(doc.root, 'AllowEmptyReferer', &:to_bool),
+          :referers => doc.css("RefererList Referer").map(&:text)
         }
 
         logger.info("Done get bucket referer")
 
-        opts.select {|_, v| v != nil}
+        opts.reject { |_, v| v.nil? }
       end
 
-      # Update bucket lifecycle settings
+      # Put bucket lifecycle settings
       # @param name [String] the bucket name
       # @param rules [Array<OSS::LifeCycleRule>] the
       #  lifecycle rules
       # @see OSS::LifeCycleRule
-      def update_bucket_lifecycle(name, rules)
-        logger.info("Begin update bucket lifecycle, name: #{name}, rules: " \
-                     "#{rules.map {|r| r.to_s}}")
+      def put_bucket_lifecycle(name, rules)
+        logger.info("Begin put bucket lifecycle, name: #{name}, rules: "\
+                     "#{rules.map { |r| r.to_s }}")
 
         sub_res = {'lifecycle' => nil}
         body = Nokogiri::XML::Builder.new do |xml|
@@ -354,12 +365,13 @@ module Aliyun
                 xml.Prefix r.prefix
                 xml.Expiration {
                   if r.expiry.is_a?(Date)
-                    xml.Date Time.utc(r.expiry.year, r.expiry.month, r.expiry.day)
+                    xml.Date Time.utc(
+                               r.expiry.year, r.expiry.month, r.expiry.day)
                               .iso8601.sub('Z', '.000Z')
                   elsif r.expiry.is_a?(Fixnum)
                     xml.Days r.expiry
                   else
-                    raise ClientError.new("Expiry must be a Date or Fixnum.")
+                    fail ClientError, "Expiry must be a Date or Fixnum."
                   end
                 }
               }
@@ -371,7 +383,7 @@ module Aliyun
           {:bucket => name, :sub_res => sub_res},
           {:body => body})
 
-        logger.info("Done update bucket lifecycle")
+        logger.info("Done put bucket lifecycle")
       end
 
       # Get bucket lifecycle settings
@@ -389,13 +401,14 @@ module Aliyun
           days = n.at_css("Expiration Days")
           date = n.at_css("Expiration Date")
 
-          raise Client.new("We can only have one of Date and Days for expiry.") \
-                          if (days and date) or (not days and not date)
+          if (days && date) || (!days && !date)
+            fail ClientError, "We can only have one of Date and Days for expiry."
+          end
 
           LifeCycleRule.new(
             :id => get_node_text(n, 'ID'),
             :prefix => get_node_text(n, 'Prefix'),
-            :enabled => get_node_text(n, 'Status') {|x| x == 'Enabled'},
+            :enabled => get_node_text(n, 'Status') { |x| x == 'Enabled' },
             :expiry => days ? days.text.to_i : Date.parse(date.text)
           )
         end
@@ -422,26 +435,18 @@ module Aliyun
       #  rules
       # @see OSS::CORSRule
       def set_bucket_cors(name, rules)
-        logger.info("Begin set bucket cors, bucket: #{name}, rules: " \
-                     "#{rules.map {|r| r.to_s}.join(';')}")
+        logger.info("Begin set bucket cors, bucket: #{name}, rules: "\
+                     "#{rules.map { |r| r.to_s }.join(';')}")
 
         sub_res = {'cors' => nil}
         body = Nokogiri::XML::Builder.new do |xml|
           xml.CORSConfiguration {
             rules.each do |r|
               xml.CORSRule {
-                r.allowed_origins.each do |x|
-                  xml.AllowedOrigin x
-                end
-                r.allowed_methods.each do |x|
-                  xml.AllowedMethod x
-                end
-                r.allowed_headers.each do |x|
-                  xml.AllowedHeader x
-                end
-                r.expose_headers.each do |x|
-                  xml.ExposeHeader x
-                end
+                r.allowed_origins.each { |x| xml.AllowedOrigin x }
+                r.allowed_methods.each { |x| xml.AllowedMethod x }
+                r.allowed_headers.each { |x| xml.AllowedHeader x }
+                r.expose_headers.each { |x| xml.ExposeHeader x }
                 xml.MaxAgeSeconds r.max_age_seconds if r.max_age_seconds
               }
             end
@@ -468,11 +473,11 @@ module Aliyun
         rules = []
 
         doc.css("CORSRule").map do |n|
-          allowed_origins = n.css("AllowedOrigin").map {|x| x.text}
-          allowed_methods = n.css("AllowedMethod").map {|x| x.text}
-          allowed_headers = n.css("AllowedHeader").map {|x| x.text}
-          expose_headers = n.css("ExposeHeader").map {|x| x.text}
-          max_age_seconds = get_node_text(n, 'MaxAgeSeconds') {|x| x.to_i}
+          allowed_origins = n.css("AllowedOrigin").map(&:text)
+          allowed_methods = n.css("AllowedMethod").map(&:text)
+          allowed_headers = n.css("AllowedHeader").map(&:text)
+          expose_headers = n.css("ExposeHeader").map(&:text)
+          max_age_seconds = get_node_text(n, 'MaxAgeSeconds', &:to_i)
 
           rules << CORSRule.new(
             :allowed_origins => allowed_origins,
@@ -535,7 +540,8 @@ module Aliyun
                      "#{object_name}, options: #{opts}")
 
         headers = {'Content-Type' => opts[:content_type]}
-        (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+        (opts[:metas] || {})
+          .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
         @http.put(
           {:bucket => bucket_name, :object => object_name},
@@ -567,12 +573,13 @@ module Aliyun
       #   2. The position must equal to the object's size before append
       #   3. The :content_type is only used when the object is created
       def append_object(bucket_name, object_name, position, opts = {}, &block)
-        logger.debug("Begin append object, bucket: #{bucket_name}, object: " \
+        logger.debug("Begin append object, bucket: #{bucket_name}, object: "\
                       "#{object_name}, position: #{position}, options: #{opts}")
 
         sub_res = {'append' => nil, 'position' => position}
         headers = {'Content-Type' => opts[:content_type]}
-        (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+        (opts[:metas] || {})
+          .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
         h, _ = @http.post(
              {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
@@ -580,7 +587,7 @@ module Aliyun
 
         logger.debug('Done append object')
 
-        wrap(h[:x_oss_next_append_position]){ |x| x.to_i } || -1
+        wrap(h[:x_oss_next_append_position], &:to_i) || -1
       end
 
       # List objects in a bucket.
@@ -629,7 +636,7 @@ module Aliyun
           'marker' => opts[:marker],
           'max-keys' => opts[:limit],
           'encoding-type' => opts[:encoding]
-        }.select {|_, v| v != nil}
+        }.reject { |_, v| v.nil? }
 
         _, body = @http.get({:bucket => bucket_name}, {:query => params})
 
@@ -639,33 +646,36 @@ module Aliyun
 
         objects = doc.css("Contents").map do |node|
           Object.new(
-            :key => get_node_text(node, "Key") {|x| decode_key(x, encoding)},
+            :key => get_node_text(node, "Key") { |x| decode_key(x, encoding) },
             :type => get_node_text(node, "Type"),
-            :size => get_node_text(node, "Size").to_i,
+            :size => get_node_text(node, "Size", &:to_i),
             :etag => get_node_text(node, "ETag"),
-            :last_modified => get_node_text(node, "LastModified") {|x| Time.parse(x)}
+            :last_modified =>
+              get_node_text(node, "LastModified") { |x| Time.parse(x) }
           )
         end || []
 
-        more = Hash[
-          {
-            :prefix => 'Prefix',
-            :delimiter => 'Delimiter',
-            :limit => 'MaxKeys',
-            :marker => 'Marker',
-            :next_marker => 'NextMarker',
-            :truncated => 'IsTruncated',
-            :encoding => 'EncodingType'
-          }.map do |k, v|
-            [k, get_node_text(doc.root, v)]
-          end].select {|_, v| v != nil}
+        more = {
+          :prefix => 'Prefix',
+          :delimiter => 'Delimiter',
+          :limit => 'MaxKeys',
+          :marker => 'Marker',
+          :next_marker => 'NextMarker',
+          :truncated => 'IsTruncated',
+          :encoding => 'EncodingType'
+        }.reduce({}) { |h, (k, v)|
+          value = get_node_text(doc.root, v)
+          value.nil?? h : h.merge(k => value)
+        }
 
-        more.update(
-          :limit => wrap(more[:limit]) {|x| x.to_i},
-          :truncated => wrap(more[:truncated]) {|x| x.to_bool},
-          :delimiter => wrap(more[:delimiter]) {|x| decode_key(x, encoding)},
-          :marker => wrap(more[:marker]) {|x| decode_key(x, encoding)},
-          :next_marker => wrap(more[:next_marker]) {|x| decode_key(x, encoding)}
+        update_if_exists(
+          more, {
+            :limit => ->(x) { x.to_i },
+            :truncated => ->(x) { x.to_bool },
+            :delimiter => ->(x) { decode_key(x, encoding) },
+            :marker => ->(x) { decode_key(x, encoding) },
+            :next_marker => ->(x) { decode_key(x, encoding) }
+          }
         )
 
         common_prefixes = []
@@ -676,7 +686,7 @@ module Aliyun
 
         logger.debug("Done list object. objects: #{objects}, more: #{more}")
 
-        [objects, more.select {|_, v| v != nil}]
+        [objects, more]
       end
 
       # Get an object from the bucket. A block is required to handle
@@ -716,23 +726,16 @@ module Aliyun
       # @yield [String] it gives the data chunks of the object to
       #  the block
       def get_object(bucket_name, object_name, opts = {}, &block)
-        logger.debug("Begin get object, bucket: #{bucket_name}, " \
+        logger.debug("Begin get object, bucket: #{bucket_name}, "\
                      "object: #{object_name}")
 
         range = opts[:range]
         conditions = opts[:condition]
         rewrites = opts[:rewrite]
 
-        raise ClientError.new("Range must be an array contains 2 Integers.") \
-                if range and not range.is_a?(Array) and not range.size == 2
-
         headers = {}
-        if range
-          r = [range.at(0), range.at(1) - 1].join('-')
-          headers['Range'] = "bytes=#{r}"
-        end
-
-        set_conditions(headers, conditions) if conditions
+        headers['Range'] = get_bytes_range(range) if range
+        headers.merge!(get_conditions(conditions)) if conditions
 
         query = {}
         if rewrites
@@ -752,21 +755,21 @@ module Aliyun
 
         h, _ = @http.get(
              {:bucket => bucket_name, :object => object_name},
-             {:headers => headers, :query => query}) {|chunk| yield chunk if block_given?}
+             {:headers => headers, :query => query}
+           ) { |chunk| yield chunk if block_given? }
 
         metas = {}
         meta_prefix = 'x_oss_meta_'
-        h.select{ |k, _| k.to_s.start_with?(meta_prefix) }.each do |k, v|
-          metas[k.to_s.sub(meta_prefix, '')] = v.to_s
-        end
+        h.select { |k, _| k.to_s.start_with?(meta_prefix) }
+          .each { |k, v| metas[k.to_s.sub(meta_prefix, '')] = v.to_s }
 
         obj = Object.new(
           :key => object_name,
           :type => h[:x_oss_object_type],
-          :size => wrap(h[:content_length]) {|x| x.to_i},
+          :size => wrap(h[:content_length], &:to_i),
           :etag => h[:etag],
           :metas => metas,
-          :last_modified => wrap(h[:last_modified]) {|x| Time.parse(x)})
+          :last_modified => wrap(h[:last_modified]) { |x| Time.parse(x) })
 
         logger.debug("Done get object")
 
@@ -786,11 +789,11 @@ module Aliyun
       #  object meta. The same as #get_object
       # @return [OSS::Object] The object meta
       def get_object_meta(bucket_name, object_name, opts = {})
-        logger.debug("Begin get object meta, bucket: #{bucket_name}, " \
+        logger.debug("Begin get object meta, bucket: #{bucket_name}, "\
                      "object: #{object_name}, options: #{opts}")
 
         headers = {}
-        set_conditions(headers, opts[:condition]) if opts[:condition]
+        headers.merge!(get_conditions(opts[:condition])) if opts[:condition]
 
         h, _ = @http.head(
              {:bucket => bucket_name, :object => object_name},
@@ -798,17 +801,16 @@ module Aliyun
 
         metas = {}
         meta_prefix = 'x_oss_meta_'
-        h.select{ |k, _| k.to_s.start_with?(meta_prefix) }.each do |k, v|
-          metas[k.to_s.sub(meta_prefix, '')] = v.to_s
-        end
+        h.select { |k, _| k.to_s.start_with?(meta_prefix) }
+          .each { |k, v| metas[k.to_s.sub(meta_prefix, '')] = v.to_s }
 
         obj = Object.new(
           :key => object_name,
           :type => h[:x_oss_object_type],
-          :size => wrap(h[:content_length]) {|x| x.to_i},
+          :size => wrap(h[:content_length], &:to_i),
           :etag => h[:etag],
           :metas => metas,
-          :last_modified => wrap(h[:last_modified]) {|x| Time.parse(x)})
+          :last_modified => wrap(h[:last_modified]) { |x| Time.parse(x) })
 
         logger.debug("Done get object meta")
 
@@ -840,24 +842,24 @@ module Aliyun
       #  * :last_modified [Time] the last modification time of the
       #    dest object
       def copy_object(bucket_name, src_object_name, dst_object_name, opts = {})
-        logger.debug("Begin copy object, bucket: #{bucket_name}, " \
-                     "source object: #{src_object_name}, dest object: " \
+        logger.debug("Begin copy object, bucket: #{bucket_name}, "\
+                     "source object: #{src_object_name}, dest object: "\
                      "#{dst_object_name}, options: #{opts}")
 
         headers = {
-          'x-oss-copy-source' => @http.get_resource_path(bucket_name, src_object_name),
+          'x-oss-copy-source' =>
+            @http.get_resource_path(bucket_name, src_object_name),
           'Content-Type' => opts[:content_type]
         }
-        (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+        (opts[:metas] || {})
+          .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
         {
           :acl => 'x-oss-object-acl',
           :meta_directive => 'x-oss-metadata-directive'
-        }.each do |k, v|
-          headers[v] = opts[k] if opts[k]
-        end
+        }.each { |k, v| headers[v] = opts[k] if opts[k] }
 
-        set_copy_conditions(headers, opts[:condition]) if opts[:condition]
+        headers.merge!(get_copy_conditions(opts[:condition])) if opts[:condition]
 
         _, body = @http.put(
           {:bucket => bucket_name, :object => dst_object_name},
@@ -866,9 +868,9 @@ module Aliyun
         doc = parse_xml(body)
         copy_result = {
           :last_modified => get_node_text(
-            doc.root, 'LastModified') {|x| Time.parse(x)},
+            doc.root, 'LastModified') { |x| Time.parse(x) },
           :etag => get_node_text(doc.root, 'ETag')
-        }.select {|_, v| v != nil}
+        }.reject { |_, v| v.nil? }
 
         logger.debug("Done copy object")
 
@@ -879,7 +881,7 @@ module Aliyun
       # @param bucket_name [String] the bucket name
       # @param object_name [String] the object name
       def delete_object(bucket_name, object_name)
-        logger.debug("Begin delete object, bucket: #{bucket_name}, " \
+        logger.debug("Begin delete object, bucket: #{bucket_name}, "\
                      "object:  #{object_name}")
 
         @http.delete({:bucket => bucket_name, :object => object_name})
@@ -899,7 +901,7 @@ module Aliyun
       # @return [Array<String>] object names that have been
       #  successfully deleted or empty if :quiet is true
       def batch_delete_objects(bucket_name, object_names, opts = {})
-        logger.debug("Begin batch delete object, bucket: #{bucket_name}, " \
+        logger.debug("Begin batch delete object, bucket: #{bucket_name}, "\
                      "objects: #{object_names}, options: #{opts}")
 
         sub_res = {'delete' => nil}
@@ -926,7 +928,7 @@ module Aliyun
           doc = parse_xml(body)
           encoding = get_node_text(doc.root, 'EncodingType')
           doc.css("Deleted").map do |n|
-            deleted << get_node_text(n, 'Key') {|x| decode_key(x, encoding)}
+            deleted << get_node_text(n, 'Key') { |x| decode_key(x, encoding) }
           end
         end
 
@@ -935,12 +937,12 @@ module Aliyun
         deleted
       end
 
-      # Update object acl
+      # Put object acl
       # @param bucket_name [String] the bucket name
       # @param object_name [String] the object name
       # @param acl [String] the object's ACL. See {OSS::ACL}
-      def update_object_acl(bucket_name, object_name, acl)
-        logger.debug("Begin update object acl, bucket: #{bucket_name}, " \
+      def put_object_acl(bucket_name, object_name, acl)
+        logger.debug("Begin update object acl, bucket: #{bucket_name}, "\
                      "object: #{object_name}, acl: #{acl}")
 
         sub_res = {'acl' => nil}
@@ -958,12 +960,12 @@ module Aliyun
       # @param object_name [String] the object name
       # [return] the object's acl. See {OSS::ACL}
       def get_object_acl(bucket_name, object_name)
-        logger.debug("Begin get object acl, bucket: #{bucket_name}, " \
+        logger.debug("Begin get object acl, bucket: #{bucket_name}, "\
                      "object: #{object_name}")
 
         sub_res = {'acl' => nil}
         _, body = @http.get(
-             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res})
+             {bucket: bucket_name, object: object_name, sub_res: sub_res})
 
         doc = parse_xml(body)
         acl = get_node_text(doc.at_css("AccessControlList"), 'Grant')
@@ -984,8 +986,8 @@ module Aliyun
       #  Access-Control-Request-Headers
       # @return [CORSRule] the CORS rule of the object
       def get_object_cors(bucket_name, object_name, origin, method, headers = [])
-        logger.debug("Begin get object cors, bucket: #{bucket_name}, object: " \
-                     "#{object_name}, origin: #{origin}, method: #{method}, " \
+        logger.debug("Begin get object cors, bucket: #{bucket_name}, object: "\
+                     "#{object_name}, origin: #{origin}, method: #{method}, "\
                      "headers: #{headers.join(',')}")
 
         h = {
@@ -1025,22 +1027,24 @@ module Aliyun
       #  that serve as the object meta which will be stored together
       #  with the object
       # @return [String] the upload id
-      def begin_multipart(bucket_name, object_name, opts = {})
-        logger.info("Begin begin_multipart, bucket: #{bucket_name}, " \
-                    "object: #{object_name}, options: #{opts}")
+      def initiate_multipart_upload(bucket_name, object_name, opts = {})
+        logger.info("Begin initiate multipart upload, bucket: "\
+                    "#{bucket_name}, object: #{object_name}, options: #{opts}")
 
         sub_res = {'uploads' => nil}
         headers = {'Content-Type' => opts[:content_type]}
-        (opts[:metas] || {}).each{ |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+        (opts[:metas] || {})
+          .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
         _, body = @http.post(
-             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+             {:bucket => bucket_name, :object => object_name,
+              :sub_res => sub_res},
              {:headers => headers})
 
         doc = parse_xml(body)
         txn_id = get_node_text(doc.root, 'UploadId')
 
-        logger.info("Done begin_multipart")
+        logger.info("Done initiate multipart upload: #{txn_id}.")
 
         txn_id
       end
@@ -1054,9 +1058,7 @@ module Aliyun
       #  yielded to the caller to which it can write chunks of data
       #  streamingly
       def upload_part(bucket_name, object_name, txn_id, part_no, &block)
-        raise ClientError.new('Missing block in upload_part') unless block
-
-        logger.debug("Begin upload part, bucket: #{bucket_name}, object: " \
+        logger.debug("Begin upload part, bucket: #{bucket_name}, object: "\
                      "#{object_name}, txn id: #{txn_id}, part No: #{part_no}")
 
         sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
@@ -1082,28 +1084,25 @@ module Aliyun
       #  copy, int the format: [begin(inclusive), end(exclusive]
       # @option opts [Hash] :condition preconditions to copy the
       #  object. See #get_object
-      def upload_part_from_object(
+      def upload_part_by_copy(
             bucket_name, object_name, txn_id, part_no, source_object, opts = {})
-        logger.debug("Begin upload part from object, bucket: #{bucket_name}, " \
-                     "object: #{object_name}, txn id: #{txn_id}, part No: #{part_no}, " \
-                     "source object: #{source_object}, options: #{opts}")
+        logger.debug("Begin upload part by copy, bucket: #{bucket_name}, "\
+                     "object: #{object_name}, source object: #{source_object}"\
+                     "txn id: #{txn_id}, part No: #{part_no}, options: #{opts}")
 
         range = opts[:range]
         conditions = opts[:condition]
 
-        raise ClientError.new("Range must be an array contains 2 int.") \
-                if range and not range.is_a?(Array) and not range.size == 2
+        if range && (!range.is_a?(Array) || range.size != 2)
+          fail ClientError, "Range must be an array containing 2 Integers."
+        end
 
         headers = {
           'x-oss-copy-source' =>
             @http.get_resource_path(bucket_name, source_object)
         }
-        if range
-          r = [range.at(0), range.at(1) - 1].join('-')
-          headers['Range'] = "bytes=#{r}"
-        end
-
-        set_copy_conditions(headers, conditions) if conditions
+        headers['Range'] = get_bytes_range(range) if range
+        headers.merge!(get_copy_conditions(conditions)) if conditions
 
         sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
 
@@ -1111,7 +1110,7 @@ module Aliyun
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:headers => headers})
 
-        logger.debug("Done upload_part_from_object")
+        logger.debug("Done upload part by copy: #{source_object}.")
 
         Multipart::Part.new(:number => part_no, :etag => headers[:etag])
       end
@@ -1122,9 +1121,9 @@ module Aliyun
       # @param txn_id [String] the upload id
       # @param parts [Array<Multipart::Part>] all the
       #  parts in this transaction
-      def commit_multipart(bucket_name, object_name, txn_id, parts)
-        logger.info("Begin commit_multipart, txn id: #{txn_id}, " \
-                    "parts: #{parts.map(&:to_s)}")
+      def complete_multipart_upload(bucket_name, object_name, txn_id, parts)
+        logger.debug("Begin complete multipart upload, "\
+                     "txn id: #{txn_id}, parts: #{parts.map(&:to_s)}")
 
         sub_res = {'uploadId' => txn_id}
 
@@ -1143,26 +1142,26 @@ module Aliyun
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:body => body})
 
-        logger.info("Done commit_multipart")
+        logger.debug("Done complete multipart upload: #{txn_id}.")
       end
 
       # Abort a multipart uploading transaction
       # @note All the parts are discarded after abort. For some parts
       #  being uploaded while the abort happens, they may not be
-      #  discarded. Call abort_multipart several times for this
+      #  discarded. Call abort_multipart_upload several times for this
       #  situation.
       # @param bucket_name [String] the bucket name
       # @param object_name [String] the object name
       # @param txn_id [String] the upload id
-      def abort_multipart(bucket_name, object_name, txn_id)
-        logger.info("Begin abort_multipart, txn id: #{txn_id}")
+      def abort_multipart_upload(bucket_name, object_name, txn_id)
+        logger.debug("Begin abort multipart upload, txn id: #{txn_id}")
 
         sub_res = {'uploadId' => txn_id}
 
         @http.delete(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res})
 
-        logger.info("Done abort_multipart")
+        logger.debug("Done abort multipart: #{txn_id}.")
       end
 
       # Get a list of all the on-going multipart uploading
@@ -1201,9 +1200,9 @@ module Aliyun
       #  * :truncated [Boolean] whether there are more transactions
       #    to be returned
       #  * :encoding [String] the object key encoding used
-      def list_multipart_transactions(bucket_name, opts = {})
-        logger.debug("Begin list multipart transactions, bucket: #{bucket_name}, " \
-                     "opts: #{opts}")
+      def list_multipart_uploads(bucket_name, opts = {})
+        logger.debug("Begin list multipart uploads, "\
+                     "bucket: #{bucket_name}, opts: #{opts}")
 
         sub_res = {'uploads' => nil}
         params = {
@@ -1213,7 +1212,7 @@ module Aliyun
           'key-marker' => opts[:key_marker],
           'max-uploads' => opts[:limit],
           'encoding-type' => opts[:encoding]
-        }.select {|_, v| v != nil}
+        }.reject { |_, v| v.nil? }
 
         _, body = @http.get(
           {:bucket => bucket_name, :sub_res => sub_res},
@@ -1226,39 +1225,41 @@ module Aliyun
         txns = doc.css("Upload").map do |node|
           Multipart::Transaction.new(
             :id => get_node_text(node, "UploadId"),
-            :object => get_node_text(node, "Key") {|x| decode_key(x, encoding)},
+            :object => get_node_text(node, "Key") { |x| decode_key(x, encoding) },
             :bucket => bucket_name,
-            :creation_time => get_node_text(node, "Initiated") {|t| Time.parse(t)}
+            :creation_time =>
+              get_node_text(node, "Initiated") { |t| Time.parse(t) }
           )
         end || []
 
-        more = Hash[
-          {
-            :prefix => 'Prefix',
-            :delimiter => 'Delimiter',
-            :limit => 'MaxUploads',
-            :id_marker => 'UploadIdMarker',
-            :next_id_marker => 'NextUploadIdMarker',
-            :key_marker => 'KeyMarker',
-            :next_key_marker => 'NextKeyMarker',
-            :truncated => 'IsTruncated',
-            :encoding => 'EncodingType'
-          }.map do |k, v|
-            [k, get_node_text(doc.root, v)]
-          end].select {|_, v| v != nil}
+        more = {
+          :prefix => 'Prefix',
+          :delimiter => 'Delimiter',
+          :limit => 'MaxUploads',
+          :id_marker => 'UploadIdMarker',
+          :next_id_marker => 'NextUploadIdMarker',
+          :key_marker => 'KeyMarker',
+          :next_key_marker => 'NextKeyMarker',
+          :truncated => 'IsTruncated',
+          :encoding => 'EncodingType'
+        }.reduce({}) { |h, (k, v)|
+          value = get_node_text(doc.root, v)
+          value.nil?? h : h.merge(k => value)
+        }
 
-        more.update(
-          :limit => wrap(more[:limit]) {|x| x.to_i},
-          :truncated => wrap(more[:truncated]) {|x| x.to_bool},
-          :delimiter => wrap(more[:delimiter]) {|x| decode_key(x, encoding)},
-          :key_marker => wrap(more[:key_marker]) {|x| decode_key(x, encoding)},
-          :next_key_marker =>
-            wrap(more[:next_key_marker]) {|x| decode_key(x, encoding)}
+        update_if_exists(
+          more, {
+            :limit => ->(x) { x.to_i },
+            :truncated => ->(x) { x.to_bool },
+            :delimiter => ->(x) { decode_key(x, encoding) },
+            :key_marker => ->(x) { decode_key(x, encoding) },
+            :next_key_marker => ->(x) { decode_key(x, encoding) }
+          }
         )
 
-        logger.debug("Done list_multipart_transactions")
+        logger.debug("Done list multipart transactions")
 
-        [txns, more.select {|_, v| v != nil}]
+        [txns, more]
       end
 
       # Get a list of parts that are successfully uploaded in a
@@ -1276,7 +1277,7 @@ module Aliyun
       #  * :truncated [Boolean] whether there are more parts to be
       #    returned
       def list_parts(bucket_name, object_name, txn_id, opts = {})
-        logger.debug("Begin list_parts, bucket: #{bucket_name}, object: " \
+        logger.debug("Begin list parts, bucket: #{bucket_name}, object: "\
                      "#{object_name}, txn id: #{txn_id}, options: #{opts}")
 
         sub_res = {'uploadId' => txn_id}
@@ -1284,7 +1285,7 @@ module Aliyun
           'part-number-marker' => opts[:marker],
           'max-parts' => opts[:limit],
           'encoding-type' => opts[:encoding]
-        }.select {|_, v| v != nil}
+        }.reject { |_, v| v.nil? }
 
         _, body = @http.get(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
@@ -1293,32 +1294,34 @@ module Aliyun
         doc = parse_xml(body)
         parts = doc.css("Part").map do |node|
           Multipart::Part.new(
-            :number => get_node_text(node, 'PartNumber') {|x| x.to_i},
+            :number => get_node_text(node, 'PartNumber', &:to_i),
             :etag => get_node_text(node, 'ETag'),
-            :size => get_node_text(node, 'Size') {|x| x.to_i},
+            :size => get_node_text(node, 'Size', &:to_i),
             :last_modified =>
-              get_node_text(node, 'LastModified') {|x| Time.parse(x)})
+              get_node_text(node, 'LastModified') { |x| Time.parse(x) })
         end || []
 
-        more = Hash[
-          {
-            :limit => 'MaxParts',
-            :marker => 'PartNumberMarker',
-            :next_marker => 'NextPartNumberMarker',
-            :truncated => 'IsTruncated',
-            :encoding => 'EncodingType'
-          }.map do |k, v|
-            [k, get_node_text(doc.root, v)]
-          end].select {|k, v| v != nil}
+        more = {
+          :limit => 'MaxParts',
+          :marker => 'PartNumberMarker',
+          :next_marker => 'NextPartNumberMarker',
+          :truncated => 'IsTruncated',
+          :encoding => 'EncodingType'
+        }.reduce({}) { |h, (k, v)|
+          value = get_node_text(doc.root, v)
+          value.nil?? h : h.merge(k => value)
+        }
 
-        more.update(
-          :limit => wrap(more[:limit]) {|x| x.to_i},
-          :truncated => wrap(more[:truncated]) {|x| x.to_bool}
+        update_if_exists(
+          more, {
+            :limit => ->(x) { x.to_i },
+            :truncated => ->(x) { x.to_bool }
+          }
         )
 
-        logger.debug("Done list_parts")
+        logger.debug("Done list parts, parts: #{parts}, more: #{more}")
 
-        [parts, more.select {|_, v| v != nil}]
+        [parts, more]
       end
 
       private
@@ -1341,9 +1344,7 @@ module Aliyun
       def get_node_text(node, tag, &block)
         n = node.at_css(tag) if node
         value = n.text if n
-        value = yield value if block and value
-
-        value
+        block && value ? yield(value) : value
       end
 
       # Decode object key using encoding. If encoding is nil it
@@ -1354,8 +1355,9 @@ module Aliyun
       def decode_key(key, encoding)
         return key unless encoding
 
-        raise ClientError.new("Unsupported key encoding: #{encoding}") \
-                  unless KeyEncoding.include?(encoding)
+        unless KeyEncoding.include?(encoding)
+          fail ClientError, "Unsupported key encoding: #{encoding}"
+        end
 
         if encoding == KeyEncoding::URL
           return CGI.unescape(key)
@@ -1367,44 +1369,65 @@ module Aliyun
       # @yield [Object] the object if given to the block
       # @return [Object] the transformed object
       def wrap(x, &block)
-        x == nil ? nil : yield(x)
+        yield x if x
       end
 
-      # Set conditions in HTTP headers
-      # @param headers [Hash] the http headers
+      # Get conditions for HTTP headers
       # @param conditions [Hash] the conditions
-      def set_conditions(headers, conditions)
+      # @return [Hash] conditions for HTTP headers
+      def get_conditions(conditions)
         {
           :if_modified_since => 'If-Modified-Since',
           :if_unmodified_since => 'If-Unmodified-Since',
-        }.each do |k, v|
-          headers[v] = conditions[k].httpdate if conditions.has_key?(k)
-        end
-        {
-          :if_match_etag => 'If-Match',
-          :if_unmatch_etag => 'If-None-Match'
-        }.each do |k, v|
-          headers[v] = conditions[k] if conditions.has_key?(k)
-        end
+        }.reduce({}) { |h, (k, v)|
+          conditions.key?(k)? h.merge(v => conditions[k].httpdate) : h
+        }.merge(
+          {
+            :if_match_etag => 'If-Match',
+            :if_unmatch_etag => 'If-None-Match'
+          }.reduce({}) { |h, (k, v)|
+            conditions.key?(k)? h.merge(v => conditions[k]) : h
+          }
+        )
       end
 
-      # Set copy conditions in HTTP headers
-      # @param headers [Hash] the http headers
+      # Get copy conditions for HTTP headers
       # @param conditions [Hash] the conditions
-      def set_copy_conditions(headers, conditions)
+      # @return [Hash] copy conditions for HTTP headers
+      def get_copy_conditions(conditions)
         {
           :if_modified_since => 'x-oss-copy-source-if-modified-since',
           :if_unmodified_since => 'x-oss-copy-source-if-unmodified-since',
-        }.each do |k, v|
-            headers[v] = conditions[k].httpdate if conditions.has_key?(k)
+        }.reduce({}) { |h, (k, v)|
+          conditions.key?(k)? h.merge(v => conditions[k].httpdate) : h
+        }.merge(
+          {
+            :if_match_etag => 'x-oss-copy-source-if-match',
+            :if_unmatch_etag => 'x-oss-copy-source-if-none-match'
+          }.reduce({}) { |h, (k, v)|
+            conditions.key?(k)? h.merge(v => conditions[k]) : h
+          }
+        )
+      end
+
+      # Get bytes range
+      # @param range [Array<Integer>] range
+      # @return [String] bytes range for HTTP headers
+      def get_bytes_range(range)
+        if range &&
+           (!range.is_a?(Array) || range.size != 2 ||
+            !range.at(0).is_a?(Fixnum) || !range.at(1).is_a?(Fixnum))
+          fail ClientError, "Range must be an array containing 2 Integers."
         end
 
-        {
-          :if_match_etag => 'x-oss-copy-source-if-match',
-          :if_unmatch_etag => 'x-oss-copy-source-if-none-match'
-        }.each do |k, v|
-          headers[v] = conditions[k] if conditions.has_key?(k)
-        end
+        "bytes=#{range.at(0)}-#{range.at(1) - 1}"
+      end
+
+      # Update values for keys that exist in hash
+      # @param hash [Hash] the hash to be updated
+      # @param kv [Hash] keys & blocks to updated
+      def update_if_exists(hash, kv)
+        kv.each { |k, v| hash[k] = v.call(hash[k]) if hash.key?(k) }
       end
 
     end # Protocol
