@@ -71,43 +71,24 @@ objects.each do |o|
   end
 end
 
-# 获取/设置Bucket属性: ACL, Logging, Website, Referer, LifeCycle, CORS
+# 获取/设置Bucket属性: ACL, Logging, Referer, Website, LifeCycle, CORS
 puts "Bucket acl before: #{bucket.acl}"
 bucket.acl = Aliyun::OSS::ACL::PUBLIC_READ
 puts "Bucket acl now: #{bucket.acl}"
 
-begin
-  puts "Bucket logging before: #{bucket.logging}"
-rescue => e
-  puts "Get bucket logging failed: #{e.message}"
-end
-bucket.logging = {:enable => true, :target_bucket => 't-hello-world', :prefix => 'foo/'}
+puts "Bucket logging before: #{bucket.logging}"
+bucket.logging = {:enable => true, :target_bucket => conf['bucket'], :prefix => 'foo/'}
 puts "Bucket logging now: #{bucket.logging}"
 
-begin
-  puts "Bucket website before: #{bucket.website}"
-rescue => e
-  puts "Get bucket website failed: #{e.message}"
-end
-
-bucket.website = {:index => 'default.html', :error => 'error.html'}
-puts "Bucket website now: #{bucket.website}"
-
-begin
-  puts "Bucket referer before: #{bucket.referer}"
-rescue => e
-  puts "Get bucket referer failed: #{e.message}"
-end
-
+puts "Bucket referer before: #{bucket.referer}"
 bucket.referer = {:allow_empty => true, :referers => ['baidu.com', 'aliyun.com']}
 puts "Bucket referer now: #{bucket.referer}"
 
-begin
-  puts "Bucket lifecycle before: #{bucket.lifecycle.map(&:to_s)}"
-rescue => e
-  puts "Get bucket lifecycle failed: #{e.message}"
-end
+puts "Bucket website before: #{bucket.website}"
+bucket.website = {:index => 'default.html', :error => 'error.html'}
+puts "Bucket website now: #{bucket.website}"
 
+puts "Bucket lifecycle before: #{bucket.lifecycle.map(&:to_s)}"
 bucket.lifecycle = [
   Aliyun::OSS::LifeCycleRule.new(
     :id => 'rule1', :enabled => true, :prefix => 'foo/', :expiry => 1),
@@ -116,12 +97,7 @@ bucket.lifecycle = [
 ]
 puts "Bucket lifecycle now: #{bucket.lifecycle.map(&:to_s)}"
 
-begin
-  puts "Bucket cors before: #{bucket.cors.map(&:to_s)}"
-rescue => e
-  puts "Get bucket cors failed: #{e.message}"
-end
-
+puts "Bucket cors before: #{bucket.cors.map(&:to_s)}"
 bucket.cors = [
     Aliyun::OSS::CORSRule.new(
       :allowed_origins => ['aliyun.com', 'http://www.taobao.com'],

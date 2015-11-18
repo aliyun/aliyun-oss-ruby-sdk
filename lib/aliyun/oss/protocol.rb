@@ -192,13 +192,12 @@ module Aliyun
         opts = {:enable => false}
 
         logging_node = doc.at_css("LoggingEnabled")
-        if logging_node
-          opts.update(:enable => true)
-          opts.update(
-            :target_bucket => get_node_text(logging_node, 'TargetBucket'),
-            :prefix => get_node_text(logging_node, 'TargetPrefix')
-          )
-        end
+        opts.update(
+          :target_bucket => get_node_text(logging_node, 'TargetBucket'),
+          :prefix => get_node_text(logging_node, 'TargetPrefix')
+        )
+        opts[:enable] = true if opts[:target_bucket]
+
         logger.info("Done get bucket logging")
 
         opts.select {|_, v| v != nil}

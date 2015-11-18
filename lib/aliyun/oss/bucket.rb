@@ -4,7 +4,8 @@ module Aliyun
   module OSS
     ##
     # Bucket是用户的Object相关的操作的client，主要包括三部分功能：
-    # 1. bucket相关：获取/设置bucket的属性（acl, logging,website, etc）
+    # 1. bucket相关：获取/设置bucket的属性（acl, logging, referer,
+    #    website, lifecycle, cors）
     # 2. object相关：上传、下载、追加、拷贝object等
     # 3. multipart相关：断点续传、断点续载
     class Bucket < Struct::Base
@@ -52,9 +53,17 @@ module Aliyun
       end
 
       # 获取Bucket的website配置
-      # @return [Hash] Bucket的website配置。See #website=
+      # @return [Hash] Bucket的website配置。见 #website=，如果当前
+      #  Bucket未设置website，则返回一个空的Hash：{}
       def website
-        @protocol.get_bucket_website(name)
+        r = {}
+        begin
+          r = @protocol.get_bucket_website(name)
+        rescue ServerError => e
+          raise unless e.http_code == 404
+        end
+
+        r
       end
 
       # 设置Bucket的website配置
@@ -79,19 +88,27 @@ module Aliyun
 
       # 设置Bucket的Referer配置
       # @param opts [Hash] Referer配置
-      # @option opts [Boolean] [:allow_empty] 设置是否允许Referer为空
+      # @option opts [Boolean] :allow_empty [必填] 设置是否允许Referer为空
       #  的请求访问Bucket
-      # @option opts [Array<String>] [:referers] 设置允许访问Bucket的
+      # @option opts [Array<String>] :referers [可选] 设置允许访问Bucket的
       #  请求的Referer白名单
-      # @note 如果opts为空，则会删除这个bucket上的referer配置
+      # @note 如果:referers为空，则会删除这个bucket上的referer list
       def referer=(opts)
         @protocol.update_bucket_referer(name, opts)
       end
 
       # 获取Bucket的生命周期配置
-      # @return [Array<OSS::LifeCycleRule>] Bucket的生命周期规则
+      # @return [Array<OSS::LifeCycleRule>] Bucket的生命周期规则，如果
+      #  当前Bucket未设置lifecycle，则返回[]
       def lifecycle
-        @protocol.get_bucket_lifecycle(name)
+        r = []
+        begin
+          r = @protocol.get_bucket_lifecycle(name)
+        rescue ServerError => e
+          raise unless e.http_code == 404
+        end
+
+        r
       end
 
       # 设置Bucket的生命周期配置
@@ -108,9 +125,17 @@ module Aliyun
       end
 
       # 获取Bucket的跨域资源共享(CORS)的规则
-      # @return [Array<OSS::CORSRule>] Bucket的CORS规则
+      # @return [Array<OSS::CORSRule>] Bucket的CORS规则，如果当前
+      #  Bucket未设置CORS规则，则返回[]
       def cors
-        @protocol.get_bucket_cors(name)
+        r = []
+        begin
+          r = @protocol.get_bucket_cors(name)
+        rescue ServerError => e
+          raise unless e.http_code == 404
+        end
+
+        r
       end
 
       # 设置Bucket的跨域资源共享(CORS)的规则
