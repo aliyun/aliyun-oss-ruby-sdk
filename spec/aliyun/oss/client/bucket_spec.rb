@@ -229,7 +229,7 @@ module Aliyun
 
           expect {
             @bucket.get_object_meta(key)
-          }.to raise_error(Exception, "InternalError")
+          }.to raise_error(Exception, "UnknownError, HTTP Code: 404")
 
           expect(@bucket.object_exists?(key)).to be false
           expect(@bucket.object_exist?(key)).to be false
@@ -255,7 +255,7 @@ module Aliyun
 
           expect {
             @bucket.object_exists?(key)
-          }.to raise_error(Exception, "InternalError")
+          }.to raise_error(Exception, "UnknownError, HTTP Code: 500")
         end
 
       end # object operations

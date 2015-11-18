@@ -121,14 +121,14 @@ begin
   o = bucket.get_object('files/hello',
                         :condition => {:if_unmatch_etag => old_etag})
 rescue Aliyun::OSS::ServerError => e
-  puts "Get object failed: #{e.message}, #{e.http_code}"
+  puts "Get object failed: #{e.message}"
 end
 
 begin
   o = bucket.get_object('files/hello',
                         :condition => {:if_modified_since => Time.now})
 rescue Aliyun::OSS::ServerError => e
-  puts "Get object failed: #{e.message}, #{e.http_code}"
+  puts "Get object failed: #{e.message}"
 end
 
 o = bucket.get_object('files/hello',

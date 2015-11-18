@@ -218,7 +218,7 @@ module Aliyun
           :block_response =>  block_response
         ) do |response, request, result, &blk|
 
-          if response.code >= 400
+          if response.code >= 300
             e = ServerError.new(response)
             logger.error(e.to_s)
             raise e

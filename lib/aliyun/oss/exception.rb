@@ -38,7 +38,7 @@ module Aliyun
       end
 
       def message
-        @attrs['Message'] || "InternalError"
+        @attrs['Message'] || "UnknownError, HTTP Code: #{http_code}"
       end
 
       def to_s
