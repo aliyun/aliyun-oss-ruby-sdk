@@ -23,15 +23,26 @@ http://www.aliyun.com/product/oss
 开通OSS服务。开通服务之后请在“管理控制台”中查看您的AccessKeyId和
 AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
 
-注：**阿里云OSS提供了1GB的免费存储空间，用户可以免费体验OSS服务**
-
 ### 安装Aliyun OSS SDK for Ruby
 
     gem install aliyun-sdk
 
-并在你的程序中包含：
+并在你的程序中或者`irb`命令下包含：
 
     require 'aliyun/oss'
+
+**注意：**
+
+1. SDK依赖的一些gem是本地扩展的形式，因此安装完Ruby之后还需要安装
+   ruby-dev以支持编译本地扩展的gem
+2. SDK依赖的处理XML的gem(nokogiri)要求环境中包含zlib库
+
+以Ubuntu为例，安装上述依赖的方法：
+
+    sudo apt-get install ruby-dev
+    sudo apt-get install zlib1g-dev
+
+其他系统类似。
 
 ### 创建Client
 
