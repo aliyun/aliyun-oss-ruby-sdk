@@ -113,7 +113,7 @@ module Aliyun
               end
 
               if p[:md5] != get_file_md5(part_file)
-                fail FileInconsistentError,
+                fail PartInconsistentError,
                      "The part file is changed: #{part_file}."
               end
             end
