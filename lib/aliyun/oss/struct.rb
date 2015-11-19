@@ -96,7 +96,7 @@ module Aliyun
     end # Struct
 
     ##
-    # LifeCycle rule for bucket. See: {https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/function&lifecycle OSS Bucket LifeCycle}
+    # LifeCycle rule for bucket. See: {http://help.aliyun.com/document_detail/oss/product-documentation/function/lifecycle.html OSS Bucket LifeCycle}
     # Attributes:
     # * id [String] the unique id of a rule
     # * enabled [Boolean] whether to enable this rule
@@ -127,7 +127,7 @@ module Aliyun
     end # LifeCycleRule
 
     ##
-    # CORS rule for bucket. See: {https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/function&referer-white-list OSS CORS}
+    # CORS rule for bucket. See: {http://help.aliyun.com/document_detail/oss/product-documentation/function/referer-white-list.html OSS CORS}
     # Attributes:
     # * allowed_origins [Array<String>] the allowed origins
     # * allowed_methods [Array<String>] the allowed methods

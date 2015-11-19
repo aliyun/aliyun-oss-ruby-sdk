@@ -154,11 +154,11 @@ module Aliyun
       def put_bucket_logging(name, opts)
         logger.info("Begin put bucket logging, name: #{name}, options: #{opts}")
 
-        unless opts.has_key?(:enable)
+        unless opts.key?(:enable)
           fail ClientError, "Must specify :enabled when put bucket logging."
         end
 
-        if opts[:enable] && !opts.has_key?(:target_bucket)
+        if opts[:enable] && !opts.key?(:target_bucket)
           fail ClientError,
                "Must specify target bucket when enabling bucket logging."
         end
@@ -232,7 +232,7 @@ module Aliyun
       def put_bucket_website(name, opts)
         logger.info("Begin put bucket website, name: #{name}, options: #{opts}")
 
-        unless opts.has_key?(:index)
+        unless opts.key?(:index)
           fail ClientError, "Must specify :index to put bucket website."
         end
 
@@ -300,7 +300,7 @@ module Aliyun
       def put_bucket_referer(name, opts)
         logger.info("Begin put bucket referer, name: #{name}, options: #{opts}")
 
-        unless opts.has_key?(:allow_empty)
+        unless opts.key?(:allow_empty)
           fail ClientError, "Must specify :allow_empty to put bucket referer."
         end
 
@@ -737,25 +737,25 @@ module Aliyun
         headers['Range'] = get_bytes_range(range) if range
         headers.merge!(get_conditions(conditions)) if conditions
 
-        query = {}
+        sub_res = {}
         if rewrites
-          [
-            :content_type,
+          [ :content_type,
             :content_language,
             :cache_control,
             :content_disposition,
             :content_encoding
           ].each do |k|
-            query["response-#{k.to_s.sub('_', '-')}"] =
-              rewrites[k] if rewrites.has_key?(k)
+            key = "response-#{k.to_s.sub('_', '-')}"
+            sub_res[key] = rewrites[k] if rewrites.key?(k)
           end
-          query["response-expires"] =
-            rewrites[:expires].httpdate if rewrites.has_key?(:expires)
+          sub_res["response-expires"] =
+            rewrites[:expires].httpdate if rewrites.key?(:expires)
         end
 
         h, _ = @http.get(
-             {:bucket => bucket_name, :object => object_name},
-             {:headers => headers, :query => query}
+             {:bucket => bucket_name, :object => object_name,
+              :sub_res => sub_res},
+             {:headers => headers}
            ) { |chunk| yield chunk if block_given? }
 
         metas = {}
