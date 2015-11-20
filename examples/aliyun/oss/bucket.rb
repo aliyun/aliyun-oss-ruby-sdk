@@ -83,24 +83,27 @@ puts "Bucket acl before: #{bucket.acl}"
 bucket.acl = Aliyun::OSS::ACL::PUBLIC_READ
 puts "Bucket acl now: #{bucket.acl}"
 
-puts "Bucket logging before: #{bucket.logging}"
-bucket.logging = {:enable => true, :target_bucket => conf['bucket'], :prefix => 'foo/'}
-puts "Bucket logging now: #{bucket.logging}"
+puts "Bucket logging before: #{bucket.logging.to_s}"
+bucket.logging = Aliyun::OSS::BucketLogging.new(
+  :enable => true, :target_bucket => conf['bucket'], :target_prefix => 'foo/')
+puts "Bucket logging now: #{bucket.logging.to_s}"
 
-puts "Bucket referer before: #{bucket.referer}"
-bucket.referer = {:allow_empty => true, :referers => ['baidu.com', 'aliyun.com']}
-puts "Bucket referer now: #{bucket.referer}"
+puts "Bucket referer before: #{bucket.referer.to_s}"
+bucket.referer = Aliyun::OSS::BucketReferer.new(
+  :allow_empty => true, :whitelist => ['baidu.com', 'aliyun.com'])
+puts "Bucket referer now: #{bucket.referer.to_s}"
 
-puts "Bucket website before: #{bucket.website}"
-bucket.website = {:index => 'default.html', :error => 'error.html'}
-puts "Bucket website now: #{bucket.website}"
+puts "Bucket website before: #{bucket.website.to_s}"
+bucket.website = Aliyun::OSS::BucketWebsite.new(
+  :enable => true, :index => 'default.html', :error => 'error.html')
+puts "Bucket website now: #{bucket.website.to_s}"
 
 puts "Bucket lifecycle before: #{bucket.lifecycle.map(&:to_s)}"
 bucket.lifecycle = [
   Aliyun::OSS::LifeCycleRule.new(
-    :id => 'rule1', :enabled => true, :prefix => 'foo/', :expiry => 1),
+    :id => 'rule1', :enable => true, :prefix => 'foo/', :expiry => 1),
   Aliyun::OSS::LifeCycleRule.new(
-    :id => 'rule2', :enabled => false, :prefix => 'bar/', :expiry => Date.new(2016, 1, 1))
+    :id => 'rule2', :enable => false, :prefix => 'bar/', :expiry => Date.new(2016, 1, 1))
 ]
 puts "Bucket lifecycle now: #{bucket.lifecycle.map(&:to_s)}"
 

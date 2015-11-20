@@ -86,10 +86,10 @@ module Aliyun
       def mock_logging(opts)
         Nokogiri::XML::Builder.new do |xml|
           xml.BucketLoggingStatus {
-            if opts[:enable]
+            if opts.enabled?
               xml.LoggingEnabled {
-                xml.TargetBucket opts[:target_bucket]
-                xml.TargetPrefix opts[:prefix]
+                xml.TargetBucket opts.target_bucket
+                xml.TargetPrefix opts.target_prefix
               }
             end
           }
@@ -100,11 +100,11 @@ module Aliyun
         Nokogiri::XML::Builder.new do |xml|
           xml.WebsiteConfiguration {
             xml.IndexDocument {
-              xml.Suffix opts[:index]
+              xml.Suffix opts.index
             }
-            if opts[:error]
+            if opts.error
               xml.ErrorDocument {
-                xml.Key opts[:error]
+                xml.Key opts.error
               }
             end
           }
@@ -114,9 +114,9 @@ module Aliyun
       def mock_referer(opts)
         Nokogiri::XML::Builder.new do |xml|
           xml.RefererConfiguration {
-            xml.AllowEmptyReferer opts[:allow_empty]
+            xml.AllowEmptyReferer opts.allow_empty?
             xml.RefererList {
-              opts[:referers].each do |r|
+              opts.whitelist.each do |r|
                 xml.Referer r
               end
             }
@@ -130,7 +130,7 @@ module Aliyun
             rules.each do |r|
               xml.Rule {
                 xml.ID r.id if r.id
-                xml.Status r.enabled ? 'Enabled' : 'Disabled'
+                xml.Status r.enabled? ? 'Enabled' : 'Disabled'
                 xml.Prefix r.prefix
                 xml.Expiration {
                   if r.expiry.is_a?(Date)
@@ -381,9 +381,9 @@ module Aliyun
           query = {'logging' => ''}
           stub_request(:put, request_path).with(:query => query)
 
-          logging_opts = {
-            :enable => true, :target_bucket => 'target-bucket', :prefix => 'foo'
-          }
+          logging_opts = BucketLogging.new(
+            :enable => true,
+            :target_bucket => 'target-bucket', :target_prefix => 'foo')
           @protocol.put_bucket_logging(@bucket, logging_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
@@ -394,7 +394,7 @@ module Aliyun
           query = {'logging' => ''}
           stub_request(:put, request_path).with(:query => query)
 
-          logging_opts = {:enable => false}
+          logging_opts = BucketLogging.new(:enable => false)
           @protocol.put_bucket_logging(@bucket, logging_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
@@ -403,18 +403,19 @@ module Aliyun
 
         it "should get logging" do
           query = {'logging' => ''}
-          logging_opts = {
-            :enable => true, :target_bucket => 'target-bucket', :prefix => 'foo'
-          }
+          logging_opts = BucketLogging.new(
+            :enable => true,
+            :target_bucket => 'target-bucket', :target_prefix => 'foo')
+
           stub_request(:get, request_path)
             .with(:query => query)
             .to_return(:body => mock_logging(logging_opts))
 
-          opts = @protocol.get_bucket_logging(@bucket)
+          logging = @protocol.get_bucket_logging(@bucket)
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
-          expect(opts).to eq(logging_opts)
+          expect(logging.to_s).to eq(logging_opts.to_s)
         end
 
         it "should delete logging" do
@@ -431,7 +432,8 @@ module Aliyun
           query = {'website' => ''}
           stub_request(:put, request_path).with(:query => query)
 
-          website_opts = {:index => 'index.html', :error => 'error.html'}
+          website_opts = BucketWebsite.new(
+            :enable => true, :index => 'index.html', :error => 'error.html')
           @protocol.put_bucket_website(@bucket, website_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
@@ -440,7 +442,8 @@ module Aliyun
 
         it "should get website" do
           query = {'website' => ''}
-          website_opts = {:index => 'index.html', :error => 'error.html'}
+          website_opts = BucketWebsite.new(
+            :enable => true, :index => 'index.html', :error => 'error.html')
 
           stub_request(:get, request_path)
             .with(:query => query)
@@ -450,7 +453,7 @@ module Aliyun
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
-          expect(opts).to eq(website_opts)
+          expect(opts.to_s).to eq(website_opts.to_s)
         end
 
         it "should delete website" do
@@ -467,7 +470,8 @@ module Aliyun
           query = {'referer' => ''}
           stub_request(:put, request_path).with(:query => query)
 
-          referer_opts = {:allow_empty => true, :referers => ['xxx', 'yyy']}
+          referer_opts = BucketReferer.new(
+            :allow_empty => true, :whitelist => ['xxx', 'yyy'])
           @protocol.put_bucket_referer(@bucket, referer_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
@@ -476,7 +480,8 @@ module Aliyun
 
         it "should get referer" do
           query = {'referer' => ''}
-          referer_opts = {:allow_empty => true, :referers => ['xxx', 'yyy']}
+          referer_opts = BucketReferer.new(
+            :allow_empty => true, :whitelist => ['xxx', 'yyy'])
 
           stub_request(:get, request_path)
             .with(:query => query)
@@ -486,7 +491,7 @@ module Aliyun
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)
-          expect(opts).to eq(referer_opts)
+          expect(opts.to_s).to eq(referer_opts.to_s)
         end
 
         it "should update lifecycle" do
@@ -495,7 +500,7 @@ module Aliyun
 
           rules = (1..5).map do |i|
             LifeCycleRule.new(
-              :id => i, :enabled => i % 2 == 0, :prefix => "foo#{i}",
+              :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
               :expiry => (i % 2 == 1 ? Date.today : 10 + i))
           end
 
@@ -509,7 +514,7 @@ module Aliyun
           query = {'lifecycle' => ''}
           return_rules = (1..5).map do |i|
             LifeCycleRule.new(
-              :id => i, :enabled => i % 2 == 0, :prefix => "foo#{i}",
+              :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
               :expiry => (i % 2 == 1 ? Date.today : 10 + i))
           end
 

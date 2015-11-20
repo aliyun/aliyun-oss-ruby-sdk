@@ -273,11 +273,8 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
     puts obj.metas
 
 关于meta信息有以下几点需要注意：
-1. meta信息的key和value都只能是String类型，并且总的大小不能超过8KB。
-2. meta信息设置后，可以通过`copy_object`来更改，这需要：
-    * 将dest_object设置成和source_object一样
-    * `:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
-3. Copy object时默认将拷贝源object的meta信息，如果用户不希望这么做，需要
+1. meta信息的key和value都只能是简单的ASCII非换行字符，并且总的大小不能超过8KB。
+2. Copy object时默认将拷贝源object的meta信息，如果用户不希望这么做，需要
    显式地将`:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
 
 ## 权限控制
@@ -352,6 +349,6 @@ SDK的examples/目录下有一些展示SDK功能的示例程序，用户稍加�
 - SDK API文档：http://10.101.168.94/d/aliyun-oss-sdk-doc/
 
 
-[1]: https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/domain-region
+[1]: http://help.aliyun.com/document_detail/oss/product-documentation/domain-region.html
 
-[2]: https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss/product-documentation/function&cname
+[2]: http://help.aliyun.com/document_detail/oss/product-documentation/function/cname.html

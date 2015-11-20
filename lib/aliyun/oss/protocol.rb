@@ -145,35 +145,23 @@ module Aliyun
 
       # Put bucket logging settings
       # @param name [String] the bucket name
-      # @param opts [Hash] logging options
-      # @option opts [Boolean] :enable whether to enable logging
-      # @option opts [String] :target_bucket the target bucket to
-      #  store logging objects
-      # @option opts [String] :prefix only turn on logging for those
-      #  objects prefixed with it if specified
-      def put_bucket_logging(name, opts)
-        logger.info("Begin put bucket logging, name: #{name}, options: #{opts}")
+      # @param logging [BucketLogging] logging options
+      def put_bucket_logging(name, logging)
+        logger.info("Begin put bucket logging, "\
+                    "name: #{name}, logging: #{logging}")
 
-        unless opts.key?(:enable)
-          fail ClientError, "Must specify :enabled when put bucket logging."
-        end
-
-        if opts[:enable] && !opts.key?(:target_bucket)
+        if logging.enabled? && !logging.target_bucket
           fail ClientError,
                "Must specify target bucket when enabling bucket logging."
-        end
-
-        if (opts.size > 1 && !opts[:enable])
-          fail ClientError, "Unexpected extra options when put bucket logging."
         end
 
         sub_res = {'logging' => nil}
         body = Nokogiri::XML::Builder.new do |xml|
           xml.BucketLoggingStatus {
-            if opts[:enable]
+            if logging.enabled?
               xml.LoggingEnabled {
-                xml.TargetBucket opts[:target_bucket]
-                xml.TargetPrefix opts[:prefix] if opts[:prefix]
+                xml.TargetBucket logging.target_bucket
+                xml.TargetPrefix logging.target_prefix if logging.target_prefix
               }
             end
           }
@@ -188,8 +176,7 @@ module Aliyun
 
       # Get bucket logging settings
       # @param name [String] the bucket name
-      # @return [Hash] logging options of this bucket
-      # @see #set_bucket_logging
+      # @return [BucketLogging] logging options of this bucket
       def get_bucket_logging(name)
         logger.info("Begin get bucket logging, name: #{name}")
 
@@ -202,13 +189,13 @@ module Aliyun
         logging_node = doc.at_css("LoggingEnabled")
         opts.update(
           :target_bucket => get_node_text(logging_node, 'TargetBucket'),
-          :prefix => get_node_text(logging_node, 'TargetPrefix')
+          :target_prefix => get_node_text(logging_node, 'TargetPrefix')
         )
         opts[:enable] = true if opts[:target_bucket]
 
         logger.info("Done get bucket logging")
 
-        opts.reject { |_, v| v.nil? }
+        BucketLogging.new(opts)
       end
 
       # Delete bucket logging settings, a.k.a. disable bucket logging
@@ -224,27 +211,24 @@ module Aliyun
 
       # Put bucket website settings
       # @param name [String] the bucket name
-      # @param opts [Hash] the bucket website options
-      # @option opts [String] :index the object name to serve as the
-      #  index page of website
-      # @option opts [String] :error the object name to serve as the
-      #  error page of website
-      def put_bucket_website(name, opts)
-        logger.info("Begin put bucket website, name: #{name}, options: #{opts}")
+      # @param website [BucketWebsite] the bucket website options
+      def put_bucket_website(name, website)
+        logger.info("Begin put bucket website, "\
+                    "name: #{name}, website: #{website}")
 
-        unless opts.key?(:index)
-          fail ClientError, "Must specify :index to put bucket website."
+        unless website.index
+          fail ClientError, "Must specify index to put bucket website."
         end
 
         sub_res = {'website' => nil}
         body = Nokogiri::XML::Builder.new do |xml|
           xml.WebsiteConfiguration {
             xml.IndexDocument {
-              xml.Suffix opts[:index]
+              xml.Suffix website.index
             }
-            if opts[:error]
+            if website.error
               xml.ErrorDocument {
-                xml.Key opts[:error]
+                xml.Key website.error
               }
             end
           }
@@ -259,15 +243,14 @@ module Aliyun
 
       # Get bucket website settings
       # @param name [String] the bucket name
-      # @return [Hash] the bucket website options
-      # @see set_bucket_website
+      # @return [BucketWebsite] the bucket website options
       def get_bucket_website(name)
         logger.info("Begin get bucket website, name: #{name}")
 
         sub_res = {'website' => nil}
         _, body = @http.get({:bucket => name, :sub_res => sub_res})
 
-        opts = {}
+        opts = {:enable => true}
         doc = parse_xml(body)
         opts.update(
           :index => get_node_text(doc.at_css('IndexDocument'), 'Suffix'),
@@ -276,7 +259,7 @@ module Aliyun
 
         logger.info("Done get bucket website")
 
-        opts.reject { |_, v| v.nil? }
+        BucketWebsite.new(opts)
       end
 
       # Delete bucket website settings
@@ -292,24 +275,17 @@ module Aliyun
 
       # Put bucket referer
       # @param name [String] the bucket name
-      # @param opts [Hash] the bucket referer options
-      # @option opts [Boolean] :allow_empty whether to allow empty
-      #  referer
-      # @option opts [Array<String>] :referers the referer white
-      #  list to allow access to this bucket
-      def put_bucket_referer(name, opts)
-        logger.info("Begin put bucket referer, name: #{name}, options: #{opts}")
-
-        unless opts.key?(:allow_empty)
-          fail ClientError, "Must specify :allow_empty to put bucket referer."
-        end
+      # @param referer [BucketReferer] the bucket referer options
+      def put_bucket_referer(name, referer)
+        logger.info("Begin put bucket referer, "\
+                    "name: #{name}, referer: #{referer}")
 
         sub_res = {'referer' => nil}
         body = Nokogiri::XML::Builder.new do |xml|
           xml.RefererConfiguration {
-            xml.AllowEmptyReferer opts[:allow_empty]
+            xml.AllowEmptyReferer referer.allow_empty?
             xml.RefererList {
-              (opts[:referers] or []).each do |r|
+              (referer.whitelist or []).each do |r|
                 xml.Referer r
               end
             }
@@ -325,8 +301,7 @@ module Aliyun
 
       # Get bucket referer
       # @param name [String] the bucket name
-      # @return [Hash] the bucket referer options
-      # @see #set_bucket_referer
+      # @return [BucketReferer] the bucket referer options
       def get_bucket_referer(name)
         logger.info("Begin get bucket referer, name: #{name}")
 
@@ -337,12 +312,12 @@ module Aliyun
         opts = {
           :allow_empty =>
             get_node_text(doc.root, 'AllowEmptyReferer', &:to_bool),
-          :referers => doc.css("RefererList Referer").map(&:text)
+          :whitelist => doc.css("RefererList Referer").map(&:text)
         }
 
         logger.info("Done get bucket referer")
 
-        opts.reject { |_, v| v.nil? }
+        BucketReferer.new(opts)
       end
 
       # Put bucket lifecycle settings
@@ -360,7 +335,7 @@ module Aliyun
             rules.each do |r|
               xml.Rule {
                 xml.ID r.id if r.id
-                xml.Status r.enabled ? 'Enabled' : 'Disabled'
+                xml.Status r.enabled? ? 'Enabled' : 'Disabled'
 
                 xml.Prefix r.prefix
                 xml.Expiration {
@@ -408,7 +383,7 @@ module Aliyun
           LifeCycleRule.new(
             :id => get_node_text(n, 'ID'),
             :prefix => get_node_text(n, 'Prefix'),
-            :enabled => get_node_text(n, 'Status') { |x| x == 'Enabled' },
+            :enable => get_node_text(n, 'Status') { |x| x == 'Enabled' },
             :expiry => days ? days.text.to_i : Date.parse(date.text)
           )
         end

@@ -26,14 +26,14 @@ File.open('/tmp/x', 'w'){ |f| f.write("hello world\n") }
 bucket.put_object('files/world', :file => '/tmp/x')
 
 # 创建一个Appendable object
-size = bucket.get_object_meta('files/appendable').size rescue 0
+size = bucket.get_object('files/appendable').size rescue 0
 bucket.append_object('files/appendable', size) do |content|
   content << 'hello appendable.'
 end
 
 # 向files/appendable中追加内容
 # 首先要获取object当前的长度
-size = bucket.get_object_meta('files/appendable').size
+size = bucket.get_object('files/appendable').size
 bucket.append_object('files/appendable', size) do |content|
   content << 'again appendable.'
 end
@@ -101,11 +101,9 @@ end
 o = bucket.get_object('files/hello', :file => '/tmp/x')
 puts "Get object: #{o.to_s}"
 
-# 通过copy_object修改metas
-bucket.copy_object('files/hello', 'files/hello',
-                   :meta_directive => Aliyun::OSS::MetaDirective::REPLACE,
-                   :metas => {'year' => '2016', 'people' => 'jack'})
-o = bucket.get_object_meta('files/hello')
+# 修改Object metas
+bucket.update_object_metas('files/hello', {'year' => '2016', 'people' => 'jack'})
+o = bucket.get_object('files/hello')
 puts "Meta changed: #{o.to_s}"
 
 # 设置Object的ACL
@@ -114,7 +112,7 @@ bucket.set_object_acl('files/hello', Aliyun::OSS::ACL::PUBLIC_READ)
 puts "Object acl now: #{bucket.get_object_acl('files/hello')}"
 
 # 指定条件get_object
-o = bucket.get_object_meta('files/hello')
+o = bucket.get_object('files/hello')
 old_etag = o.etag
 
 begin

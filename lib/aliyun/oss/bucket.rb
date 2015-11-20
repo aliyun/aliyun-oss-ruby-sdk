@@ -32,83 +32,66 @@ module Aliyun
       end
 
       # 获取Bucket的logging配置
-      # @return [Hash] Bucket的logging配置。见{#logging=}
+      # @return [BucketLogging] Bucket的logging配置
       def logging
         @protocol.get_bucket_logging(name)
       end
 
       # 设置Bucket的logging配置
-      # @param opts [Hash] logging配置
-      # @option opts [Boolean] [:enable] 是否开启logging
-      # @option opts [String] [:target_bucket] 用于存放日志object的bucket名字
-      # @option opts [String] [:prefix] 开启日志的object的前缀，若不指
-      #  定则对bucket下的所有object都开启
-      # @note 如果opts为空，则会删除这个bucket上的logging配置
-      def logging=(opts)
-        if opts.empty?
-          @protocol.delete_bucket_logging(name)
+      # @param logging [BucketLogging] logging配置
+      def logging=(logging)
+        if logging.enabled?
+          @protocol.put_bucket_logging(name, logging)
         else
-          @protocol.put_bucket_logging(name, opts)
+          @protocol.delete_bucket_logging(name)
         end
       end
 
       # 获取Bucket的website配置
-      # @return [Hash] Bucket的website配置。见 #website=，如果当前
-      #  Bucket未设置website，则返回一个空的Hash：{}
+      # @return [BucketWebsite] Bucket的website配置
       def website
-        r = {}
         begin
-          r = @protocol.get_bucket_website(name)
+          w = @protocol.get_bucket_website(name)
         rescue ServerError => e
           raise unless e.http_code == 404
         end
 
-        r
+        w || BucketWebsite.new
       end
 
       # 设置Bucket的website配置
-      # @param opts [Hash] website配置
-      # @option opts [String] :index 网站首页的后缀，如index.html
-      # @option opts [String] :error 网站错误页面的object名字，如
-      #  error.html
-      # @note 如果opts为空，则会删除这个bucket上的website配置
-      def website=(opts)
-        if opts.empty?
-          @protocol.delete_bucket_website(name)
+      # @param website [BucketWebsite] website配置
+      def website=(website)
+        if website.enabled?
+          @protocol.put_bucket_website(name, website)
         else
-          @protocol.put_bucket_website(name, opts)
+          @protocol.delete_bucket_website(name)
         end
       end
 
       # 获取Bucket的Referer配置
-      # @return [Hash] Bucket的Referer配置。See #referer=
+      # @return [BucketReferer] Bucket的Referer配置
       def referer
         @protocol.get_bucket_referer(name)
       end
 
       # 设置Bucket的Referer配置
-      # @param opts [Hash] Referer配置
-      # @option opts [Boolean] :allow_empty [必填] 设置是否允许Referer为空
-      #  的请求访问Bucket
-      # @option opts [Array<String>] :referers [可选] 设置允许访问Bucket的
-      #  请求的Referer白名单
-      # @note 如果:referers为空，则会删除这个bucket上的referer list
-      def referer=(opts)
-        @protocol.put_bucket_referer(name, opts)
+      # @param referer [BucketReferer] Referer配置
+      def referer=(referer)
+        @protocol.put_bucket_referer(name, referer)
       end
 
       # 获取Bucket的生命周期配置
       # @return [Array<OSS::LifeCycleRule>] Bucket的生命周期规则，如果
       #  当前Bucket未设置lifecycle，则返回[]
       def lifecycle
-        r = []
         begin
           r = @protocol.get_bucket_lifecycle(name)
         rescue ServerError => e
           raise unless e.http_code == 404
         end
 
-        r
+        r || []
       end
 
       # 设置Bucket的生命周期配置
@@ -128,14 +111,13 @@ module Aliyun
       # @return [Array<OSS::CORSRule>] Bucket的CORS规则，如果当前
       #  Bucket未设置CORS规则，则返回[]
       def cors
-        r = []
         begin
           r = @protocol.get_bucket_cors(name)
         rescue ServerError => e
           raise unless e.http_code == 404
         end
 
-        r
+        r || []
       end
 
       # 设置Bucket的跨域资源共享(CORS)的规则

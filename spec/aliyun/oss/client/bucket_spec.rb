@@ -109,7 +109,7 @@ module Aliyun
 
           stub_request(:delete, bucket_url).with(:query => query)
 
-          @bucket.logging = {}
+          @bucket.logging = BucketLogging.new(:enable => false)
 
           expect(WebMock).to have_requested(:delete, bucket_url)
             .with(:query => query, :body => nil)
@@ -199,6 +199,34 @@ module Aliyun
           expect(WebMock).to have_requested(:get, object_url(key))
                          .with(:body => nil, :query => {})
           expect(File.read('/tmp/x')).to eq(content)
+        end
+
+        it "should only get meta when get object without :file or block" do
+          key = 'ruby'
+
+          last_modified = Time.now.rfc822
+          return_headers = {
+            'x-oss-object-type' => 'Normal',
+            'ETag' => 'xxxyyyzzz',
+            'Content-Length' => 1024,
+            'Last-Modified' => last_modified,
+            'x-oss-meta-year' => '2015',
+            'x-oss-meta-people' => 'mary'
+          }
+          stub_request(:head, object_url(key))
+            .to_return(:headers => return_headers)
+
+          obj = @bucket.get_object(key)
+
+          expect(WebMock).to have_requested(:head, object_url(key))
+            .with(:body => nil, :query => {})
+
+          expect(obj.key).to eq(key)
+          expect(obj.type).to eq('Normal')
+          expect(obj.etag).to eq('xxxyyyzzz')
+          expect(obj.size).to eq(1024)
+          expect(obj.last_modified.rfc822).to eq(last_modified)
+          expect(obj.metas).to eq({'year' => '2015', 'people' => 'mary'})
         end
 
         it "should append object from file" do

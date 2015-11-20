@@ -11,11 +11,13 @@ module Aliyun
         READ_SIZE = 16 * 1024
 
         def initialize(protocol, opts)
-          super(opts)
+          args = opts.dup
           @protocol = protocol
-          @file, @checkpoint_file = opts[:file], opts[:cpt_file]
+          @file = args.delete(:file)
+          @checkpoint_file = args.delete(:cpt_file)
           @object_meta = {}
           @parts = []
+          super(args)
         end
 
         # Run the download transaction, which includes 3 stages:
