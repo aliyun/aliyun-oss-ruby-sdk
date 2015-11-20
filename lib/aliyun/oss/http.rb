@@ -44,15 +44,27 @@ module Aliyun
           @producer.resume
         end
 
+        # FIXME: it may return more than bytes, not sure if that's a problem
         def read(bytes = nil, outbuf = nil)
-          # WARNING: Using outbuf = '' here DOES NOT work!
-          outbuf.clear if outbuf
+          ret = ""
+          loop do
+            c = @chunks.shift
+            ret << c if c && !c.empty?
+            break if bytes && ret.size >= bytes
+            if @producer.alive?
+              @producer.resume
+            else
+              break
+            end
+          end
 
-          c = @chunks.shift
-          outbuf << c if outbuf and c and not c.empty?
-          @producer.resume if @producer.alive?
+          if outbuf
+            # WARNING: Using outbuf = '' here DOES NOT work!
+            outbuf.clear
+            outbuf << ret
+          end
 
-          c
+          ret.empty? ? nil : ret
         end
 
         def write(chunk)

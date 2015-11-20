@@ -14,7 +14,7 @@ module Aliyun
           end
 
           10.times do |i|
-            bytes, outbuf = nil, ""
+            bytes, outbuf = "hello, 0".size, ""
             s.read(bytes, outbuf)
             expect(outbuf).to eq("hello, #{i}")
           end
