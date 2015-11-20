@@ -70,6 +70,24 @@ module Aliyun
         @protocol.delete_bucket(name)
       end
 
+      # 判断一个bucket是否存在
+      # @param name [String] Bucket名字
+      # @return [Boolean] 如果Bucket存在则返回true，否则返回false
+      def bucket_exists?(name)
+        exist = false
+
+        begin
+          @protocol.get_bucket_acl(name)
+          exist = true
+        rescue ServerError => e
+          raise unless e.http_code == 404
+        end
+
+        exist
+      end
+
+      alias :bucket_exist? :bucket_exists?
+
       # 获取一个Bucket对象，用于操作bucket中的objects。
       # @param name [String] Bucket名字
       # @return [Bucket] Bucket对象

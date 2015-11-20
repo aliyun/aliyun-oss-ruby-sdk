@@ -96,6 +96,21 @@ module Aliyun
         end.to_xml
       end
 
+      def mock_acl(acl)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.AccessControlPolicy {
+            xml.Owner {
+              xml.ID 'owner_id'
+              xml.DisplayName 'owner_name'
+            }
+
+            xml.AccessControlList {
+              xml.Grant acl
+            }
+          }
+        end.to_xml
+      end
+
       context "bucket operations" do
         before :all do
           @endpoint = 'oss.aliyuncs.com'
@@ -160,6 +175,24 @@ module Aliyun
           expect(buckets.map {|b| b.to_s}.join(";"))
             .to eq((return_buckets_1 + return_buckets_2).map {|b| b.to_s}.join(";"))
           expect(WebMock).to have_requested(:get, /#{@endpoint}.*/).times(2)
+        end
+
+        it "should test bucket existence" do
+          query = {'acl' => ''}
+          return_acl = ACL::PUBLIC_READ
+          stub_request(:get, bucket_url)
+            .with(:query => query)
+            .to_return(:body => mock_acl(return_acl)).then
+            .to_return(:status => 404)
+
+          exist = @client.bucket_exists?(@bucket)
+          expect(exist).to be true
+
+          exist = @client.bucket_exists?(@bucket)
+          expect(exist).to be false
+
+          expect(WebMock).to have_requested(:get, bucket_url)
+            .with(:query => query, :body => nil).times(2)
         end
 
         it "should not list buckets when endpoint is cname" do
