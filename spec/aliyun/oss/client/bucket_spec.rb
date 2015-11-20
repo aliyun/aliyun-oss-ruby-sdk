@@ -26,6 +26,10 @@ module Aliyun
         "#{@bucket_name}.#{@endpoint}/#{object}"
       end
 
+      def resource_path(object)
+        "/#{@bucket_name}/#{object}"
+      end
+
       def mock_objects(objects, more = {})
         Nokogiri::XML::Builder.new do |xml|
           xml.ListBucketResult {
@@ -220,7 +224,7 @@ module Aliyun
             .to_return(:status => 404).times(3)
 
           expect {
-            @bucket.get_object_meta(key)
+            @bucket.get_object(key)
           }.to raise_error(Exception, "UnknownError, HTTP Code: 404")
 
           expect(@bucket.object_exists?(key)).to be false
@@ -248,6 +252,23 @@ module Aliyun
           expect {
             @bucket.object_exists?(key)
           }.to raise_error(Exception, "UnknownError, HTTP Code: 500")
+        end
+
+        it "should update object metas" do
+          key = 'ruby'
+
+          stub_request(:put, object_url(key))
+
+          @bucket.update_object_metas(
+            key, {'people' => 'mary', 'year' => '2016'})
+
+          expect(WebMock).to have_requested(:put, object_url(key))
+                         .with(:body => nil,
+                               :headers => {
+                                 'x-oss-copy-source' => resource_path(key),
+                                 'x-oss-metadata-directive' => 'REPLACE',
+                                 'x-oss-meta-year' => '2016',
+                                 'x-oss-meta-people' => 'mary'})
         end
 
       end # object operations

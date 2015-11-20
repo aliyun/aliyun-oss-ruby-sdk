@@ -252,7 +252,9 @@ module Aliyun
       #   get_object('x', :file => '/tmp/x', :condition => {:if_match_etag => 'etag'})
       # @example 指定重写响应的header信息
       #   get_object('x', :file => '/tmp/x', :rewrite => {:content_type => 'text/html'})
-      # @note 注意：如果opts中指定了:file，则block会被忽略
+      # @note 如果opts中指定了`:file`，则block会被忽略
+      # @note 如果既没有指定`:file`也没有指定block，则只获取Object
+      #  meta而不下载Object内容
       def get_object(key, opts = {}, &block)
         obj = nil
         file = opts[:file]
@@ -262,21 +264,29 @@ module Aliyun
               f.write(chunk)
             end
           end
-        else
+        elsif block
           obj = @protocol.get_object(name, key, opts, &block)
+        else
+          obj = @protocol.get_object_meta(name, key, opts)
         end
 
         obj
       end
 
-      # 获取Object的meta而不下载Object内容
+      # 更新Object的metas
       # @param key [String] Object的名字
-      # @param opts [Hash] 下载Object的选项（可选）
-      # @option opts [Hash] :condition 指定下载object需要满足的条件，
+      # @param metas [Hash] Object的meta
+      # @param conditions [Hash] 指定更新Object meta需要满足的条件，
       #  同{#get_object}
-      # @return [OSS::Object] 返回Object对象
-      def get_object_meta(key, opts = {})
-        @protocol.get_object_meta(name, key, opts)
+      # @return [Hash] 更新后文件的信息
+      #  * :etag [String] 更新后文件的ETag
+      #  * :last_modified [Time] 更新后文件的最后修改时间
+      def update_object_metas(key, metas, conditions = {})
+        @protocol.copy_object(
+          name, key, key,
+          :meta_directive => MetaDirective::REPLACE,
+          :metas => metas,
+          :condition => conditions)
       end
 
       # 判断一个object是否存在
@@ -284,7 +294,7 @@ module Aliyun
       # @return [Boolean] 如果Object存在返回true，否则返回false
       def object_exists?(key)
         begin
-          get_object_meta(key)
+          get_object(key)
           return true
         rescue ServerError => e
           return false if e.http_code == 404

@@ -30,7 +30,7 @@ module Aliyun
 
           stub_request(:get, "#{bucket}.#{endpoint}/#{object}")
 
-          client.get_bucket(bucket).get_object(object)
+          client.get_bucket(bucket).get_object(object) {}
 
           expect(WebMock)
             .to have_requested(:get, "#{bucket}.#{endpoint}/#{object}")
@@ -52,7 +52,7 @@ module Aliyun
           stub_request(:get, "#{bucket}.#{ep1}/#{object}")
           stub_request(:put, "#{bucket}.#{ep2}/#{object}")
 
-          c1.get_bucket(bucket).get_object(object)
+          c1.get_bucket(bucket).get_object(object) {}
           c2.get_bucket(bucket).put_object(object)
 
           expect(WebMock).to have_requested(:get, "#{bucket}.#{ep1}/#{object}")
