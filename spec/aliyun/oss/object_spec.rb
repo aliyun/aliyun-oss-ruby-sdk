@@ -84,7 +84,6 @@ module Aliyun
           xml.Error {
             xml.Code code
             xml.Message message
-            xml.RequestId '0000'
           }
         end
 
@@ -382,11 +381,19 @@ module Aliyun
           code = 'EntityTooLarge'
           message = 'The object to copy is too large.'
           stub_request(:put, url).to_return(
-            :status => 400, :body => mock_error(code, message))
+            :status => 400,
+            :headers => {'x-oss-request-id' => '0000-1111'},
+            :body => mock_error(code, message))
 
-          expect {
+          begin
             @protocol.copy_object(@bucket, src_object, dst_object)
-          }.to raise_error(Exception, message)
+            expect(false).to be true
+          rescue ServerError => e
+            expect(e.http_code).to eq(400)
+            expect(e.error_code).to eq(code)
+            expect(e.message).to eq(message)
+            expect(e.request_id).to eq('0000-1111')
+          end
 
           expect(WebMock).to have_requested(:put, url)
             .with(:body => nil, :headers => {

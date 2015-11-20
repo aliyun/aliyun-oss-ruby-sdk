@@ -20,7 +20,7 @@ module Aliyun
     class ServerError < Exception
       include Logging
 
-      attr_reader :http_code, :attrs
+      attr_reader :http_code, :error_code, :message, :request_id
 
       def initialize(response)
         @http_code = response.code
@@ -35,6 +35,10 @@ module Aliyun
             @attrs[n.name] = n.text
           end
         end
+
+        @error_code = @attrs['Code']
+        @message = @attrs['Message']
+        @request_id = @attrs['RequestId']
       end
 
       def message
