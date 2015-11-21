@@ -324,12 +324,12 @@ module Aliyun
           expect(query.key?('Expires')).to be true
           expect(query['OSSAccessKeyId']).to eq('xxx')
           expires = query['Expires']
-          signature = query['Signature']
+          signature = CGI.unescape(query['Signature'])
 
           string_to_sign =
             "GET\n" + "\n\n" + "#{expires}\n" + "/rubysdk-bucket/yeah"
           sig = Util.sign('yyy', string_to_sign)
-          expect(signature + '=').to eq(sig)
+          expect(signature).to eq(sig)
         end
       end # object operations
 

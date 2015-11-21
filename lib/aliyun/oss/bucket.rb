@@ -507,8 +507,8 @@ module Aliyun
 
         query_string = {
           'Expires' => expires.to_s,
-          'OSSAccessKeyId' => access_key_id,
-          'Signature' => signature
+          'OSSAccessKeyId' => CGI.escape(access_key_id),
+          'Signature' => CGI.escape(signature)
         }.map { |k, v| "#{k}=#{v}" }.join('&')
 
         [url, query_string].join('?')
