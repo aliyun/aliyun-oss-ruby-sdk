@@ -25,7 +25,7 @@ module AliyunOssHelper
 
     content.safe_concat(
       form_tag_html(
-        html_options_for_form(bucket.endpoint, multipart: true)))
+        html_options_for_form(bucket.bucket_url, multipart: true)))
 
     key = if opts[:save_as]
             opts[:save_as]
