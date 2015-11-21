@@ -18,6 +18,7 @@ module Aliyun
       include Logging
 
       def initialize(config)
+        @config = config
         @http = HTTP.new(config)
       end
 
@@ -1297,6 +1298,27 @@ module Aliyun
         logger.debug("Done list parts, parts: #{parts}, more: #{more}")
 
         [parts, more]
+      end
+
+      # Get bucket/object url
+      # @param [String] bucket the bucket name
+      # @param [String] object the bucket name
+      # @return [String] url for the bucket/object
+      def get_request_url(bucket, object = nil)
+        @http.get_request_url(bucket, object)
+      end
+
+      # Get user's access key id
+      # @return [String] the access key id
+      def get_access_key_id
+        @config.access_key_id
+      end
+
+      # Sign a string using the stored access key secret
+      # @param [String] string_to_sign the string to sign
+      # @return [String] the signature
+      def sign(string_to_sign)
+        Util.sign(@config.access_key_secret, string_to_sign)
       end
 
       private

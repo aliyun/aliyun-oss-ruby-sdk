@@ -42,6 +42,14 @@ module Aliyun
 
           logger.debug("String to sign: #{string_to_sign}")
 
+          Util.sign(key, string_to_sign)
+        end
+
+        # Sign a string using HMAC and BASE64
+        # @param [String] key the secret key
+        # @param [String] string_to_sign the string to sign
+        # @return [String] the signature
+        def sign(key, string_to_sign)
           Base64.strict_encode64(
             OpenSSL::HMAC.digest('sha1', key, string_to_sign))
         end

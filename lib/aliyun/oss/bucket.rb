@@ -483,6 +483,50 @@ module Aliyun
         ).run
       end
 
+      # 获取Bucket的URL
+      # @return [String] Bucket的URL
+      def bucket_url
+        @protocol.get_request_url(name)
+      end
+
+      # 获取Object的URL
+      # @param [String] key Object的key
+      # @param [Boolean] sign 是否对URL进行签名，默认为是
+      # @param [Fixnum] expiry URL的有效时间，单位为秒，默认为60s
+      # @return [String] 用于直接访问Object的URL
+      def object_url(key, sign = true, expiry = 60)
+        url = @protocol.get_request_url(name, key)
+        return url unless sign
+
+        expires = Time.now.to_i + expiry
+        string_to_sign = "GET\n" +
+                         "\n\n" +
+                         "#{expires}\n" +
+                         "/#{name}/#{key}"
+        signature = sign(string_to_sign)
+
+        query_string = {
+          'Expires' => expires.to_s,
+          'OSSAccessKeyId' => CGI.escape(access_key_id),
+          'Signature' => CGI.escape(signature)
+        }.map { |k, v| "#{k}=#{v}" }.join('&')
+
+        [url, query_string].join('?')
+      end
+
+      # 获取用户所设置的ACCESS_KEY_ID
+      # @return [String] 用户的ACCESS_KEY_ID
+      def access_key_id
+        @protocol.get_access_key_id
+      end
+
+      # 用ACCESS_KEY_SECRET对内容进行签名
+      # @param [String] string_to_sign 要进行签名的内容
+      # @return [String] 生成的签名
+      def sign(string_to_sign)
+        @protocol.sign(string_to_sign)
+      end
+
       private
       # Infer the file's content type using MIME::Types
       # @param file [String] the file path

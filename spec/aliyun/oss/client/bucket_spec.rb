@@ -114,6 +114,15 @@ module Aliyun
           expect(WebMock).to have_requested(:delete, bucket_url)
             .with(:query => query, :body => nil)
         end
+
+        it "should get bucket url" do
+          expect(@bucket.bucket_url)
+            .to eq('http://rubysdk-bucket.oss-cn-hangzhou.aliyuncs.com')
+        end
+
+        it "should get access key id" do
+          expect(@bucket.access_key_id).to eq('xxx')
+        end
       end # bucket operations
 
       context "object operations" do
@@ -299,6 +308,29 @@ module Aliyun
                                  'x-oss-meta-people' => 'mary'})
         end
 
+        it "should get object url" do
+          url = @bucket.object_url('yeah', false)
+          object_url = 'http://rubysdk-bucket.oss-cn-hangzhou.aliyuncs.com/yeah'
+          expect(url).to eq(object_url)
+
+          url = @bucket.object_url('yeah')
+          path = url[0, url.index('?')]
+          expect(path).to eq(object_url)
+
+          query = {}
+          url[url.index('?') + 1, url.size].split('&')
+            .each { |s| k, v = s.split('='); query[k] = v }
+
+          expect(query.key?('Expires')).to be true
+          expect(query['OSSAccessKeyId']).to eq('xxx')
+          expires = query['Expires']
+          signature = CGI.unescape(query['Signature'])
+
+          string_to_sign =
+            "GET\n" + "\n\n" + "#{expires}\n" + "/rubysdk-bucket/yeah"
+          sig = Util.sign('yyy', string_to_sign)
+          expect(signature).to eq(sig)
+        end
       end # object operations
 
     end # Bucket
