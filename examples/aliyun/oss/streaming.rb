@@ -90,7 +90,7 @@ bucket.put_object(large_file) do |content|
 end
 
 # 查看object大小
-object_size = bucket.get_object_meta(large_file).size
+object_size = bucket.get_object(large_file).size
 puts "Object: #{large_file}的大小是：#{object_size}"
 
 # 流式下载文件，仅打印进度，不保存文件

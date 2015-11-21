@@ -1,5 +1,7 @@
 # -*- encoding: utf-8 -*-
 
+require 'json'
+
 module Aliyun
   module OSS
 
