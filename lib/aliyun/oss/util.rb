@@ -42,13 +42,13 @@ module Aliyun
 
           logger.debug("String to sign: #{string_to_sign}")
 
-          Base64.encode64(
+          Base64.strict_encode64(
             OpenSSL::HMAC.digest('sha1', key, string_to_sign))
         end
 
         # Calculate content md5
         def get_content_md5(content)
-          Base64.encode64(OpenSSL::Digest::MD5.digest(content))
+          Base64.strict_encode64(OpenSSL::Digest::MD5.digest(content))
         end
 
       end # self
