@@ -113,7 +113,7 @@ module Aliyun
           ranges << req.headers['Range']
         }.times(13)
 
-        expect(ranges).to match_array((1..10).map{ |i| mock_range(i) })
+        expect(ranges.uniq).to match_array((1..10).map{ |i| mock_range(i) })
         expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
       end
 
