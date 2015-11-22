@@ -10,7 +10,7 @@ http://www.aliyun.com/product/oss
 
 ## 运行环境
 
-- Ruby版本 >= 1.9.3
+- Ruby版本 >= 1.9.2
 - 支持Ruby运行环境的Windows/Linux/OS X
 
 安装Ruby请参考：https://www.ruby-lang.org/zh_cn/downloads/
@@ -340,6 +340,17 @@ SDK的examples/目录下有一些展示SDK功能的示例程序，用户稍加�
 用户需要创建（如果不存在）或者修改其中的内容，然后运行：
 
     ruby examples/aliyun/oss/bucket.rb
+
+## 运行测试
+
+SDK采用rspec进行测试，如果要对SDK进行修改，请确保没有break现有测试。测
+试运行的方法是，在ruby-sdk/目录下运行：
+
+    rspec
+
+或者用bundle和rake：
+
+    bundle exec rake spec
 
 ## 更多
 

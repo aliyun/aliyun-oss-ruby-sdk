@@ -32,6 +32,15 @@ bucket = Aliyun::OSS::Client.new(
   :access_key_id => conf['id'],
   :access_key_secret => conf['key']).get_bucket(conf['bucket'])
 
+# 辅助打印函数
+def demo(msg)
+  puts "######### #{msg} ########"
+  puts
+  yield
+  puts "-------------------------"
+  puts
+end
+
 # 例子1: 归并排序
 # 有两个文件sort.1, sort.2，它们分别存了一些从小到大排列的整数，每个整
 # 数1行，现在要将它们做归并排序的结果上传到OSS中，命名为sort.all
@@ -51,59 +60,65 @@ File.open(File.expand_path(local_2), 'w') do |f|
   end
 end
 
-bucket.put_object(result_object) do |content|
-  f1 = File.open(File.expand_path(local_1))
-  f2 = File.open(File.expand_path(local_2))
-  v1, v2 = f1.readline, f2.readline
+demo "Streaming upload" do
+  bucket.put_object(result_object) do |content|
+    f1 = File.open(File.expand_path(local_1))
+    f2 = File.open(File.expand_path(local_2))
+    v1, v2 = f1.readline, f2.readline
 
-  until f1.eof? or f2.eof?
-    if v1.to_i < v2.to_i
-      content << v1
-      v1 = f1.readline
-    else
-      content << v2
-      v2 = f2.readline
+    until f1.eof? or f2.eof?
+      if v1.to_i < v2.to_i
+        content << v1
+        v1 = f1.readline
+      else
+        content << v2
+        v2 = f2.readline
+      end
     end
+
+    [v1, v2].sort.each{|i| content << i}
+    content << f1.readline until f1.eof?
+    content << f2.readline until f2.eof?
   end
 
-  [v1, v2].sort.each{|i| content << i}
-  content << f1.readline until f1.eof?
-  content << f2.readline until f2.eof?
+  puts "Put object: #{result_object}"
+
+  # 将文件下载下来查看
+  bucket.get_object(result_object, :file => result_object)
+  puts "Get object: #{result_object}"
+  puts "Content: #{File.read(result_object)}"
 end
-
-puts "内容写入OSS成功，object: #{result_object}"
-
-# 将文件下载下来查看
-bucket.get_object(result_object, :file => result_object)
-puts "文件下载成功，请查看文件：#{result_object}的内容"
 
 # 例子2: 下载进度条
 # 下载一个大文件（10M），在下载的过程中打印下载进度
 
 large_file = 'large_file'
 
-# 利用streaming上传，每次上传100KB，分100次完成
-i = (1..100).each
-bucket.put_object(large_file) do |content|
-  v = i.next rescue nil
-  content << "x" * (100 * 1024) if v
-end
-
-# 查看object大小
-object_size = bucket.get_object(large_file).size
-puts "Object: #{large_file}的大小是：#{object_size}"
-
-# 流式下载文件，仅打印进度，不保存文件
-def to_percentile(v)
-  "#{(v * 100.0).round(2)} %"
-end
-
-last_got, got = 0, 0
-bucket.get_object(large_file) do |chunk|
-  got += chunk.size
-  # 仅在下载进度大于10%的时候打印
-  if (got - last_got).to_f / object_size > 0.1
-    puts "下载进度：#{to_percentile(got.to_f / object_size)}"
-    last_got = got
+demo "Streaming download" do
+  puts "Begin put object: #{large_file}"
+  # 利用streaming上传
+  bucket.put_object(large_file) do |stream|
+    10.times { stream << "x" * (1024 * 1024) }
   end
+
+  # 查看object大小
+  object_size = bucket.get_object(large_file).size
+  puts "Put object: #{large_file}, size: #{object_size}"
+
+  # 流式下载文件，仅打印进度，不保存文件
+  def to_percentile(v)
+    "#{(v * 100.0).round(2)} %"
+  end
+
+  puts "Begin download: #{large_file}"
+  last_got, got = 0, 0
+  bucket.get_object(large_file) do |chunk|
+    got += chunk.size
+    # 仅在下载进度大于10%的时候打印
+    if (got - last_got).to_f / object_size > 0.1
+      puts "Progress: #{to_percentile(got.to_f / object_size)}"
+      last_got = got
+    end
+  end
+  puts "Get object: #{large_file}, size: #{object_size}"
 end

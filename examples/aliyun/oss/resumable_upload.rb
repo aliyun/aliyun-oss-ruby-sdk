@@ -14,18 +14,30 @@ bucket = Aliyun::OSS::Client.new(
   :access_key_id => conf['id'],
   :access_key_secret => conf['key']).get_bucket(conf['bucket'])
 
-# 生成一个100M的文件
-File.open('/tmp/x', 'w') do |f|
-  (1..1024*1024).each{ |i| f.puts i.to_s.rjust(99, '0') }
+# 辅助打印函数
+def demo(msg)
+  puts "######### #{msg} ########"
+  puts
+  yield
+  puts "-------------------------"
+  puts
 end
 
-# 上传一个100M的文件
-start = Time.now
-puts "Start upload..."
-bucket.resumable_upload('resumable', '/tmp/x', :cpt_file => '/tmp/x.cpt')
-puts "Upload complete. Cost: #{Time.now - start} seconds."
+demo "Resumable upload" do
+  puts "Generate file: /tmp/x, size: 100MB"
+  # 生成一个100M的文件
+  File.open('/tmp/x', 'w') do |f|
+    (1..1024*1024).each{ |i| f.puts i.to_s.rjust(99, '0') }
+  end
 
-# 测试方法：
-# 1. ruby examples/resumable_upload.rb
-# 2. 过几秒后用Ctrl-C中断上传
-# 3. ruby examples/resumable_upload.rb恢复上传
+  # 上传一个100M的文件
+  start = Time.now
+  puts "Start upload: /tmp/x => resumable"
+  bucket.resumable_upload('resumable', '/tmp/x', :cpt_file => '/tmp/x.cpt')
+  puts "Upload complete. Cost: #{Time.now - start} seconds."
+
+  # 测试方法：
+  # 1. ruby examples/resumable_upload.rb
+  # 2. 过几秒后用Ctrl-C中断上传
+  # 3. ruby examples/resumable_upload.rb恢复上传
+end

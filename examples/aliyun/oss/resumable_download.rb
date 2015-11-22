@@ -14,13 +14,24 @@ bucket = Aliyun::OSS::Client.new(
   :access_key_id => conf['id'],
   :access_key_secret => conf['key']).get_bucket(conf['bucket'])
 
-# 下载一个100M的文件
-start = Time.now
-puts "Start download..."
-bucket.resumable_download('resumable', '/tmp/y', :cpt_file => '/tmp/y.cpt')
-puts "Download complete. Cost: #{Time.now - start} seconds."
+# 辅助打印函数
+def demo(msg)
+  puts "######### #{msg} ########"
+  puts
+  yield
+  puts "-------------------------"
+  puts
+end
 
-# 测试方法：
-# 1. ruby examples/resumable_download.rb
-# 2. 过几秒后用Ctrl-C中断下载
-# 3. ruby examples/resumable_download.rb恢复下载
+demo "Resumable download" do
+  # 下载一个100M的文件
+  start = Time.now
+  puts "Start download: resumable => /tmp/y"
+  bucket.resumable_download('resumable', '/tmp/y', :cpt_file => '/tmp/y.cpt')
+  puts "Download complete. Cost: #{Time.now - start} seconds."
+
+  # 测试方法：
+  # 1. ruby examples/resumable_download.rb
+  # 2. 过几秒后用Ctrl-C中断下载
+  # 3. ruby examples/resumable_download.rb恢复下载
+end
