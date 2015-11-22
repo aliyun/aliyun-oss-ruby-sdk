@@ -420,6 +420,10 @@ module Aliyun
       # @raise [CheckpointBrokenError] 如果cpt文件被损坏，则抛出此错误
       # @raise [FileInconsistentError] 如果指定的文件与cpt中记录的不一
       #  致，则抛出此错误
+      # @example
+      #   bucket.resumable_upload('my-object', '/tmp/x') do |p|
+      #     puts "Progress: #{(p * 100).round(2)} %"
+      #   end
       def resumable_upload(key, file, opts = {}, &block)
         unless cpt_file = opts[:cpt_file]
           cpt_file = get_cpt_file(file)
@@ -468,6 +472,10 @@ module Aliyun
       #  MD5值与cpt文件记录的不一致，则抛出此错误
       # @note 已经下载的部分会在file所在的目录创建.part文件，命名方式
       #  为file.part.N
+      # @example
+      #   bucket.resumable_download('my-object', '/tmp/x') do |p|
+      #     puts "Progress: #{(p * 100).round(2)} %"
+      #   end
       def resumable_download(key, file, opts = {}, &block)
         unless cpt_file = opts[:cpt_file]
           cpt_file = get_cpt_file(file)

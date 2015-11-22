@@ -2,6 +2,13 @@
 
 require 'aliyun/oss'
 
+##
+# Help initialize OSS Client. User can use it easily at any place in
+# your rails application.
+# @example
+#   OSS.client.list_buckets
+#   bucket = OSS.client.get_bucket('my-bucket')
+#   bucket.list_objects
 module OSS
   def self.client
     unless @client
