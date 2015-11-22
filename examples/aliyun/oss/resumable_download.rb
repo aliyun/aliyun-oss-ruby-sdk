@@ -27,7 +27,10 @@ demo "Resumable download" do
   # 下载一个100M的文件
   start = Time.now
   puts "Start download: resumable => /tmp/y"
-  bucket.resumable_download('resumable', '/tmp/y', :cpt_file => '/tmp/y.cpt')
+  bucket.resumable_download(
+    'resumable', '/tmp/y', :cpt_file => '/tmp/y.cpt') do |progress|
+    puts "Progress: #{(progress * 100).round(2)} %"
+  end
   puts "Download complete. Cost: #{Time.now - start} seconds."
 
   # 测试方法：

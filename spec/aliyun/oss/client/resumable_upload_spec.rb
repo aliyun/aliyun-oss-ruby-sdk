@@ -72,7 +72,9 @@ module Aliyun
         stub_request(:put, /#{object_url}\?partNumber.*/)
         stub_request(:post, /#{object_url}\?uploadId.*/)
 
-        @bucket.resumable_upload(@object_key, @file, :part_size => 10)
+        prg = []
+        @bucket.resumable_upload(
+          @object_key, @file, :part_size => 10) { |p| prg << p }
 
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploads.*/).times(1)
@@ -94,6 +96,7 @@ module Aliyun
           :post, /#{object_url}\?uploadId.*/).times(1)
 
         expect(File.exist?("#{@file}.cpt")).to be false
+        expect(prg).to match_array((1..10).map {|i| i.to_f / 10 })
       end
 
       it "should restart when begin txn fails" do

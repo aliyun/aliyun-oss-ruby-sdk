@@ -415,22 +415,21 @@ module Aliyun
       #  果设置为true，则在上传的过程中不会写checkpoint文件，这意味着
       #  上传失败后不能断点续传，而只能重新上传整个文件。如果这个值为
       #  true，则:cpt_file会被忽略。
+      # @yield [Float] 如果调用的时候传递了block，则会将上传进度交由
+      #  block处理，进度值是一个0-1之间的小数
       # @raise [CheckpointBrokenError] 如果cpt文件被损坏，则抛出此错误
       # @raise [FileInconsistentError] 如果指定的文件与cpt中记录的不一
       #  致，则抛出此错误
-      def resumable_upload(key, file, opts = {})
+      def resumable_upload(key, file, opts = {}, &block)
         unless cpt_file = opts[:cpt_file]
           cpt_file = get_cpt_file(file)
         end
 
         Multipart::Upload.new(
-          @protocol,
-          :options => opts,
-          :object => key,
-          :bucket => name,
-          :creation_time => Time.now,
-          :file => File.expand_path(file),
-          :cpt_file => cpt_file
+          @protocol, options: opts,
+          progress: block,
+          object: key, bucket: name, creation_time: Time.now,
+          file: File.expand_path(file), cpt_file: cpt_file
         ).run
       end
 
@@ -458,6 +457,8 @@ module Aliyun
       #  同 {#get_object}
       # @option opts [Hash] :rewrite 指定下载object时Server端返回的响
       #  应头部字段的值，同 {#get_object}
+      # @yield [Float] 如果调用的时候传递了block，则会将下载进度交由
+      #  block处理，进度值是一个0-1之间的小数
       # @raise [CheckpointBrokenError] 如果cpt文件被损坏，则抛出此错误
       # @raise [ObjectInconsistentError] 如果指定的object的etag与cpt文
       #  件中记录的不一致，则抛出错误
@@ -467,19 +468,16 @@ module Aliyun
       #  MD5值与cpt文件记录的不一致，则抛出此错误
       # @note 已经下载的部分会在file所在的目录创建.part文件，命名方式
       #  为file.part.N
-      def resumable_download(key, file, opts = {})
+      def resumable_download(key, file, opts = {}, &block)
         unless cpt_file = opts[:cpt_file]
           cpt_file = get_cpt_file(file)
         end
 
         Multipart::Download.new(
-          @protocol,
-          :options => opts,
-          :object => key,
-          :bucket => name,
-          :creation_time => Time.now,
-          :file => File.expand_path(file),
-          :cpt_file => cpt_file
+          @protocol, options: opts,
+          progress: block,
+          object: key, bucket: name, creation_time: Time.now,
+          file: File.expand_path(file), cpt_file: cpt_file
         ).run
       end
 

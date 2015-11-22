@@ -33,7 +33,10 @@ demo "Resumable upload" do
   # 上传一个100M的文件
   start = Time.now
   puts "Start upload: /tmp/x => resumable"
-  bucket.resumable_upload('resumable', '/tmp/x', :cpt_file => '/tmp/x.cpt')
+  bucket.resumable_upload(
+    'resumable', '/tmp/x', :cpt_file => '/tmp/x.cpt') do |progress|
+    puts "Progress: #{(progress * 100).round(2)} %"
+  end
   puts "Upload complete. Cost: #{Time.now - start} seconds."
 
   # 测试方法：

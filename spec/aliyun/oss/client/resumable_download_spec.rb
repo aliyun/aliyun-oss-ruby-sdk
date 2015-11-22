@@ -62,7 +62,9 @@ module Aliyun
         stub_request(:get, object_url)
           .to_return((1..10).map{ |i| {:body => mock_object(i)} })
 
-        @bucket.resumable_download(@object_key, @file, :part_size => 10)
+        prg = []
+        @bucket.resumable_download(
+          @object_key, @file, :part_size => 10) { |p| prg << p }
 
         ranges = []
         expect(WebMock).to have_requested(:get, object_url).with{ |req|
@@ -74,6 +76,7 @@ module Aliyun
         expect(Dir.glob("#{@file}.part.*").empty?).to be true
 
         expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
+        expect(prg).to match_array((1..10).map {|i| i.to_f / 10 })
       end
 
       it "should resume when download part fails" do

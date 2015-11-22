@@ -13,6 +13,7 @@ module Aliyun
         def initialize(protocol, opts)
           args = opts.dup
           @protocol = protocol
+          @progress = args.delete(:progress)
           @file = args.delete(:file)
           @checkpoint_file = args.delete(:cpt_file)
           @object_meta = {}
@@ -72,6 +73,12 @@ module Aliyun
             :object_meta => @object_meta,
             :parts => @parts
           }
+
+          # report progress
+          if @progress
+            done = @parts.count { |p| p[:done] }
+            @progress.call(done.to_f / @parts.size) if done > 0
+          end
 
           write_checkpoint(states, @checkpoint_file) unless options[:disable_cpt]
 
