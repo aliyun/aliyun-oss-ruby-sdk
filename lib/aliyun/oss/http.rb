@@ -198,8 +198,12 @@ module Aliyun
         headers['Date'] = Time.now.httpdate
         headers['Content-Type'] ||= DEFAULT_CONTENT_TYPE
 
-        if body = http_options[:body] and body.respond_to?(:read)
-          headers['Transfer-Encoding'] = 'chunked'
+        if body = http_options[:body]
+          if body.respond_to?(:read)
+            headers['Transfer-Encoding'] = 'chunked'
+          else
+            headers['Content-MD5'] = Util.get_content_md5(body)
+          end
         end
 
         res = {

@@ -871,7 +871,7 @@ module Aliyun
       # @param opts [Hash] options
       # @option opts [Boolean] :quiet indicates whether the server
       #  should return the delete result of the objects
-      # @option opts [String] :encoding-type the encoding type for
+      # @option opts [String] :encoding the encoding type for
       #  object key in the response body, only
       #  {OSS::KeyEncoding::URL} is supported now
       # @return [Array<String>] object names that have been
@@ -881,16 +881,16 @@ module Aliyun
                      "objects: #{object_names}, options: #{opts}")
 
         sub_res = {'delete' => nil}
-        body = Nokogiri::XML::Builder.new do |xml|
-          xml.Delete {
-            xml.Quiet opts[:quiet]? true : false
-            object_names.each do |o|
-              xml.Object {
-                xml.Key o
-              }
-            end
-          }
-        end.to_xml
+
+        # It may have invisible chars in object key which will corrupt
+        # libxml. So we're constructing xml body manually here.
+        body = '<?xml version="1.0"?>'
+        body << '<Delete>'
+        body << '<Quiet>' << (opts[:quiet]? true : false).to_s << '</Quiet>'
+        object_names.each { |k|
+          body << '<Object><Key>' << k << '</Key></Object>'
+        }
+        body << '</Delete>'
 
         query = {}
         query['encoding-type'] = opts[:encoding] if opts[:encoding]

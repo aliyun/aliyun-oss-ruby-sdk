@@ -151,8 +151,6 @@ module Aliyun
       #  '/foo/bar/', '/foo/xxx/'。它们恰好就是目录'/foo/'下的所有子目
       #  录。用delimiter获取公共前缀的方法避免了查询当前bucket下的所有
       #   object（可能数量巨大），是用于模拟目录结构的常用做法。
-      # @option opts [String] :encoding 指定返回的响应中object名字的编
-      #  码方法，目前只支持{OSS::KeyEncoding::URL}编码方式。
       # @return [Enumerator<Object>] 其中Object可能是{OSS::Object}，也
       #  可能是{String}，此时它是一个公共前缀
       # @example
@@ -165,7 +163,8 @@ module Aliyun
       #    end
       #  end
       def list_objects(opts = {})
-        Iterator::Objects.new(@protocol, name, opts).to_enum
+        Iterator::Objects.new(
+          @protocol, name, opts.merge(encoding: KeyEncoding::URL)).to_enum
       end
 
       # 向Bucket中上传一个object
@@ -358,13 +357,12 @@ module Aliyun
       # @param keys [Array<String>] Object的名字集合
       # @param opts [Hash] 删除object的选项（可选）
       # @option opts [Boolean] :quiet 指定是否允许Server返回成功删除的
-      #  object
-      # @option opts [String] :encoding 指定Server返回的成功删除的
-      #  object的名字的编码方式，目前只支持{OSS::KeyEncoding::URL}
+      #  object，默认为false，即返回删除结果
       # @return [Array<String>] 成功删除的object的名字，如果指定
       #  了:quiet参数，则返回[]
       def batch_delete_objects(keys, opts = {})
-        @protocol.batch_delete_objects(name, keys, opts)
+        @protocol.batch_delete_objects(
+          name, keys, opts.merge(encoding: KeyEncoding::URL))
       end
 
       # 设置object的ACL
