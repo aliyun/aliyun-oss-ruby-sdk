@@ -175,7 +175,7 @@ module Aliyun
       # @option opts [String] :content_type 设置所上传的内容的
       #  Content-Type，默认是application/octet-stream
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
-      #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
+      #  义的属性，它们会和object一起存储，在{#get_object}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @yield [HTTP::StreamWriter] 如果调
       #  用的时候传递了block，则写入到object的数据由block指定
@@ -296,7 +296,7 @@ module Aliyun
       # @option opts [String] :content_type 设置所上传的内容的
       #  Content-Type，默认是application/octet-stream
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
-      #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
+      #  义的属性，它们会和object一起存储，在{#get_object}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @example 流式上传数据
       #   pos = append_object('x', 0){ |stream| 100.times { |i| stream << i.to_s } }
@@ -335,7 +335,7 @@ module Aliyun
       #  meta信息，默认为{OSS::MetaDirective::COPY}：即拷贝object的时
       #  候也拷贝meta信息。
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
-      #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
+      #  义的属性，它们会和object一起存储，在{#get_object}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015'
       #  }。如果:meta_directive为{OSS::MetaDirective::COPY}，则:metas
       #  会被忽略。
@@ -401,7 +401,7 @@ module Aliyun
       # @option opts [String] :content_type 设置所上传的内容的
       #  Content-Type，默认是application/octet-stream
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
-      #  义的属性，它们会和object一起存储，在{#get_object_meta}的时候会
+      #  义的属性，它们会和object一起存储，在{#get_object}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
       #  默认为1 MB。断点上传最多允许10000个分片，如果文件大于10000个

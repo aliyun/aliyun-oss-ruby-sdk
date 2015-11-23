@@ -3,7 +3,7 @@
 module Aliyun
   module OSS
 
-    VERSION = "0.1.0"
+    VERSION = "0.1.2"
 
   end # OSS
 end # Aliyun

@@ -249,10 +249,10 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 
 ### 向Object追加内容
 
-    pos = bucket.get_object_meta(object_key).size
+    pos = bucket.get_object(object_key).size
     next_pos = bucket.append_object(object_key, pos, :file => local_file)
 
-程序第一次追加时，可以通过{Aliyun::OSS::Bucket#get_object_meta}获取文件的长度，
+程序第一次追加时，可以通过{Aliyun::OSS::Bucket#get_object}获取文件的长度，
 后续追加时，可以根据{Aliyun::OSS::Bucket#append_object}返回的下次追加长度。
 
 注意：如果并发地`append_object`，`next_pos`并不总是对的。
@@ -261,7 +261,7 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
 
 在上传Object时，除了Object内容，OSS还允许用户为Object设置一些"meta信息
 "，这些meta信息是一个个的Key-Value对，用于标识Object特有的属性信息。这
-些meta信息会跟Object一起存储，并在`get_object`和`get_object_meta`时返
+些meta信息会跟Object一起存储，并在`get_object`和`get_object`时返
 回给用户。
 
     bucket.put_object(object_key, :file => local_file,
