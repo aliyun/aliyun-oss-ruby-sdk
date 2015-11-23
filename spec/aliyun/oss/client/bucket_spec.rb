@@ -77,6 +77,10 @@ module Aliyun
         end.to_xml
       end
 
+      def err(msg, reqid = '0000')
+        "#{msg} RequestId: #{reqid}"
+      end
+
       context "bucket operations" do
         it "should get acl" do
           query = {'acl' => ''}
@@ -262,7 +266,7 @@ module Aliyun
 
           expect {
             @bucket.get_object(key)
-          }.to raise_error(Exception, "UnknownError, HTTP Code: 404")
+          }.to raise_error(ServerError, err("UnknownError[404].", ''))
 
           expect(@bucket.object_exists?(key)).to be false
           expect(@bucket.object_exist?(key)).to be false
@@ -288,7 +292,7 @@ module Aliyun
 
           expect {
             @bucket.object_exists?(key)
-          }.to raise_error(Exception, "UnknownError, HTTP Code: 500")
+          }.to raise_error(ServerError, err("UnknownError[500].", ''))
         end
 
         it "should update object metas" do

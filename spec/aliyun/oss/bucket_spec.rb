@@ -171,15 +171,17 @@ module Aliyun
       end
 
       def mock_error(code, message)
-        builder = Nokogiri::XML::Builder.new do |xml|
+        Nokogiri::XML::Builder.new do |xml|
           xml.Error {
             xml.Code code
             xml.Message message
             xml.RequestId '0000'
           }
-        end
+        end.to_xml
+      end
 
-        builder.to_xml
+      def err(msg, reqid = '0000')
+        "#{msg} RequestId: #{reqid}"
       end
 
       context "Create bucket" do
@@ -348,7 +350,7 @@ module Aliyun
 
           expect {
             @protocol.delete_bucket(@bucket)
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
         end
       end # delete bucket
 

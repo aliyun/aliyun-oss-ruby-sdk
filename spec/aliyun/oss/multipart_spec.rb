@@ -87,15 +87,17 @@ module Aliyun
       end
 
       def mock_error(code, message)
-        builder = Nokogiri::XML::Builder.new do |xml|
+        Nokogiri::XML::Builder.new do |xml|
           xml.Error {
             xml.Code code
             xml.Message message
             xml.RequestId '0000'
           }
-        end
+        end.to_xml
+      end
 
-        builder.to_xml
+      def err(msg, reqid = '0000')
+        "#{msg} RequestId: #{reqid}"
       end
 
       context "Initiate multipart upload" do
@@ -143,7 +145,7 @@ module Aliyun
 
           expect {
             @protocol.initiate_multipart_upload(@bucket, @object)
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:post, request_path)
             .with(:body => nil, :query => query)
@@ -200,7 +202,7 @@ module Aliyun
 
           expect {
             @protocol.upload_part(@bucket, @object, txn_id, part_no) {}
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:body => nil, :query => query)
@@ -302,7 +304,7 @@ module Aliyun
 
           expect {
             @protocol.upload_part_by_copy(@bucket, @object, txn_id, part_no, 'src_obj')
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:body => nil, :query => query, :headers => headers)
@@ -351,7 +353,7 @@ module Aliyun
 
           expect {
             @protocol.complete_multipart_upload(@bucket, @object, txn_id, [])
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:post, request_path)
             .with(:query => query)
@@ -386,7 +388,7 @@ module Aliyun
 
           expect {
             @protocol.abort_multipart_upload(@bucket, @object, txn_id)
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:body => nil, :query => query)
@@ -568,7 +570,7 @@ module Aliyun
 
           expect {
             @protocol.list_multipart_uploads(@bucket)
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)
@@ -662,7 +664,7 @@ module Aliyun
 
           expect {
             @protocol.list_parts(@bucket, @object, txn_id)
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:body => nil, :query => query)

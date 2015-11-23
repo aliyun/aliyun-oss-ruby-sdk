@@ -80,14 +80,17 @@ module Aliyun
       end
 
       def mock_error(code, message)
-        builder = Nokogiri::XML::Builder.new do |xml|
+        Nokogiri::XML::Builder.new do |xml|
           xml.Error {
             xml.Code code
             xml.Message message
+            xml.RequestId '0000'
           }
-        end
+        end.to_xml
+      end
 
-        builder.to_xml
+      def err(msg, reqid = '0000')
+        "#{msg} RequestId: #{reqid}"
       end
 
       context "Put object" do
@@ -120,7 +123,7 @@ module Aliyun
             @protocol.put_object(@bucket, object_name) do |c|
               c << content
             end
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:put, url)
             .with(:body => content, :query => {})
@@ -226,7 +229,7 @@ module Aliyun
             @protocol.append_object(@bucket, object_name, 11) do |c|
               c << content
             end
-          }.to raise_error(Exception, message)
+          }.to raise_error(Exception, err(message))
 
           expect(WebMock).to have_requested(:post, url)
             .with(:body => content, :query => query)
@@ -382,7 +385,7 @@ module Aliyun
           message = 'The object to copy is too large.'
           stub_request(:put, url).to_return(
             :status => 400,
-            :headers => {'x-oss-request-id' => '0000-1111'},
+            :headers => {'x-oss-request-id' => '0000'},
             :body => mock_error(code, message))
 
           begin
@@ -391,8 +394,8 @@ module Aliyun
           rescue ServerError => e
             expect(e.http_code).to eq(400)
             expect(e.error_code).to eq(code)
-            expect(e.message).to eq(message)
-            expect(e.request_id).to eq('0000-1111')
+            expect(e.message).to eq(err(message))
+            expect(e.request_id).to eq('0000')
           end
 
           expect(WebMock).to have_requested(:put, url)
@@ -462,7 +465,7 @@ module Aliyun
 
           expect {
             @protocol.get_object(@bucket, object_name) {|c| true}
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => {})
@@ -619,7 +622,7 @@ module Aliyun
 
           expect {
             @protocol.delete_object(@bucket, object_name)
-          }.to raise_error(Exception, message)
+          }.to raise_error(ServerError, err(message))
 
           expect(WebMock).to have_requested(:delete, url)
             .with(:body => nil, :query => {})

@@ -42,7 +42,8 @@ module Aliyun
       end
 
       def message
-        @attrs['Message'] || "UnknownError, HTTP Code: #{http_code}"
+        msg = @attrs['Message'] || "UnknownError[#{http_code}]."
+        "#{msg} RequestId: #{request_id}"
       end
 
       def to_s
