@@ -133,7 +133,8 @@ module Aliyun
         it "should list objects" do
           query_1 = {
             :prefix => 'list-',
-            :delimiter => '-'
+            :delimiter => '-',
+            'encoding-type' => 'url'
           }
           return_obj_1 = (1..5).map{ |i| Object.new(
             :key => "obj-#{i}",
@@ -148,7 +149,8 @@ module Aliyun
           query_2 = {
             :prefix => 'list-',
             :delimiter => '-',
-            :marker => 'foo'
+            :marker => 'foo',
+            'encoding-type' => 'url'
           }
           return_obj_2 = (6..8).map{ |i| Object.new(
             :key => "obj-#{i}",

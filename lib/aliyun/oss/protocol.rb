@@ -745,7 +745,8 @@ module Aliyun
           :size => wrap(h[:content_length], &:to_i),
           :etag => h[:etag],
           :metas => metas,
-          :last_modified => wrap(h[:last_modified]) { |x| Time.parse(x) })
+          :last_modified => wrap(h[:last_modified]) { |x| Time.parse(x) },
+          :content_type => h[:content_type])
 
         logger.debug("Done get object")
 
@@ -786,7 +787,8 @@ module Aliyun
           :size => wrap(h[:content_length], &:to_i),
           :etag => h[:etag],
           :metas => metas,
-          :last_modified => wrap(h[:last_modified]) { |x| Time.parse(x) })
+          :last_modified => wrap(h[:last_modified]) { |x| Time.parse(x) },
+          :content_type => h[:content_type])
 
         logger.debug("Done get object meta")
 

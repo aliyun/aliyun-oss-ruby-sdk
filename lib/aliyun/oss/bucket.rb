@@ -191,17 +191,20 @@ module Aliyun
       #  它读到的数据为nil停止。
       # @note 如果opts中指定了:file，则block会被忽略
       def put_object(key, opts = {}, &block)
-        file = opts[:file]
-        if file
-          opts[:content_type] = get_content_type(file)
+        args = opts.dup
 
-          @protocol.put_object(name, key, opts) do |sw|
+        file = args[:file]
+        args[:content_type] ||= get_content_type(file) if file
+        args[:content_type] ||= get_content_type(key)
+
+        if file
+          @protocol.put_object(name, key, args) do |sw|
             File.open(File.expand_path(file), 'rb') do |f|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) until f.eof?
             end
           end
         else
-          @protocol.put_object(name, key, opts, &block)
+          @protocol.put_object(name, key, args, &block)
         end
       end
 
@@ -308,18 +311,20 @@ module Aliyun
       # @return [Integer] 返回下次append的位置
       # @yield [HTTP::StreamWriter] 同 {#put_object}
       def append_object(key, pos, opts = {}, &block)
-        next_pos = -1
-        file = opts[:file]
-        if file
-          opts[:content_type] = get_content_type(file)
+        args = opts.dup
 
-          next_pos = @protocol.append_object(name, key, pos, opts) do |sw|
+        file = args[:file]
+        args[:content_type] ||= get_content_type(file) if file
+        args[:content_type] ||= get_content_type(key)
+
+        if file
+          next_pos = @protocol.append_object(name, key, pos, args) do |sw|
             File.open(File.expand_path(file), 'rb') do |f|
               sw << f.read(Protocol::STREAM_CHUNK_SIZE) until f.eof?
             end
           end
         else
-          next_pos = @protocol.append_object(name, key, pos, opts, &block)
+          next_pos = @protocol.append_object(name, key, pos, args, &block)
         end
 
         next_pos
@@ -344,7 +349,10 @@ module Aliyun
       #  * :etag [String] 目标文件的ETag
       #  * :last_modified [Time] 目标文件的最后修改时间
       def copy_object(source, dest, opts = {})
-        @protocol.copy_object(name, source, dest, opts)
+        args = opts.dup
+
+        args[:content_type] ||= get_content_type(dest)
+        @protocol.copy_object(name, source, dest, args)
       end
 
       # 删除一个object
@@ -423,12 +431,17 @@ module Aliyun
       #     puts "Progress: #{(p * 100).round(2)} %"
       #   end
       def resumable_upload(key, file, opts = {}, &block)
-        unless cpt_file = opts[:cpt_file]
+        args = opts.dup
+
+        args[:content_type] ||= get_content_type(file)
+        args[:content_type] ||= get_content_type(key)
+
+        unless cpt_file = args[:cpt_file]
           cpt_file = get_cpt_file(file)
         end
 
         Multipart::Upload.new(
-          @protocol, options: opts,
+          @protocol, options: args,
           progress: block,
           object: key, bucket: name, creation_time: Time.now,
           file: File.expand_path(file), cpt_file: cpt_file
@@ -475,12 +488,17 @@ module Aliyun
       #     puts "Progress: #{(p * 100).round(2)} %"
       #   end
       def resumable_download(key, file, opts = {}, &block)
-        unless cpt_file = opts[:cpt_file]
+        args = opts.dup
+
+        args[:content_type] ||= get_content_type(file)
+        args[:content_type] ||= get_content_type(key)
+
+        unless cpt_file = args[:cpt_file]
           cpt_file = get_cpt_file(file)
         end
 
         Multipart::Download.new(
-          @protocol, options: opts,
+          @protocol, options: args,
           progress: block,
           object: key, bucket: name, creation_time: Time.now,
           file: File.expand_path(file), cpt_file: cpt_file

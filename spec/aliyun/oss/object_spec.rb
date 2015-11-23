@@ -54,16 +54,15 @@ module Aliyun
       end
 
       def mock_delete(objects, opts = {})
-        Nokogiri::XML::Builder.new do |xml|
-          xml.Delete {
-            xml.Quiet opts[:quiet]? true : false
-            objects.each do |o|
-              xml.Object {
-                xml.Key o
-              }
-            end
-          }
-        end.to_xml
+        # It may have invisible chars in object key which will corrupt
+        # libxml. So we're constructing xml body manually here.
+        body = '<?xml version="1.0"?>'
+        body << '<Delete>'
+        body << '<Quiet>' << (opts[:quiet]? true : false).to_s << '</Quiet>'
+        objects.each { |k|
+          body << '<Object><Key>' << k << '</Key></Object>'
+        }
+        body << '</Delete>'
       end
 
       def mock_delete_result(deleted, opts = {})
