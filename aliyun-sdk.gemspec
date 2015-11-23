@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
 
   spec.files         = Dir.glob("lib/**/*.rb")
   spec.test_files    = Dir.glob("spec/**/*_spec.rb")
-  spec.extra_rdoc_files = ['README.md']
+  spec.extra_rdoc_files = ['README.md', 'CHANGELOG.md']
   spec.bindir        = 'bin'
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
