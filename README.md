@@ -356,8 +356,7 @@ SDK采用rspec进行测试，如果要对SDK进行修改，请确保没有break�
 
 更多文档请查看：
 
-- 阿里云官网文档：https://docs.aliyun.com/?spm=5176.383663.13.7.zbyclQ#/pub/oss
-- SDK API文档：http://10.101.168.94/d/aliyun-oss-sdk-doc/
+- 阿里云官网文档：http://help.aliyun.com/product/8314910_oss.html
 
 
 [1]: http://help.aliyun.com/document_detail/oss/product-documentation/domain-region.html
