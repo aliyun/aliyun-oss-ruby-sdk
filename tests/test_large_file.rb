@@ -24,7 +24,7 @@ class TestObjectKey < Minitest::Unit::TestCase
 
   def test_large_file_1gb
     key = get_key("large_file_1gb")
-    Benchmark.bm(7) do |bm|
+    Benchmark.bm(32) do |bm|
       bm.report("Upload with put_object: ") do
         @bucket.put_object(key, :file => './large_file_1gb')
       end
@@ -39,6 +39,27 @@ class TestObjectKey < Minitest::Unit::TestCase
 
       bm.report("Download with resumable_download: ") do
         @bucket.resumable_download(key, './large_file_1gb')
+      end
+    end
+  end
+
+  def test_large_file_8gb
+    key = get_key("large_file_8gb")
+    Benchmark.bm(32) do |bm|
+      bm.report("Upload with put_object: ") do
+        @bucket.put_object(key, :file => './large_file_8gb')
+      end
+
+      bm.report("Upload with resumable_upload: ") do
+        @bucket.resumable_upload(key, './large_file_8gb')
+      end
+
+      bm.report("Download with get_object: ") do
+        @bucket.get_object(key, :file => './large_file_8gb')
+      end
+
+      bm.report("Download with resumable_download: ") do
+        @bucket.resumable_download(key, './large_file_8gb')
       end
     end
   end
