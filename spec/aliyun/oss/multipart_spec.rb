@@ -38,7 +38,6 @@ module Aliyun
           xml.ListMultipartUploadsResult {
             {
               :prefix => 'Prefix',
-              :delimiter => 'Delimiter',
               :limit => 'MaxUploads',
               :id_marker => 'UploadIdMarker',
               :next_id_marker => 'NextUploadIdMarker',
@@ -414,7 +413,6 @@ module Aliyun
           query = {
             'uploads' => '',
             'prefix' => 'foo-',
-            'delimiter' => '-',
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
             'max-uploads' => 10,
@@ -426,7 +424,6 @@ module Aliyun
           @protocol.list_multipart_uploads(
             @bucket,
             :prefix => 'foo-',
-            :delimiter => '-',
             :id_marker => 'id-marker',
             :key_marker => 'key-marker',
             :limit => 10,
@@ -442,7 +439,6 @@ module Aliyun
           query = {
             'uploads' => '',
             'prefix' => 'foo-',
-            'delimiter' => '-',
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
             'max-uploads' => 100,
@@ -459,7 +455,6 @@ module Aliyun
 
           return_more = {
             :prefix => 'foo-',
-            :delimiter => '-',
             :id_marker => 'id-marker',
             :key_marker => 'key-marker',
             :next_id_marker => 'next-id-marker',
@@ -474,7 +469,6 @@ module Aliyun
           txns, more = @protocol.list_multipart_uploads(
                   @bucket,
                   :prefix => 'foo-',
-                  :delimiter => '-',
                   :id_marker => 'id-marker',
                   :key_marker => 'key-marker',
                   :limit => 100,
@@ -492,7 +486,6 @@ module Aliyun
           query = {
             'uploads' => '',
             'prefix' => 'foo-',
-            'delimiter' => '-',
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
             'max-uploads' => 100,
@@ -516,7 +509,6 @@ module Aliyun
 
           return_more = {
             :prefix => 'foo-',
-            :delimiter => '中国のruby',
             :id_marker => 'id-marker',
             :key_marker => '杭州のruby',
             :next_id_marker => 'next-id-marker',
@@ -528,7 +520,6 @@ module Aliyun
 
           es_more = {
             :prefix => 'foo-',
-            :delimiter => CGI.escape('中国のruby'),
             :id_marker => 'id-marker',
             :key_marker => CGI.escape('杭州のruby'),
             :next_id_marker => 'next-id-marker',
@@ -545,7 +536,6 @@ module Aliyun
           txns, more = @protocol.list_multipart_uploads(
                   @bucket,
                   :prefix => 'foo-',
-                  :delimiter => '-',
                   :id_marker => 'id-marker',
                   :key_marker => 'key-marker',
                   :limit => 100,

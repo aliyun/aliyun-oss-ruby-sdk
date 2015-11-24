@@ -46,6 +46,8 @@ module Aliyun
       # 列出当前所有的bucket
       # @param opts [Hash] 查询选项
       # @option opts [String] :prefix 如果设置，则只返回以它为前缀的bucket
+      # @option opts [String] :marker 如果设置，则只返回名字在它之后
+      #  （字母表顺序排序，不包含marker）的bucket
       # @return [Enumerator<Bucket>] Bucket的迭代器
       def list_buckets(opts = {})
         if @config.cname

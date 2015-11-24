@@ -69,6 +69,24 @@ module Aliyun
         end
       end # Objects
 
+      ##
+      # Uploads iterator
+      #
+      class Uploads < Base
+        def initialize(protocol, bucket_name, opts = {})
+          super(protocol, opts)
+          @bucket = bucket_name
+        end
+
+        def fetch(more)
+          @results, cont = @protocol.list_multipart_uploads(@bucket, more)
+          @results = cont[:common_prefixes] + @results if cont[:common_prefixes]
+          @more[:id_marker] = cont[:next_id_marker]
+          @more[:key_marker] = cont[:next_key_marker]
+          @more[:truncated] = cont[:truncated] || false
+        end
+      end # Objects
+
     end # Iterator
   end # OSS
 end # Aliyun

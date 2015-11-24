@@ -1146,8 +1146,8 @@ module Aliyun
       # transactions. That is: thoses started and not aborted.
       # @param bucket_name [String] the bucket name
       # @param opts [Hash] options:
-      # @option opts [String] :id_marker return only thoese transactions with
-      #  txn id after :id_marker
+      # @option opts [String] :id_marker return only thoese
+      #  transactions with txn id after :id_marker
       # @option opts [String] :key_marker the object key marker for
       #  a multipart upload transaction.
       #  1. if +:id_marker+ is not set, return only those
@@ -1158,8 +1158,6 @@ module Aliyun
       # @option opts [String] :prefix the prefix of the object key
       #  for a multipart upload transaction. if set only return
       #  those transactions with the object key prefixed with it
-      # @option opts [String] :delimiter the delimiter for the
-      #  object key for a multipart upload transaction.
       # @option opts [String] :encoding the encoding of object key
       #  in the response body. Only {OSS::KeyEncoding::URL} is
       #  supported now.
@@ -1167,7 +1165,6 @@ module Aliyun
       #  the returned transactions and a hash including next tokens,
       #  which includes:
       #  * :prefix [String] the prefix used
-      #  * :delimiter [String] the delimiter used
       #  * :limit [Integer] the limit used
       #  * :id_marker [String] the upload id marker used
       #  * :next_id_marker [String] upload id marker to continue list
@@ -1185,7 +1182,6 @@ module Aliyun
         sub_res = {'uploads' => nil}
         params = {
           'prefix' => opts[:prefix],
-          'delimiter' => opts[:delimiter],
           'upload-id-marker' => opts[:id_marker],
           'key-marker' => opts[:key_marker],
           'max-uploads' => opts[:limit],
@@ -1212,7 +1208,6 @@ module Aliyun
 
         more = {
           :prefix => 'Prefix',
-          :delimiter => 'Delimiter',
           :limit => 'MaxUploads',
           :id_marker => 'UploadIdMarker',
           :next_id_marker => 'NextUploadIdMarker',
@@ -1229,7 +1224,6 @@ module Aliyun
           more, {
             :limit => ->(x) { x.to_i },
             :truncated => ->(x) { x.to_bool },
-            :delimiter => ->(x) { decode_key(x, encoding) },
             :key_marker => ->(x) { decode_key(x, encoding) },
             :next_key_marker => ->(x) { decode_key(x, encoding) }
           }

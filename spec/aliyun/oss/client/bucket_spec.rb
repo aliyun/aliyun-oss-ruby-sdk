@@ -62,6 +62,33 @@ module Aliyun
         end.to_xml
       end
 
+      def mock_uploads(txns, more = {})
+        Nokogiri::XML::Builder.new do |xml|
+          xml.ListMultipartUploadsResult {
+            {
+              :prefix => 'Prefix',
+              :delimiter => 'Delimiter',
+              :limit => 'MaxUploads',
+              :key_marker => 'KeyMarker',
+              :id_marker => 'UploadIdMarker',
+              :next_key_marker => 'NextKeyMarker',
+              :next_id_marker => 'NextUploadIdMarker',
+              :truncated => 'IsTruncated',
+              :encoding => 'EncodingType'
+            }.map do |k, v|
+              xml.send(v, more[k]) if more[k] != nil
+            end
+
+            txns.each do |t|
+              xml.Upload {
+                xml.Key t.object
+                xml.UploadId t.id
+              }
+            end
+          }
+        end.to_xml
+      end
+
       def mock_acl(acl)
         Nokogiri::XML::Builder.new do |xml|
           xml.AccessControlPolicy {
@@ -338,6 +365,63 @@ module Aliyun
           expect(signature).to eq(sig)
         end
       end # object operations
+
+      context "multipart operations" do
+        it "should list uploads" do
+          query_1 = {
+            :prefix => 'list-',
+            'encoding-type' => 'url',
+            'uploads' => ''
+          }
+          return_up_1 = (1..5).map{ |i| Multipart::Transaction.new(
+            :id => "txn-#{i}",
+            :object => "my-object",
+            :bucket => @bucket_name
+          )}
+          return_more_1 = {
+            :next_id_marker => "txn-5",
+            :truncated => true
+          }
+
+          query_2 = {
+            :prefix => 'list-',
+            'upload-id-marker' => 'txn-5',
+            'encoding-type' => 'url',
+            'uploads' => ''
+          }
+          return_up_2 = (6..8).map{ |i| Multipart::Transaction.new(
+            :id => "txn-#{i}",
+            :object => "my-object",
+            :bucket => @bucket_name
+          )}
+          return_more_2 = {
+            :next_id_marker => 'txn-8',
+            :truncated => false,
+          }
+
+          stub_request(:get, bucket_url)
+            .with(:query => query_1)
+            .to_return(:body => mock_uploads(return_up_1, return_more_1))
+
+          stub_request(:get, bucket_url)
+            .with(:query => query_2)
+            .to_return(:body => mock_uploads(return_up_2, return_more_2))
+
+          txns = @bucket.list_uploads(prefix: 'list-').to_a
+
+          expect(WebMock).to have_requested(:get, bucket_url)
+                         .with(:query => query_1).times(1)
+          expect(WebMock).to have_requested(:get, bucket_url)
+                         .with(:query => query_2).times(1)
+
+          all_txns = (1..8).map{ |i| Multipart::Transaction.new(
+            :id => "txn-#{i}",
+            :object => "my-object",
+            :bucket => @bucket_name
+          )}
+          expect(txns.map(&:to_s)).to match_array(all_txns.map(&:to_s))
+        end
+      end # multipart operations
 
     end # Bucket
   end # OSS

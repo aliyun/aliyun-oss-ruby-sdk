@@ -138,6 +138,8 @@ module Aliyun
       # @param opts [Hash] 查询选项
       # @option opts [String] :prefix 返回的object的前缀，如果设置则只
       #  返回那些名字以它为前缀的object
+      # @option opts [String] :marker 如果设置，则只返回名字在它之后
+      #  （字母表顺序排序，不包含marker）的object
       # @option opts [String] :delimiter 用于获取公共前缀的分隔符，从
       #  前缀后面开始到第一个分隔符出现的位置之前的字符，作为公共前缀。
       # @example
@@ -503,6 +505,43 @@ module Aliyun
           object: key, bucket: name, creation_time: Time.now,
           file: File.expand_path(file), cpt_file: cpt_file
         ).run
+      end
+
+      # 列出此Bucket中正在进行的multipart上传请求，不包括已经完成或者
+      # 被取消的。
+      # @param [Hash] opts 可选项
+      # @option opts [String] :key_marker object key的标记，根据有没有
+      #  设置:id_marker，:key_marker的含义不同：
+      #  1. 如果未设置:id_marker，则只返回object key在:key_marker之后
+      #     （字母表顺序排序，不包含marker）的upload请求
+      #  2. 如果设置了:id_marker，则返回object key在:key_marker之后
+      #     （字母表顺序排序，不包含marker）的uplaod请求**和**Object
+      #     key与:key_marker相等，但是upload id在:id_marker之后（字母
+      #     表顺序排序，不包含marker）的upload请求
+      # @option opts [String] :id_marker upload id的标记，如
+      # 果:key_marker没有设置，则此参数会被忽略；否则与:key_marker一起
+      # 决定返回的结果（见上）
+      # @option opts [String] :prefix 如果指定，则只返回object key中符
+      #  合指定前缀的upload请求
+      # @return [Enumerator<Multipart::Transaction>] 其中每一个元素表
+      #  示一个upload请求
+      # @example
+      #   key_marker = 1, id_marker = null
+      #   # return <2, 0>, <2, 1>, <3, 0> ...
+      #   key_marker = 1, id_marker = 5
+      #   # return <1, 6>, <1, 7>, <2, 0>, <3, 0> ...
+      def list_uploads(opts = {})
+        Iterator::Uploads.new(
+          @protocol, name, opts.merge(encoding: KeyEncoding::URL)).to_enum
+      end
+
+      # 取消一个multipart上传请求，一般用于清除Bucket下因断点上传而产
+      # 生的文件碎片。成功取消后属于这个上传请求的分片都会被清除。
+      # @param [String] upload_id 上传请求的id，可通过{#list_uploads}
+      #  获得
+      # @param [String] key Object的名字
+      def abort_upload(upload_id, key)
+        @protocol.abort_multipart_upload(name, key, upload_id)
       end
 
       # 获取Bucket的URL
