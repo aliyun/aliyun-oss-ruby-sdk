@@ -64,7 +64,13 @@ module Aliyun
             outbuf << ret
           end
 
-          ret.empty? ? nil : ret
+          # Conform to IO#read(length[, outbuf]):
+          # At end of file, it returns nil or "" depend on
+          # length. ios.read() and ios.read(nil) returns
+          # "". ios.read(positive-integer) returns nil.
+          return nil if ret.empty? && !bytes.nil? && bytes > 0
+
+          ret
         end
 
         def write(chunk)
@@ -231,7 +237,7 @@ module Aliyun
           :url => get_request_url(bucket, object),
           :headers => headers,
           :payload => http_options[:body],
-          :block_response =>  block_response
+          :block_response => block_response
         ) do |response, request, result, &blk|
 
           if response.code >= 300
