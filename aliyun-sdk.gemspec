@@ -14,8 +14,8 @@ Gem::Specification.new do |spec|
   spec.description   = 'A Ruby program to facilitate accessing Aliyun Object Storage Service'
   spec.homepage      = 'https://gitlab.alibaba-inc.com/oss/ruby-sdk'
 
-  spec.files         = Dir.glob("lib/**/*.rb")
-  spec.test_files    = Dir.glob("spec/**/*_spec.rb")
+  spec.files         = Dir.glob("lib/**/*.rb") + Dir.glob("examples/**/*.rb")
+  spec.test_files    = Dir.glob("spec/**/*_spec.rb") + Dir.glob("tests/**/*.rb")
   spec.extra_rdoc_files = ['README.md', 'CHANGELOG.md']
   spec.bindir        = 'bin'
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
