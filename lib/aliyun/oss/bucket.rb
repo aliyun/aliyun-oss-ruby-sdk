@@ -139,7 +139,7 @@ module Aliyun
       # @option opts [String] :prefix 返回的object的前缀，如果设置则只
       #  返回那些名字以它为前缀的object
       # @option opts [String] :marker 如果设置，则只返回名字在它之后
-      #  （字母表顺序排序，不包含marker）的object
+      #  （字典序，不包含marker）的object
       # @option opts [String] :delimiter 用于获取公共前缀的分隔符，从
       #  前缀后面开始到第一个分隔符出现的位置之前的字符，作为公共前缀。
       # @example
@@ -513,14 +513,14 @@ module Aliyun
       # @option opts [String] :key_marker object key的标记，根据有没有
       #  设置:id_marker，:key_marker的含义不同：
       #  1. 如果未设置:id_marker，则只返回object key在:key_marker之后
-      #     （字母表顺序排序，不包含marker）的upload请求
+      #     （字典序，不包含marker）的upload请求
       #  2. 如果设置了:id_marker，则返回object key在:key_marker之后
-      #     （字母表顺序排序，不包含marker）的uplaod请求**和**Object
-      #     key与:key_marker相等，但是upload id在:id_marker之后（字母
+      #     （字典序，不包含marker）的uplaod请求*和*Object
+      #     key与:key_marker相等，*且*upload id在:id_marker之后（字母
       #     表顺序排序，不包含marker）的upload请求
       # @option opts [String] :id_marker upload id的标记，如
-      # 果:key_marker没有设置，则此参数会被忽略；否则与:key_marker一起
-      # 决定返回的结果（见上）
+      #  果:key_marker没有设置，则此参数会被忽略；否则与:key_marker一起
+      #  决定返回的结果（见上）
       # @option opts [String] :prefix 如果指定，则只返回object key中符
       #  合指定前缀的upload请求
       # @return [Enumerator<Multipart::Transaction>] 其中每一个元素表
