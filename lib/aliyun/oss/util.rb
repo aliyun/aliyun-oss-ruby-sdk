@@ -3,6 +3,7 @@
 require 'time'
 require 'base64'
 require 'openssl'
+require 'digest/md5'
 
 module Aliyun
   module OSS

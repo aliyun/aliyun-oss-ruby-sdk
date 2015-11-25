@@ -96,7 +96,7 @@ module Aliyun
           :post, /#{object_url}\?uploadId.*/).times(1)
 
         expect(File.exist?("#{@file}.cpt")).to be false
-        expect(prg).to match_array((1..10).map {|i| i.to_f / 10 })
+        expect(prg.size).to eq(10)
       end
 
       it "should restart when begin txn fails" do
@@ -149,7 +149,8 @@ module Aliyun
         success = false
         4.times do
           begin
-            @bucket.resumable_upload(@object_key, @file, :part_size => 10)
+            @bucket.resumable_upload(
+              @object_key, @file, part_size: 10, threads: 1)
             success = true
           rescue
             # pass
@@ -206,7 +207,8 @@ module Aliyun
         success = false
         4.times do
           begin
-            @bucket.resumable_upload(@object_key, @file, :part_size => 10)
+            @bucket.resumable_upload(
+              @object_key, @file, part_size: 10, threads: 1)
             success = true
           rescue
             # pass
@@ -251,7 +253,8 @@ module Aliyun
         success = false
         3.times do
           begin
-            @bucket.resumable_upload(@object_key, @file, :part_size => 10)
+            @bucket.resumable_upload(
+              @object_key, @file, part_size: 10, threads: 1)
             success = true
           rescue
             # pass

@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 require 'json'
+require 'digest/md5'
 
 module Aliyun
   module OSS
@@ -22,8 +23,8 @@ module Aliyun
         private
         # Persist transaction states to file
         def write_checkpoint(states, file)
-          states[:md5] = Util.get_content_md5(states.to_json)
-          File.open(file, 'w'){ |f| f.write(states.to_json) }
+          md5= Util.get_content_md5(states.to_json)
+          File.open(file, 'w') { |f| f.write(states.merge(md5: md5).to_json) }
         end
 
         # Load transaction states from file

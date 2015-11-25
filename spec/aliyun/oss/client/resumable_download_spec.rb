@@ -75,8 +75,9 @@ module Aliyun
         expect(File.exist?("#{@file}.cpt")).to be false
         expect(Dir.glob("#{@file}.part.*").empty?).to be true
 
-        expect(File.read(@file)).to eq((1..10).map{ |i| mock_object(i) }.join)
-        expect(prg).to match_array((1..10).map {|i| i.to_f / 10 })
+        expect(File.read(@file).lines)
+          .to match_array((1..10).map{ |i| mock_object(i) })
+        expect(prg.size).to eq(10)
       end
 
       it "should resume when download part fails" do
@@ -103,7 +104,8 @@ module Aliyun
         success = false
         4.times do
           begin
-            @bucket.resumable_download(@object_key, @file, :part_size => 10)
+            @bucket.resumable_download(
+              @object_key, @file, :part_size => 10, :threads => 1)
             success = true
           rescue
             # pass
@@ -158,7 +160,8 @@ module Aliyun
         success = false
         4.times do
           begin
-            @bucket.resumable_download(@object_key, @file, :part_size => 10)
+            @bucket.resumable_download(
+              @object_key, @file, :part_size => 10, :threads => 1)
             success = true
           rescue
             # pass
@@ -197,7 +200,7 @@ module Aliyun
           begin
             @bucket.resumable_download(
               @object_key, @file, :part_size => 10,
-              :cpt_file => cpt_file, :disable_cpt => true)
+              :cpt_file => cpt_file, :disable_cpt => true, :threads => 1)
             success = true
           rescue
             # pass

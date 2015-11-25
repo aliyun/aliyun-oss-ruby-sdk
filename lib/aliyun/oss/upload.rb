@@ -9,16 +9,22 @@ module Aliyun
       class Upload < Transaction
         PART_SIZE = 4 * 1024 * 1024
         READ_SIZE = 16 * 1024
+        NUM_THREAD = 10
 
         def initialize(protocol, opts)
           args = opts.dup
           @protocol = protocol
           @progress = args.delete(:progress)
           @file = args.delete(:file)
-          @checkpoint_file = args.delete(:cpt_file)
-          @file_meta = {}
-          @parts = []
+          @cpt_file = args.delete(:cpt_file)
           super(args)
+
+          @file_meta = {}
+          @num_threads = options[:threads] || NUM_THREAD
+          @all_mutex = Mutex.new
+          @parts = []
+          @todo_mutex = Mutex.new
+          @todo_parts = []
         end
 
         # Run the upload transaction, which includes 3 stages:
@@ -27,8 +33,9 @@ module Aliyun
         # * 2.  upload each unfinished part
         # * 3.  commit the multipart upload transaction
         def run
-          logger.info("Begin upload, file: #{@file}, checkpoint file: " \
-                      "#{@checkpoint_file}")
+          logger.info("Begin upload, file: #{@file}, "\
+                      "checkpoint file: #{@cpt_file}, "\
+                      "threads: #{@num_threads}")
 
           # Rebuild transaction states from checkpoint file
           # Or initiate new transaction states
@@ -38,7 +45,17 @@ module Aliyun
           divide_parts if @parts.empty?
 
           # Upload each part
-          @parts.reject { |p| p[:done] }.each { |p| upload_part(p) }
+          @todo_parts = @parts.reject { |p| p[:done] }
+
+          (1..@num_threads).map {
+            Thread.new {
+              loop {
+                p = sync_get_todo_part
+                break unless p
+                upload_part(p)
+              }
+            }
+          }.map(&:join)
 
           # Commit the multipart upload transaction
           commit
@@ -62,24 +79,26 @@ module Aliyun
         #     :md5 => 'states_md5'
         #   }
         def checkpoint
-          logger.debug("Begin make checkpoint, disable_cpt: #{options[:disable_cpt]}")
+          logger.debug("Begin make checkpoint, disable_cpt: "\
+                       "#{options[:disable_cpt] == true}")
 
           ensure_file_not_changed
 
+          parts = sync_get_all_parts
           states = {
             :id => id,
             :file => @file,
             :file_meta => @file_meta,
-            :parts => @parts
+            :parts => parts
           }
 
           # report progress
           if @progress
-            done = @parts.count { |p| p[:done] }
-            @progress.call(done.to_f / @parts.size) if done > 0
+            done = parts.count { |p| p[:done] }
+            @progress.call(done.to_f / parts.size) if done > 0
           end
 
-          write_checkpoint(states, @checkpoint_file) unless options[:disable_cpt]
+          write_checkpoint(states, @cpt_file) unless options[:disable_cpt]
 
           logger.debug("Done make checkpoint, states: #{states}")
         end
@@ -91,20 +110,24 @@ module Aliyun
         def commit
           logger.info("Begin commit transaction, id: #{id}")
 
-          parts = @parts.map{ |p| Part.new(:number  => p[:number], :etag => p[:etag])}
+          parts = sync_get_all_parts.map{ |p|
+            Part.new(:number  => p[:number], :etag => p[:etag])
+          }
           @protocol.complete_multipart_upload(bucket, object, id, parts)
 
-          File.delete(@checkpoint_file) unless options[:disable_cpt]
+          File.delete(@cpt_file) unless options[:disable_cpt]
 
           logger.info("Done commit transaction, id: #{id}")
         end
 
         # Rebuild the states of the transaction from checkpoint file
         def rebuild
-          logger.info("Begin rebuild transaction, checkpoint: #{@checkpoint_file}")
+          logger.info("Begin rebuild transaction, checkpoint: #{@cpt_file}")
 
-          if File.exists?(@checkpoint_file) and not options[:disable_cpt]
-            states = load_checkpoint(@checkpoint_file)
+          if options[:disable_cpt] || !File.exists?(@cpt_file)
+            initiate
+          else
+            states = load_checkpoint(@cpt_file)
 
             if states[:file_md5] != @file_meta[:md5]
               fail FileInconsistentError.new("The file to upload is changed.")
@@ -113,8 +136,6 @@ module Aliyun
             @id = states[:id]
             @file_meta = states[:file_meta]
             @parts = states[:parts]
-          else
-            initiate
           end
 
           logger.info("Done rebuild transaction, states: #{states}")
@@ -151,8 +172,8 @@ module Aliyun
               end
             end
           end
-          p[:done] = true
-          p[:etag] = result.etag
+
+          sync_update_part(p.merge(done: true, etag: result.etag))
 
           checkpoint
 
@@ -178,6 +199,24 @@ module Aliyun
           checkpoint
 
           logger.info("Done divide parts, parts: #{@parts}")
+        end
+
+        def sync_get_todo_part
+          @todo_mutex.synchronize {
+            @todo_parts.shift
+          }
+        end
+
+        def sync_update_part(p)
+          @all_mutex.synchronize {
+            @parts[p[:number] - 1] = p
+          }
+        end
+
+        def sync_get_all_parts
+          @all_mutex.synchronize {
+            @parts.dup
+          }
         end
 
         # Ensure file not changed during uploading

@@ -12,6 +12,8 @@ module Aliyun
     module Logging
 
       DEFAULT_LOG_FILE = "./oss_sdk.log"
+      MAX_NUM_LOG = 100
+      ROTATE_SIZE = 10 * 1024 * 1024
 
       # level = Logger::DEBUG | Logger::INFO | Logger::ERROR | Logger::FATAL
       def self.set_log_level(level)
@@ -20,7 +22,7 @@ module Aliyun
 
       # 设置日志输出的文件
       def self.set_log_file(file)
-        @@log_file = file
+        @log_file = file
       end
 
       # 获取logger
@@ -32,7 +34,8 @@ module Aliyun
 
       def self.logger
         unless @logger
-          @logger = Logger.new(@@log_file ||= DEFAULT_LOG_FILE)
+          @logger = Logger.new(
+            @log_file ||= DEFAULT_LOG_FILE, MAX_NUM_LOG, ROTATE_SIZE)
           @logger.level = Logger::INFO
         end
         @logger
