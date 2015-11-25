@@ -4,7 +4,7 @@ require 'yaml'
 $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 require 'aliyun/oss'
 
-class TestObjectKey < Minitest::Unit::TestCase
+class TestObjectKey < Minitest::Test
   def setup
     Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
     conf_file = '~/.oss.yml'

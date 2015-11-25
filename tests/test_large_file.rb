@@ -5,7 +5,7 @@ require 'yaml'
 $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 require 'aliyun/oss'
 
-class TestObjectKey < Minitest::Unit::TestCase
+class TestObjectKey < Minitest::Test
   def setup
     conf_file = '~/.oss.yml'
     conf = YAML.load(File.read(File.expand_path(conf_file)))
