@@ -30,6 +30,10 @@ module Aliyun
       #  KEY SECRET，如果不填则会尝试匿名访问
       # @option opts [Boolean] :cname [可选] 指定endpoint是否是用户绑
       #  定的域名
+      # @option opts [Fixnum] :open_timeout [可选] 指定建立连接的超时
+      #  时间，默认为10秒
+      # @option opts [Fixnum] :read_timeout [可选] 指定等待响应的超时
+      #  时间，默认为120秒
       # @example 标准endpoint
       #   oss-cn-hangzhou.aliyuncs.com
       #   oss-cn-beijing.aliyuncs.com

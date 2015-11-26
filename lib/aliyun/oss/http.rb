@@ -32,6 +32,8 @@ module Aliyun
     class HTTP
 
       DEFAULT_CONTENT_TYPE = 'application/octet-stream'
+      OPEN_TIMEOUT = 10
+      READ_TIMEOUT = 120
 
       ##
       # A stream implementation
@@ -237,7 +239,9 @@ module Aliyun
           :url => get_request_url(bucket, object),
           :headers => headers,
           :payload => http_options[:body],
-          :block_response => block_response
+          :block_response => block_response,
+          :open_timeout => @config.open_timeout || OPEN_TIMEOUT,
+          :timeout => @config.read_timeout || READ_TIMEOUT
         ) do |response, request, result, &blk|
 
           if response.code >= 300

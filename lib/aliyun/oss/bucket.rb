@@ -412,8 +412,8 @@ module Aliyun
       #  义的属性，它们会和object一起存储，在{#get_object}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
       # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
-      #  默认为1 MB。断点上传最多允许10000个分片，如果文件大于10000个
-      #  分片的大小，则每个分片的大小会大于1MB。
+      #  默认为10 MB。断点上传最多允许10000个分片，如果文件大于10000个
+      #  分片的大小，则每个分片的大小会大于10MB。
       # @option opts [String] :cpt_file 断点续传的checkpoint文件，如果
       #  指定的cpt文件不存在，则会在file所在目录创建一个默认的cpt文件，
       #  命名方式为：file.cpt，其中file是用户要上传的文件。在上传的过
@@ -459,8 +459,8 @@ module Aliyun
       # @param file [String] 本地文件的路径
       # @param opts [Hash] 下载文件的可选项
       # @option opts [Integer] :part_size 设置分片上传时每个分片的大小，
-      #  默认为1 MB。断点下载最多允许100个分片，如果文件大于100个分片，
-      #  则每个分片的大小会大于1MB
+      #  默认为10 MB。断点下载最多允许100个分片，如果文件大于100个分片，
+      #  则每个分片的大小会大于10 MB
       # @option opts [String] :cpt_file 断点续传的checkpoint文件，如果
       #  指定的cpt文件不存在，则会在file所在目录创建一个默认的cpt文件，
       #  命名方式为：file.cpt，其中file是用户要下载的文件名。在下载的过

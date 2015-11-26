@@ -9,7 +9,8 @@ module Aliyun
     #
     class Config < Struct::Base
 
-      attrs :endpoint, :cname, :access_key_id, :access_key_secret
+      attrs :endpoint, :cname, :access_key_id, :access_key_secret,
+            :open_timeout, :read_timeout
 
       def initialize(opts = {})
         super(opts)
