@@ -20,16 +20,31 @@ module Aliyun
 
         attrs :id, :object, :bucket, :creation_time, :options
 
+        def initialize(opts = {})
+          super(opts)
+
+          @mutex = Mutex.new
+        end
+
         private
         # Persist transaction states to file
         def write_checkpoint(states, file)
           md5= Util.get_content_md5(states.to_json)
-          File.open(file, 'w') { |f| f.write(states.merge(md5: md5).to_json) }
+
+          @mutex.synchronize {
+            File.open(file, 'w') {
+              |f| f.write(states.merge(md5: md5).to_json)
+            }
+          }
         end
 
         # Load transaction states from file
         def load_checkpoint(file)
-          states = JSON.load(File.read(file))
+          states = {}
+
+          @mutex.synchronize {
+            states = JSON.load(File.read(file))
+          }
           states.symbolize_keys!
           md5 = states.delete(:md5)
 
