@@ -1,5 +1,10 @@
 ## Change Log
 
+### v0.1.5
+
+- Add open_timeout and read_timeout config
+- Fix a concurrency bug in resumable_upload/download
+
 ### v0.1.4
 
 - Fix object key encoding problem
