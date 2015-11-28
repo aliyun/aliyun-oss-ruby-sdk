@@ -7,3 +7,4 @@ rvm:
   - 2.2
 script:
   bundle exec rake spec
+before_install: gem install bundler

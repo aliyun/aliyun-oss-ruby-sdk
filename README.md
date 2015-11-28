@@ -1,5 +1,9 @@
 # Aliyun OSS SDK for Ruby
 
+[![Build Status](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk.svg)](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk)
+
+[![Coverage Status](https://coveralls.io/repos/aliyun/aliyun-oss-ruby-sdk/badge.svg?branch=master&service=github)](https://coveralls.io/github/aliyun/aliyun-oss-ruby-sdk?branch=master)
+
 -----
 
 Aliyun OSS SDK for Ruby是用于方便访问阿里云OSS（Object Storage Service）
