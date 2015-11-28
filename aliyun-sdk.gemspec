@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = 'Aliyun OSS SDK for Ruby'
   spec.description   = 'A Ruby program to facilitate accessing Aliyun Object Storage Service'
-  spec.homepage      = 'https://github.com/aliyun/aliyun-ossruby-sdk'
+  spec.homepage      = 'https://github.com/aliyun/aliyun-oss-ruby-sdk'
 
   spec.files         = Dir.glob("lib/**/*.rb") + Dir.glob("examples/**/*.rb")
   spec.test_files    = Dir.glob("spec/**/*_spec.rb") + Dir.glob("tests/**/*.rb")
