@@ -8,11 +8,11 @@ Gem::Specification.new do |spec|
   spec.name          = 'aliyun-sdk'
   spec.version       = Aliyun::OSS::VERSION
   spec.authors       = ['Tianlong Wu']
-  spec.email         = ['tianlong.wtl@alibaba-inc.com']
+  spec.email         = ['rockuw.@gmail.com']
 
   spec.summary       = 'Aliyun OSS SDK for Ruby'
   spec.description   = 'A Ruby program to facilitate accessing Aliyun Object Storage Service'
-  spec.homepage      = 'https://gitlab.alibaba-inc.com/oss/ruby-sdk'
+  spec.homepage      = 'https://github.com/aliyun/aliyun-ossruby-sdk'
 
   spec.files         = Dir.glob("lib/**/*.rb") + Dir.glob("examples/**/*.rb")
   spec.test_files    = Dir.glob("spec/**/*_spec.rb") + Dir.glob("tests/**/*.rb")
@@ -25,7 +25,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'nokogiri', '~> 1.6'
   spec.add_dependency 'rest-client', '~> 1.8'
 
-  spec.add_development_dependency 'bundler', '~> 1.5'
+  spec.add_development_dependency 'bundler', '~> 1.10'
   spec.add_development_dependency 'rake', '~> 10.4'
   spec.add_development_dependency 'rspec', '~> 3.3'
   spec.add_development_dependency 'webmock', '~> 1.22'
