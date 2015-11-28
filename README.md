@@ -11,7 +11,7 @@ http://www.aliyun.com/product/oss
 
 ## 运行环境
 
-- Ruby版本 >= 1.9.2
+- Ruby版本 >= 1.9.3
 - 支持Ruby运行环境的Windows/Linux/OS X
 
 安装Ruby请参考：https://www.ruby-lang.org/zh_cn/downloads/
