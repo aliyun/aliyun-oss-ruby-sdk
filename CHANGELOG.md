@@ -1,5 +1,12 @@
 ## Change Log
 
+### v0.1.6
+
+- Required ruby version >= 1.9.3 due to 1.9.2 has String encoding
+  compatibility problems
+- Add travis & overalls
+- Open source to github.com
+
 ### v0.1.5
 
 - Add open_timeout and read_timeout config
