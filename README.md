@@ -2,8 +2,8 @@
 
 -----
 
-Aliyun::OSS是用于方便访问阿里云OSS（Object Storage Service）RESTful
-API的Ruby客户端程序。了解OSS的的更多信息请访问OSS官网：
+Aliyun OSS SDK for Ruby是用于方便访问阿里云OSS（Object Storage Service）
+RESTful API的Ruby客户端程序。了解OSS的的更多信息请访问OSS官网：
 http://www.aliyun.com/product/oss
 
 ## 运行环境
