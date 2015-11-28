@@ -1,7 +1,5 @@
 # Aliyun OSS SDK for Ruby
 
-![Build Status](http://cise.alibaba-inc.com/task/119062/build/10/status.svg)
-
 -----
 
 Aliyun::OSS是用于方便访问阿里云OSS（Object Storage Service）RESTful
