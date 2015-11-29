@@ -88,7 +88,7 @@ module Aliyun
         end
 
         def inspect
-          "@chunks: " + @chunks.map { |c| c[0, 100] }.join(';')
+          "@chunks: " + @chunks.map { |c| c[0, 100].inspect }.join(';')
         end
       end
 

@@ -53,7 +53,7 @@ AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
       :access_key_secret => 'access_key_secret')
 
 其中`endpoint`是OSS服务的地址，根据节点区域不同，这个地址可能不一样，例如
-杭州节点的地址是：`http://oss-cn-hangzhou.oss.aliyuncs.com`，其他节点的地址见：
+杭州节点的地址是：`http://oss-cn-hangzhou.aliyuncs.com`，其他节点的地址见：
 [节点列表][1]
 
 `access_key_id`和`access_key_secret`是您的服务凭证，在官网的“管理控制
@@ -360,6 +360,5 @@ SDK采用rspec进行测试，如果要对SDK进行修改，请确保没有break�
 - 阿里云官网文档：http://help.aliyun.com/product/8314910_oss.html
 
 
-[1]: http://help.aliyun.com/document_detail/oss/product-documentation/domain-region.html
-
-[2]: http://help.aliyun.com/document_detail/oss/product-documentation/function/cname.html
+[1]: http://help.aliyun.com/document_detail/oss/user_guide/endpoint_region.html
+[2]: http://help.aliyun.com/document_detail/oss/user_guide/oss_concept/oss_cname.html
