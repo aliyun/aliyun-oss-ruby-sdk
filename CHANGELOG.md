@@ -1,5 +1,10 @@
 ## Change Log
 
+### v0.1.7
+
+- Fix StreamWriter#inspect bug
+- Fix wrong in README
+
 ### v0.1.6
 
 - Required ruby version >= 1.9.3 due to 1.9.2 has String encoding
