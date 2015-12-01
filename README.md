@@ -149,7 +149,7 @@ Object的common prefix，包含在`list_objects`的结果中。
 
     objs = bucket.list_objects(:prefix => '/foo/', :delimiter => '/')
     objs.each do |i|
-      if i.is_a?(Object) # a object
+      if i.is_a?(Aliyun::OSS::Object) # a object
         puts "object: #{i.key}"
       else
         puts "common prefix: #{i}"
