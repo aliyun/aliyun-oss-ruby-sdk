@@ -275,7 +275,7 @@ module Aliyun
       end
 
       def get_user_agent
-        "aliyun-sdk-ruby/#{VERSION}"
+        "aliyun-sdk-ruby/#{VERSION} ruby-#{RUBY_VERSION}/#{RUBY_PLATFORM}"
       end
 
     end # HTTP

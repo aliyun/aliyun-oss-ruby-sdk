@@ -149,7 +149,7 @@ Object的common prefix，包含在`list_objects`的结果中。
 
     objs = bucket.list_objects(:prefix => '/foo/', :delimiter => '/')
     objs.each do |i|
-      if i.is_a?(Object) # a object
+      if i.is_a?(Aliyun::OSS::Object) # a object
         puts "object: #{i.key}"
       else
         puts "common prefix: #{i}"
@@ -330,13 +330,13 @@ Bucket的权限。
 
 SDK的examples/目录下有一些展示SDK功能的示例程序，用户稍加配置就可以直
 接运行。examples需要的权限信息和bucket信息从用户`HOME`目录下的配置文件
-`~/.oss.yml`中读取，其中应该包含以下字段：
+`~/.oss.yml`中读取，其中应该包含以下字段（**注意冒号后面需要有一个空格**）：
 
     endpoint: oss-cn-hangzhou.aliyuncs.com
     cname: false
-    id: ACCESS KEY ID
-    key: ACCESS KEY SECRET
-    bucket: BUCKET NAME
+    access_key_id: <ACCESS KEY ID>
+    access_key_secret: <ACCESS KEY SECRET>
+    bucket: <BUCKET NAME>
 
 用户需要创建（如果不存在）或者修改其中的内容，然后运行：
 
