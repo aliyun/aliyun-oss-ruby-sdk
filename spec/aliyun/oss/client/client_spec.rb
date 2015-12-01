@@ -10,11 +10,11 @@ module Aliyun
     describe Client do
 
       context "construct" do
-        it "should setup endpoint and a/k", :focus => true do
+        it "should setup endpoint and a/k" do
           endpoint = 'oss-cn-hangzhou.aliyuncs.com'
           client = Client.new(
             :endpoint => endpoint,
-            :access_key_id => 'xxx', :access_key_secret => 'yyy')
+            :access_key_id => 'xxx ', :access_key_secret => '  yyy ')
 
           config = client.instance_variable_get('@config')
           expect(config.endpoint.to_s).to eq("http://#{endpoint}")
