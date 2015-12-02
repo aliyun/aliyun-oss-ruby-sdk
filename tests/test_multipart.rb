@@ -4,15 +4,15 @@ require 'yaml'
 $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 require 'aliyun/oss'
 
-class TestMultipart < Minitest::Unit::TestCase
+class TestMultipart < Minitest::Test
   def setup
     conf_file = '~/.oss.yml'
     conf = YAML.load(File.read(File.expand_path(conf_file)))
     opts = {
       endpoint: conf['endpoint'],
       cname: conf['cname'],
-      access_key_id: conf['id'],
-      access_key_secret: conf['key'],
+      access_key_id: conf['access_key_id'],
+      access_key_secret: conf['access_key_secret'],
     }
     client = Aliyun::OSS::Client.new(opts)
     @bucket_name = conf['bucket']
