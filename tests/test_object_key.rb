@@ -12,8 +12,8 @@ class TestObjectKey < Minitest::Test
     client = Aliyun::OSS::Client.new(
       :endpoint => conf['endpoint'],
       :cname => conf['cname'],
-      :access_key_id => conf['id'],
-      :access_key_secret => conf['key'])
+      :access_key_id => conf['access_key_id'],
+      :access_key_secret => conf['access_key_secret'])
     @bucket = client.get_bucket(conf['bucket'])
     @prefix = 'tests/object_key/'
     @keys = {

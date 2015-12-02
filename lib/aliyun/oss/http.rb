@@ -41,18 +41,22 @@ module Aliyun
       #
       class StreamWriter
         def initialize
-          @chunks = []
+          @buffer = ""
           @producer = Fiber.new { yield self if block_given? }
           @producer.resume
         end
 
-        # FIXME: it may return more than bytes, not sure if that's a problem
         def read(bytes = nil, outbuf = nil)
           ret = ""
           loop do
-            c = @chunks.shift
-            ret << c if c && !c.empty?
-            break if bytes && ret.size >= bytes
+            if bytes
+              ret << @buffer.slice!(0, bytes)
+              break if ret.size >= bytes
+            else
+              ret << @buffer
+              @buffer.clear
+            end
+
             if @producer.alive?
               @producer.resume
             else
@@ -76,7 +80,7 @@ module Aliyun
         end
 
         def write(chunk)
-          @chunks << chunk
+          @buffer << chunk.to_s.force_encoding(Encoding::ASCII_8BIT)
           Fiber.yield
           self
         end
@@ -88,7 +92,7 @@ module Aliyun
         end
 
         def inspect
-          "@chunks: " + @chunks.map { |c| c[0, 100].inspect }.join(';')
+          "@buffer: " + @buffer[0, 32].inspect + "...#{@buffer.size} bytes"
         end
       end
 
