@@ -178,8 +178,8 @@ module Aliyun
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
       #  义的属性，它们会和object一起存储，在{#get_object}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
-      # @yield [HTTP::StreamWriter] 如果调
-      #  用的时候传递了block，则写入到object的数据由block指定
+      # @yield [HTTP::StreamWriter] 如果调用的时候传递了block，则写入
+      #  到object的数据由block指定
       # @example 流式上传数据
       #   put_object('x'){ |stream| 100.times { |i| stream << i.to_s } }
       #   put_object('x'){ |stream| stream << get_data }
@@ -188,9 +188,6 @@ module Aliyun
       # @example 指定Content-Type和metas
       #   put_object('x', :file => '/tmp/x', :content_type => 'text/html',
       #              :metas => {'year' => '2015', 'people' => 'mary'})
-      # @note 采用streaming的方式时，提供的数据必须是有结束标记的数据。
-      #  因为put_object会不断地从StreamWriter中读取数据上传到OSS，直到
-      #  它读到的数据为nil停止。
       # @note 如果opts中指定了:file，则block会被忽略
       def put_object(key, opts = {}, &block)
         args = opts.dup
