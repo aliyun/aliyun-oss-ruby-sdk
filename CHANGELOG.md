@@ -1,5 +1,11 @@
 ## Change Log
 
+### v0.1.8
+
+- Fix StreamWriter string encoding problem
+- Add ruby version and os version in User-Agent
+- Some comments & examples refine
+
 ### v0.1.7
 
 - Fix StreamWriter#inspect bug
