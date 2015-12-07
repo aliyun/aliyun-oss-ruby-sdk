@@ -14,12 +14,14 @@ module Aliyun
           endpoint = 'oss-cn-hangzhou.aliyuncs.com'
           client = Client.new(
             :endpoint => endpoint,
-            :access_key_id => 'xxx ', :access_key_secret => '  yyy ')
+            :access_key_id => 'xxx ', :access_key_secret => '  yyy ',
+            :sts_token => 'sts-token')
 
           config = client.instance_variable_get('@config')
           expect(config.endpoint.to_s).to eq("http://#{endpoint}")
           expect(config.access_key_id).to eq('xxx')
           expect(config.access_key_secret).to eq('yyy')
+          expect(config.sts_token).to eq('sts-token')
         end
 
         it "should not set Authorization with anonymous client" do
@@ -35,6 +37,24 @@ module Aliyun
           expect(WebMock)
             .to have_requested(:get, "#{bucket}.#{endpoint}/#{object}")
             .with{ |req| not req.headers.has_key?('Authorization') }
+        end
+
+        it "should set STS header" do
+          endpoint = 'oss-cn-hangzhou.aliyuncs.com'
+          bucket = 'rubysdk-bucket'
+          object = 'rubysdk-object'
+          client = Client.new(
+            :endpoint => endpoint,
+            :access_key_id => 'xxx', :access_key_secret => 'yyy',
+            :sts_token => 'sts-token')
+
+          stub_request(:get, "#{bucket}.#{endpoint}/#{object}")
+
+          client.get_bucket(bucket).get_object(object) {}
+
+          expect(WebMock)
+            .to have_requested(:get, "#{bucket}.#{endpoint}/#{object}")
+            .with{ |req| not req.headers.has_key?('x-oss-security-token') }
         end
 
         it "should construct different client" do
