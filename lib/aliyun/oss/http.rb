@@ -32,6 +32,7 @@ module Aliyun
     class HTTP
 
       DEFAULT_CONTENT_TYPE = 'application/octet-stream'
+      STS_HEADER = 'x-oss-security-token'
       OPEN_TIMEOUT = 10
       READ_TIMEOUT = 120
 
@@ -209,6 +210,7 @@ module Aliyun
         headers['User-Agent'] = get_user_agent
         headers['Date'] = Time.now.httpdate
         headers['Content-Type'] ||= DEFAULT_CONTENT_TYPE
+        headers[STS_HEADER] = @config.sts_token if @config.sts_token
 
         if body = http_options[:body]
           if body.respond_to?(:read)

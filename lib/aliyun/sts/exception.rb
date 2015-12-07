@@ -5,15 +5,11 @@ require 'nokogiri'
 module Aliyun
   module STS
 
-    # Base exception class
-    class Exception < RuntimeError
-    end
-
     # ServerError represents exceptions from the STS
     # service. i.e. Client receives a HTTP response whose status is
     # NOT OK. #message provides the error message and #to_s gives
     # detailed information probably including the STS request id.
-    class ServerError < Exception
+    class ServerError < Common::Exception
 
       attr_reader :http_code, :error_code, :message, :request_id
 
@@ -50,12 +46,7 @@ module Aliyun
 
     # ClientError represents client exceptions caused mostly by
     # invalid parameters.
-    class ClientError < Exception
-      attr_reader :message
-
-      def initialize(message)
-        @message = message
-      end
+    class ClientError < Common::Exception
     end # ClientError
 
   end # STS

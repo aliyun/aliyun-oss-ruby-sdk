@@ -34,7 +34,8 @@ module Aliyun
         def initialize(opts = {})
           extra_keys = opts.keys - attrs
           unless extra_keys.empty?
-            fail ClientError, "Unexpected extra keys: #{extra_keys.join(', ')}"
+            fail Common::Exception,
+                 "Unexpected extra keys: #{extra_keys.join(', ')}"
           end
 
           attrs.each do |attr|
