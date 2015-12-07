@@ -1,5 +1,10 @@
 ## Change Log
 
+### v0.2.0
+
+- Add aliyun/sts
+- OSS::Client support STS
+
 ### v0.1.8
 
 - Fix StreamWriter string encoding problem

@@ -54,7 +54,7 @@ AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
 
 其中`endpoint`是OSS服务的地址，根据节点区域不同，这个地址可能不一样，例如
 杭州节点的地址是：`http://oss-cn-hangzhou.aliyuncs.com`，其他节点的地址见：
-[节点列表][1]
+[节点列表][region-list]
 
 `access_key_id`和`access_key_secret`是您的服务凭证，在官网的“管理控制
 台”上面可以查看。**请妥善保管您的AccessKeySecret，泄露之后可能影响您的
@@ -65,7 +65,7 @@ AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
 OSS支持自定义域名绑定，允许用户将自己的域名指向阿里云OSS的服务地址
 （CNAME），这样用户迁移到OSS上时应用内资源的路径可以不用修改。绑定的域
 名指向OSS的一个bucket。绑定域名的操作只能在OSS控制台进行。更多关于自定
-义域名绑定的内容请到官网了解：[OSS自定义域名绑定][2]
+义域名绑定的内容请到官网了解：[OSS自定义域名绑定][custom-domain]
 
 用户绑定了域名后，使用SDK时指定的endpoint可以使用标准的OSS服务地址，也
 可以使用用户绑定的域名：
@@ -86,8 +86,8 @@ OSS支持自定义域名绑定，允许用户将自己的域名指向阿里云OS
 
 #### 使用STS创建Client
 
-OSS支持用户使用STS进行访问，更多有关STS的内容，请参考
-[阿里云STS][aliyun-sts]。在使用STS之前需要先向STS申请一个临时token，
+OSS支持用户使用STS进行访问，更多有关STS的内容，请参考 [阿里云STS][aliyun-sts]。
+在使用STS之前需要先向STS申请一个临时token，
 aliyun-sdk中包含了STS的SDK，使用时只需要`require 'aliyun/sts'`即可：
 
     require 'aliyun/sts'
@@ -382,7 +382,7 @@ SDK采用rspec进行测试，如果要对SDK进行修改，请确保没有break�
 - 阿里云官网文档：http://help.aliyun.com/product/8314910_oss.html
 
 
-[1]: http://help.aliyun.com/document_detail/oss/user_guide/endpoint_region.html
-[2]: http://help.aliyun.com/document_detail/oss/user_guide/oss_concept/oss_cname.html
+[region-list]: https://help.aliyun.com/document_detail/oss/user_guide/endpoint_region.html
+[custom-domain]: https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/oss_cname.html
 [aliyun-sts]: https://help.aliyun.com/document_detail/ram/intro/concepts.html
 [sdk-api]: http://www.rubydoc.info/gems/aliyun-sdk/
