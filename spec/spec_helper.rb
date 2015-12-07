@@ -5,6 +5,7 @@ Coveralls.wear!
 
 require 'webmock/rspec'
 require 'aliyun/oss'
+require 'aliyun/sts'
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|
@@ -17,4 +18,4 @@ RSpec.configure do |config|
 
 end
 
-Aliyun::OSS::Logging::set_log_level(Logger::DEBUG)
+Aliyun::Common::Logging::set_log_level(Logger::DEBUG)

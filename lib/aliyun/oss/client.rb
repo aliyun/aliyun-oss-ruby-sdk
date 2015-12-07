@@ -18,8 +18,6 @@ module Aliyun
     #   bucket = client.get_bucket('my-bucket')
     class Client
 
-      include Logging
-
       # 构造OSS client，用于操作buckets。
       # @param opts [Hash] 构造Client时的参数选项
       # @option opts [String] :endpoint [必填]OSS服务的地址，可以是以
@@ -30,6 +28,8 @@ module Aliyun
       #  KEY SECRET，如果不填则会尝试匿名访问
       # @option opts [Boolean] :cname [可选] 指定endpoint是否是用户绑
       #  定的域名
+      # @option opts [Boolean] :sts_token [可选] 指定STS的
+      #  SecurityToken，如果指定，则使用STS授权访问
       # @option opts [Fixnum] :open_timeout [可选] 指定建立连接的超时
       #  时间，默认为10秒
       # @option opts [Fixnum] :read_timeout [可选] 指定等待响应的超时

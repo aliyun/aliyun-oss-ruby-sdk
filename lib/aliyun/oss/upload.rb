@@ -7,6 +7,9 @@ module Aliyun
       # A multipart upload transaction
       #
       class Upload < Transaction
+
+        include Common::Logging
+
         PART_SIZE = 10 * 1024 * 1024
         READ_SIZE = 16 * 1024
         NUM_THREAD = 10

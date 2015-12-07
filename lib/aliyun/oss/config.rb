@@ -7,9 +7,10 @@ module Aliyun
     # A place to store various configurations: credentials, api
     # timeout, retry mechanism, etc
     #
-    class Config < Struct::Base
+    class Config < Common::Struct::Base
 
-      attrs :endpoint, :cname, :access_key_id, :access_key_secret,
+      attrs :endpoint, :cname, :sts_token,
+            :access_key_id, :access_key_secret,
             :open_timeout, :read_timeout
 
       def initialize(opts = {})

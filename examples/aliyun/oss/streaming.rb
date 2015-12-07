@@ -23,7 +23,7 @@ require 'aliyun/oss'
 # 和下载。
 
 # 初始化OSS client
-Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
+Aliyun::Common::Logging.set_log_level(Logger::DEBUG)
 conf_file = '~/.oss.yml'
 conf = YAML.load(File.read(File.expand_path(conf_file)))
 bucket = Aliyun::OSS::Client.new(

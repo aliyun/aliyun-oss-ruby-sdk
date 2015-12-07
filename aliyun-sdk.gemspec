@@ -2,11 +2,11 @@
 
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'aliyun/oss/version'
+require 'aliyun/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'aliyun-sdk'
-  spec.version       = Aliyun::OSS::VERSION
+  spec.version       = Aliyun::VERSION
   spec.authors       = ['Tianlong Wu']
   spec.email         = ['rockuw.@gmail.com']
 

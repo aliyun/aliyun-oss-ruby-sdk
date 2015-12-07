@@ -8,7 +8,7 @@ module Aliyun
     #    website, lifecycle, cors）
     # 2. object相关：上传、下载、追加、拷贝object等
     # 3. multipart相关：断点续传、断点续载
-    class Bucket < Struct::Base
+    class Bucket < Common::Struct::Base
 
       attrs :name, :location, :creation_time
 
