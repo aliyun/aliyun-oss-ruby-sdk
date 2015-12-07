@@ -84,6 +84,28 @@ OSS支持自定义域名绑定，允许用户将自己的域名指向阿里云OS
 3. 在{Aliyun::OSS::Client#get_bucket}时仍需要指定bucket名字，并且要与
    域名所绑定的bucket名字相同
 
+#### 使用STS创建Client
+
+OSS支持用户使用STS进行访问，更多有关STS的内容，请参考
+[阿里云STS][aliyun-sts]。在使用STS之前需要先向STS申请一个临时token，
+aliyun-sdk中包含了STS的SDK，使用时只需要`require 'aliyun/sts'`即可：
+
+    require 'aliyun/sts'
+    sts = Aliyun::STS::Client.new(
+      access_key_id: 'access_key_id',
+      access_key_secret: 'access_key_secret')
+
+    token = sts.assume_role('role-arn', 'my-app')
+
+    client = Aliyun::OSS::Client.new(
+      :endpoint => 'http://img.my-domain.com',
+      :access_key_id => token.access_key_id,
+      :access_key_secret => token.access_key_secret,
+      :sts_token => token.sts_token)
+
+注意使用STS时必须指定`:sts_token`参数。用户还可以通过`STS::Client`申请
+带Policy的token，细节请参考[API文档][sdk-api]。
+
 ### 列出当前所有的Bucket
 
     buckets = client.list_buckets
@@ -362,3 +384,5 @@ SDK采用rspec进行测试，如果要对SDK进行修改，请确保没有break�
 
 [1]: http://help.aliyun.com/document_detail/oss/user_guide/endpoint_region.html
 [2]: http://help.aliyun.com/document_detail/oss/user_guide/oss_concept/oss_cname.html
+[aliyun-sts]: https://help.aliyun.com/document_detail/ram/intro/concepts.html
+[sdk-api]: http://www.rubydoc.info/gems/aliyun-sdk/
