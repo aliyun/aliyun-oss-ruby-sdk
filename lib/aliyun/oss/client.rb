@@ -18,8 +18,6 @@ module Aliyun
     #   bucket = client.get_bucket('my-bucket')
     class Client
 
-      include Logging
-
       # 构造OSS client，用于操作buckets。
       # @param opts [Hash] 构造Client时的参数选项
       # @option opts [String] :endpoint [必填]OSS服务的地址，可以是以

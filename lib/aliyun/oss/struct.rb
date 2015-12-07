@@ -52,55 +52,6 @@ module Aliyun
     end # KeyEncoding
 
     ##
-    # Common structs used. It provides a 'attrs' helper method for
-    # subclass to define its attributes. 'attrs' is based on
-    # attr_reader and provide additional functionalities for classes
-    # that inherits Struct::Base :
-    # * the constuctor is provided to accept options and set the
-    #   corresponding attibute automatically
-    # * the #to_s method is rewrite to concatenate the defined
-    #   attributes keys and values
-    # @example
-    #   class X < Struct::Base
-    #     attrs :foo, :bar
-    #   end
-    #
-    #   x.new(:foo => 'hello', :bar => 'world')
-    #   x.foo # == "hello"
-    #   x.bar # == "world"
-    #   x.to_s # == "foo: hello, bar: world"
-    module Struct
-      class Base
-        module AttrHelper
-          def attrs(*s)
-            define_method(:attrs) {s}
-            attr_reader(*s)
-          end
-        end
-
-        extend AttrHelper
-
-        def initialize(opts = {})
-          extra_keys = opts.keys - attrs
-          unless extra_keys.empty?
-            fail ClientError, "Unexpected extra keys: #{extra_keys.join(', ')}"
-          end
-
-          attrs.each do |attr|
-            instance_variable_set("@#{attr}", opts[attr])
-          end
-        end
-
-        def to_s
-          attrs.map do |attr|
-            v = instance_variable_get("@#{attr}")
-            "#{attr.to_s}: #{v}"
-          end.join(", ")
-        end
-      end # Base
-    end # Struct
-
-    ##
     # Bucket Logging setting. See: {http://help.aliyun.com/document_detail/oss/product-documentation/function/logging.html OSS Bucket logging}
     # Attributes:
     # * enable [Boolean] whether to enable bucket logging
@@ -111,7 +62,7 @@ module Aliyun
     #    :enable => true, :target_bucket => 'log_bucket', :target_prefix => 'my-log')
     # @example Disable bucket logging
     #  bucket.logging = BucketLogging.new(:enable => false)
-    class BucketLogging < Struct::Base
+    class BucketLogging < Common::Struct::Base
       attrs :enable, :target_bucket, :target_prefix
 
       def enabled?
@@ -125,7 +76,7 @@ module Aliyun
     # * enable [Boolean] whether to enable website hosting for the bucket
     # * index [String] the index object as the index page for the website
     # * error [String] the error object as the error page for the website
-    class BucketWebsite < Struct::Base
+    class BucketWebsite < Common::Struct::Base
       attrs :enable, :index, :error
 
       def enabled?
@@ -138,7 +89,7 @@ module Aliyun
     # Attributes:
     # * allow_empty [Boolean] whether to allow requests with empty "Referer"
     # * whitelist [Array<String>] the allowed origins for requests
-    class BucketReferer < Struct::Base
+    class BucketReferer < Common::Struct::Base
       attrs :allow_empty, :whitelist
 
       def allow_empty?
@@ -171,7 +122,7 @@ module Aliyun
     #     :prefix => 'foo/',
     #     :expiry => 15)
     # @note the expiry date is treated as UTC time
-    class LifeCycleRule < Struct::Base
+    class LifeCycleRule < Common::Struct::Base
 
       attrs :id, :enable, :prefix, :expiry
 
@@ -188,7 +139,7 @@ module Aliyun
     # * allowed_headers [Array<String>] the allowed headers
     # * expose_headers [Array<String>] the expose headers
     # * max_age_seconds [Integer] the max age seconds
-    class CORSRule < Struct::Base
+    class CORSRule < Common::Struct::Base
 
       attrs :allowed_origins, :allowed_methods, :allowed_headers,
             :expose_headers, :max_age_seconds

@@ -124,7 +124,7 @@ module Aliyun
 
       end
 
-      include Logging
+      include Common::Logging
 
       def initialize(config)
         @config = config

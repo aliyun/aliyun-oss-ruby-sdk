@@ -18,7 +18,6 @@ module Aliyun
     # detailed information probably including the OSS request id.
     #
     class ServerError < Exception
-      include Logging
 
       attr_reader :http_code, :error_code, :message, :request_id
 

@@ -3,7 +3,7 @@
 require 'logger'
 
 module Aliyun
-  module OSS
+  module Common
     ##
     # Logging support
     # @example
@@ -11,7 +11,7 @@ module Aliyun
     #   logger.info(xxx)
     module Logging
 
-      DEFAULT_LOG_FILE = "./oss_sdk.log"
+      DEFAULT_LOG_FILE = "./aliyun_sdk.log"
       MAX_NUM_LOG = 100
       ROTATE_SIZE = 10 * 1024 * 1024
 
@@ -42,5 +42,5 @@ module Aliyun
       end
 
     end # logging
-  end # OSS
+  end # Common
 end # Aliyun

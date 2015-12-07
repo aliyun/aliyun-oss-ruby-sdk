@@ -6,7 +6,7 @@ module Aliyun
     ##
     # Object表示OSS存储的一个对象
     #
-    class Object < Struct::Base
+    class Object < Common::Struct::Base
 
       attrs :key, :type, :size, :etag, :metas, :last_modified, :content_type
 

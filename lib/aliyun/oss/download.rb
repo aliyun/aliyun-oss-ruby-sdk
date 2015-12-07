@@ -7,6 +7,9 @@ module Aliyun
       # A multipart download transaction
       #
       class Download < Transaction
+
+        include Common::Logging
+
         PART_SIZE = 10 * 1024 * 1024
         READ_SIZE = 16 * 1024
         NUM_THREAD = 10

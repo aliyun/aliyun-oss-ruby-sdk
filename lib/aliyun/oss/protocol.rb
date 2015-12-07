@@ -15,7 +15,7 @@ module Aliyun
 
       STREAM_CHUNK_SIZE = 16 * 1024
 
-      include Logging
+      include Common::Logging
 
       def initialize(config)
         @config = config

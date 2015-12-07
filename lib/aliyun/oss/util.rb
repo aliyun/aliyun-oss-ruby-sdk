@@ -18,7 +18,7 @@ module Aliyun
 
       class << self
 
-        include Logging
+        include Common::Logging
 
         # Calculate request signatures
         def get_signature(key, verb, headers, resources)
