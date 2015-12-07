@@ -54,7 +54,7 @@ module Aliyun
 
           expect(WebMock)
             .to have_requested(:get, "#{bucket}.#{endpoint}/#{object}")
-            .with{ |req| not req.headers.has_key?('x-oss-security-token') }
+            .with{ |req| req.headers.key?('X-Oss-Security-Token') }
         end
 
         it "should construct different client" do
