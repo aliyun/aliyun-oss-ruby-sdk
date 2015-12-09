@@ -14,6 +14,7 @@ module Aliyun
     class Protocol
 
       STREAM_CHUNK_SIZE = 16 * 1024
+      CALLBACK_HEADER = 'x-oss-callback'
 
       include Common::Logging
 
@@ -49,8 +50,8 @@ module Aliyun
           'max-keys' => opts[:limit]
         }.reject { |_, v| v.nil? }
 
-        _, body = @http.get( {}, {:query => params})
-        doc = parse_xml(body)
+        r = @http.get( {}, {:query => params})
+        doc = parse_xml(r.body)
 
         buckets = doc.css("Buckets Bucket").map do |node|
           Bucket.new(
@@ -135,9 +136,9 @@ module Aliyun
         logger.info("Begin get bucket acl, name: #{name}")
 
         sub_res = {'acl' => nil}
-        _, body = @http.get({:bucket => name, :sub_res => sub_res})
+        r = @http.get({:bucket => name, :sub_res => sub_res})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         acl = get_node_text(doc.at_css("AccessControlList"), 'Grant')
         logger.info("Done get bucket acl")
 
@@ -182,9 +183,9 @@ module Aliyun
         logger.info("Begin get bucket logging, name: #{name}")
 
         sub_res = {'logging' => nil}
-        _, body = @http.get({:bucket => name, :sub_res => sub_res})
+        r = @http.get({:bucket => name, :sub_res => sub_res})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         opts = {:enable => false}
 
         logging_node = doc.at_css("LoggingEnabled")
@@ -249,10 +250,10 @@ module Aliyun
         logger.info("Begin get bucket website, name: #{name}")
 
         sub_res = {'website' => nil}
-        _, body = @http.get({:bucket => name, :sub_res => sub_res})
+        r = @http.get({:bucket => name, :sub_res => sub_res})
 
         opts = {:enable => true}
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         opts.update(
           :index => get_node_text(doc.at_css('IndexDocument'), 'Suffix'),
           :error => get_node_text(doc.at_css('ErrorDocument'), 'Key')
@@ -307,9 +308,9 @@ module Aliyun
         logger.info("Begin get bucket referer, name: #{name}")
 
         sub_res = {'referer' => nil}
-        _, body = @http.get({:bucket => name, :sub_res => sub_res})
+        r = @http.get({:bucket => name, :sub_res => sub_res})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         opts = {
           :allow_empty =>
             get_node_text(doc.root, 'AllowEmptyReferer', &:to_bool),
@@ -370,9 +371,9 @@ module Aliyun
         logger.info("Begin get bucket lifecycle, name: #{name}")
 
         sub_res = {'lifecycle' => nil}
-        _, body = @http.get({:bucket => name, :sub_res => sub_res})
+        r = @http.get({:bucket => name, :sub_res => sub_res})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         rules = doc.css("Rule").map do |n|
           days = n.at_css("Expiration Days")
           date = n.at_css("Expiration Date")
@@ -443,9 +444,9 @@ module Aliyun
         logger.info("Begin get bucket cors, bucket: #{name}")
 
         sub_res = {'cors' => nil}
-        _, body = @http.get({:bucket => name, :sub_res => sub_res})
+        r = @http.get({:bucket => name, :sub_res => sub_res})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         rules = []
 
         doc.css("CORSRule").map do |n|
@@ -505,6 +506,8 @@ module Aliyun
       # @option opts [Hash<Symbol, String>] :metas key-value pairs
       #  that serve as the object meta which will be stored together
       #  with the object
+      # @option opts [Callback] :callback the HTTP callback performed
+      #  by OSS after `put_object` succeeds
       # @yield [HTTP::StreamWriter] a stream writer is
       #  yielded to the caller to which it can write chunks of data
       #  streamingly
@@ -516,12 +519,22 @@ module Aliyun
                      "#{object_name}, options: #{opts}")
 
         headers = {'Content-Type' => opts[:content_type]}
+        if opts.key?(:callback)
+          headers[CALLBACK_HEADER] = opts[:callback].serialize
+        end
+
         (opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
-        @http.put(
+        r = @http.put(
           {:bucket => bucket_name, :object => object_name},
           {:headers => headers, :body => HTTP::StreamPayload.new(&block)})
+
+        if r.code == 203
+          e = CallbackError.new(r)
+          logger.error(e.to_s)
+          raise e
+        end
 
         logger.debug('Done put object')
       end
@@ -557,13 +570,13 @@ module Aliyun
         (opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
-        h, _ = @http.post(
-             {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-             {:headers => headers, :body => HTTP::StreamPayload.new(&block)})
+        r = @http.post(
+          {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
+          {:headers => headers, :body => HTTP::StreamPayload.new(&block)})
 
         logger.debug('Done append object')
 
-        wrap(h[:x_oss_next_append_position], &:to_i) || -1
+        wrap(r.headers[:x_oss_next_append_position], &:to_i) || -1
       end
 
       # List objects in a bucket.
@@ -614,12 +627,10 @@ module Aliyun
           'encoding-type' => opts[:encoding]
         }.reject { |_, v| v.nil? }
 
-        _, body = @http.get({:bucket => bucket_name}, {:query => params})
+        r = @http.get({:bucket => bucket_name}, {:query => params})
 
-        doc = parse_xml(body)
-
+        doc = parse_xml(r.body)
         encoding = get_node_text(doc.root, 'EncodingType')
-
         objects = doc.css("Contents").map do |node|
           Object.new(
             :key => get_node_text(node, "Key") { |x| decode_key(x, encoding) },
@@ -728,12 +739,13 @@ module Aliyun
             rewrites[:expires].httpdate if rewrites.key?(:expires)
         end
 
-        h, _ = @http.get(
-             {:bucket => bucket_name, :object => object_name,
-              :sub_res => sub_res},
-             {:headers => headers}
-           ) { |chunk| yield chunk if block_given? }
+        r = @http.get(
+          {:bucket => bucket_name, :object => object_name,
+           :sub_res => sub_res},
+          {:headers => headers}
+        ) { |chunk| yield chunk if block_given? }
 
+        h = r.headers
         metas = {}
         meta_prefix = 'x_oss_meta_'
         h.select { |k, _| k.to_s.start_with?(meta_prefix) }
@@ -772,10 +784,11 @@ module Aliyun
         headers = {}
         headers.merge!(get_conditions(opts[:condition])) if opts[:condition]
 
-        h, _ = @http.head(
-             {:bucket => bucket_name, :object => object_name},
-             {:headers => headers})
+        r = @http.head(
+          {:bucket => bucket_name, :object => object_name},
+          {:headers => headers})
 
+        h = r.headers
         metas = {}
         meta_prefix = 'x_oss_meta_'
         h.select { |k, _| k.to_s.start_with?(meta_prefix) }
@@ -839,11 +852,11 @@ module Aliyun
 
         headers.merge!(get_copy_conditions(opts[:condition])) if opts[:condition]
 
-        _, body = @http.put(
+        r = @http.put(
           {:bucket => bucket_name, :object => dst_object_name},
           {:headers => headers})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         copy_result = {
           :last_modified => get_node_text(
             doc.root, 'LastModified') { |x| Time.parse(x) },
@@ -897,13 +910,13 @@ module Aliyun
         query = {}
         query['encoding-type'] = opts[:encoding] if opts[:encoding]
 
-        _, body = @http.post(
+        r = @http.post(
              {:bucket => bucket_name, :sub_res => sub_res},
              {:query => query, :body => body})
 
         deleted = []
         unless opts[:quiet]
-          doc = parse_xml(body)
+          doc = parse_xml(r.body)
           encoding = get_node_text(doc.root, 'EncodingType')
           doc.css("Deleted").map do |n|
             deleted << get_node_text(n, 'Key') { |x| decode_key(x, encoding) }
@@ -942,10 +955,10 @@ module Aliyun
                      "object: #{object_name}")
 
         sub_res = {'acl' => nil}
-        _, body = @http.get(
-             {bucket: bucket_name, object: object_name, sub_res: sub_res})
+        r = @http.get(
+          {bucket: bucket_name, object: object_name, sub_res: sub_res})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         acl = get_node_text(doc.at_css("AccessControlList"), 'Grant')
 
         logger.debug("Done get object acl")
@@ -974,18 +987,18 @@ module Aliyun
           'Access-Control-Request-Headers' => headers.join(',')
         }
 
-        return_headers, _ = @http.options(
-                          {:bucket => bucket_name, :object => object_name},
-                          {:headers => h})
+        r = @http.options(
+          {:bucket => bucket_name, :object => object_name},
+          {:headers => h})
 
         logger.debug("Done get object cors")
 
         CORSRule.new(
-          :allowed_origins => return_headers[:access_control_allow_origin],
-          :allowed_methods => return_headers[:access_control_allow_methods],
-          :allowed_headers => return_headers[:access_control_allow_headers],
-          :expose_headers => return_headers[:access_control_expose_headers],
-          :max_age_seconds => return_headers[:access_control_max_age]
+          :allowed_origins => r.headers[:access_control_allow_origin],
+          :allowed_methods => r.headers[:access_control_allow_methods],
+          :allowed_headers => r.headers[:access_control_allow_headers],
+          :expose_headers => r.headers[:access_control_expose_headers],
+          :max_age_seconds => r.headers[:access_control_max_age]
         )
       end
 
@@ -1014,12 +1027,12 @@ module Aliyun
         (opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
-        _, body = @http.post(
-             {:bucket => bucket_name, :object => object_name,
-              :sub_res => sub_res},
-             {:headers => headers})
+        r = @http.post(
+          {:bucket => bucket_name, :object => object_name,
+           :sub_res => sub_res},
+          {:headers => headers})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         txn_id = get_node_text(doc.root, 'UploadId')
 
         logger.info("Done initiate multipart upload: #{txn_id}.")
@@ -1040,13 +1053,13 @@ module Aliyun
                      "#{object_name}, txn id: #{txn_id}, part No: #{part_no}")
 
         sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
-        headers, _ = @http.put(
+        r = @http.put(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:body => HTTP::StreamPayload.new(&block)})
 
         logger.debug("Done upload part")
 
-        Multipart::Part.new(:number => part_no, :etag => headers[:etag])
+        Multipart::Part.new(:number => part_no, :etag => r.headers[:etag])
       end
 
       # Upload a part in a multipart uploading transaction by copying
@@ -1084,26 +1097,31 @@ module Aliyun
 
         sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
 
-        headers, _ = @http.put(
+        r = @http.put(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:headers => headers})
 
         logger.debug("Done upload part by copy: #{source_object}.")
 
-        Multipart::Part.new(:number => part_no, :etag => headers[:etag])
+        Multipart::Part.new(:number => part_no, :etag => r.headers[:etag])
       end
 
       # Complete a multipart uploading transaction
       # @param bucket_name [String] the bucket name
       # @param object_name [String] the object name
       # @param txn_id [String] the upload id
-      # @param parts [Array<Multipart::Part>] all the
-      #  parts in this transaction
-      def complete_multipart_upload(bucket_name, object_name, txn_id, parts)
+      # @param parts [Array<Multipart::Part>] all the parts in this
+      #  transaction
+      # @param callback [Callback] the HTTP callback performed by OSS
+      #  after this operation succeeds
+      def complete_multipart_upload(
+            bucket_name, object_name, txn_id, parts, callback = nil)
         logger.debug("Begin complete multipart upload, "\
                      "txn id: #{txn_id}, parts: #{parts.map(&:to_s)}")
 
         sub_res = {'uploadId' => txn_id}
+        headers = {}
+        headers[CALLBACK_HEADER] = callback.serialize if callback
 
         body = Nokogiri::XML::Builder.new do |xml|
           xml.CompleteMultipartUpload {
@@ -1116,9 +1134,15 @@ module Aliyun
           }
         end.to_xml
 
-        @http.post(
+        r = @http.post(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-          {:body => body})
+          {:headers => headers, :body => body})
+
+        if r.code == 203
+          e = CallbackError.new(r)
+          logger.error(e.to_s)
+          raise e
+        end
 
         logger.debug("Done complete multipart upload: #{txn_id}.")
       end
@@ -1188,14 +1212,12 @@ module Aliyun
           'encoding-type' => opts[:encoding]
         }.reject { |_, v| v.nil? }
 
-        _, body = @http.get(
+        r = @http.get(
           {:bucket => bucket_name, :sub_res => sub_res},
           {:query => params})
 
-        doc = parse_xml(body)
-
+        doc = parse_xml(r.body)
         encoding = get_node_text(doc.root, 'EncodingType')
-
         txns = doc.css("Upload").map do |node|
           Multipart::Transaction.new(
             :id => get_node_text(node, "UploadId"),
@@ -1259,11 +1281,11 @@ module Aliyun
           'encoding-type' => opts[:encoding]
         }.reject { |_, v| v.nil? }
 
-        _, body = @http.get(
+        r = @http.get(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:query => params})
 
-        doc = parse_xml(body)
+        doc = parse_xml(r.body)
         parts = doc.css("Part").map do |node|
           Multipart::Part.new(
             :number => get_node_text(node, 'PartNumber', &:to_i),

@@ -104,6 +104,16 @@ module Aliyun
         end.to_xml
       end
 
+      def mock_error(code, message)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.Error {
+            xml.Code code
+            xml.Message message
+            xml.RequestId '0000'
+          }
+        end.to_xml
+      end
+
       def err(msg, reqid = '0000')
         "#{msg} RequestId: #{reqid}"
       end
@@ -227,6 +237,43 @@ module Aliyun
 
           expect(WebMock).to have_requested(:put, object_url(key))
             .with(:body => content, :query => {})
+        end
+
+        it "should put object with callback" do
+          key = 'ruby'
+          stub_request(:put, object_url(key))
+
+          callback = Callback.new(
+            url: 'http://app.server.com/callback',
+            query: {'id' => 1, 'name' => '杭州'},
+            body: 'hello world',
+            host: 'server.com'
+          )
+          @bucket.put_object(key, callback: callback)
+
+          expect(WebMock).to have_requested(:put, object_url(key))
+            .with { |req| req.headers.key?('X-Oss-Callback') }
+        end
+
+        it "should raise CallbackError when callback failed" do
+          key = 'ruby'
+          code = 'CallbackFailed'
+          message = 'Error status: 502.'
+          stub_request(:put, object_url(key))
+            .to_return(:status => 203, :body => mock_error(code, message))
+
+          callback = Callback.new(
+            url: 'http://app.server.com/callback',
+            query: {'id' => 1, 'name' => '杭州'},
+            body: 'hello world',
+            host: 'server.com'
+          )
+          expect {
+            @bucket.put_object(key, callback: callback)
+          }.to raise_error(CallbackError, err(message))
+
+          expect(WebMock).to have_requested(:put, object_url(key))
+            .with { |req| req.headers.key?('X-Oss-Callback') }
         end
 
         it "should get object to file" do

@@ -116,7 +116,8 @@ module Aliyun
           parts = sync_get_all_parts.map{ |p|
             Part.new(:number  => p[:number], :etag => p[:etag])
           }
-          @protocol.complete_multipart_upload(bucket, object, id, parts)
+          @protocol.complete_multipart_upload(
+            bucket, object, id, parts, @options[:callback])
 
           File.delete(@cpt_file) unless options[:disable_cpt]
 

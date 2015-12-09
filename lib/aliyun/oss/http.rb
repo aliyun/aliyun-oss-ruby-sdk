@@ -277,7 +277,7 @@ module Aliyun
         logger.debug("Received HTTP response, code: #{r.code}, headers: " \
                       "#{r.headers}, body: #{r.body}")
 
-        [r.headers, r.body]
+        r
       end
 
       def get_user_agent

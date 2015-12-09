@@ -178,6 +178,9 @@ module Aliyun
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
       #  义的属性，它们会和object一起存储，在{#get_object}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
+      # @option opts [Callback] :callback 指定操作成功后OSS的
+      #  上传回调，上传成功后OSS会向用户的应用服务器发一个HTTP POST请
+      #  求，`:callback`参数指定这个请求的相关参数
       # @yield [HTTP::StreamWriter] 如果调用的时候传递了block，则写入
       #  到object的数据由block指定
       # @example 流式上传数据
@@ -188,7 +191,20 @@ module Aliyun
       # @example 指定Content-Type和metas
       #   put_object('x', :file => '/tmp/x', :content_type => 'text/html',
       #              :metas => {'year' => '2015', 'people' => 'mary'})
-      # @note 如果opts中指定了:file，则block会被忽略
+      # @example 指定Callback
+      #   callback = Aliyun::OSS::Callback.new(
+      #     url: 'http://10.101.168.94:1234/callback',
+      #     query: {user: 'put_object'},
+      #     body: 'bucket=${bucket}&object=${object}'
+      #   )
+      #
+      #   bucket.put_object('files/hello', callback: callback)
+      # @raise [CallbackError] 如果文件上传成功而Callback调用失败，抛
+      #  出此错误
+      # @note 如果opts中指定了`:file`，则block会被忽略
+      # @note 如果指定了`:callback`，则可能文件上传成功，但是callback
+      #  执行失败，此时会抛出{OSS::CallbackError}，用户可以选择接住这
+      #  个异常，以忽略Callback调用错误
       def put_object(key, opts = {}, &block)
         args = opts.dup
 
@@ -420,15 +436,31 @@ module Aliyun
       #  果设置为true，则在上传的过程中不会写checkpoint文件，这意味着
       #  上传失败后不能断点续传，而只能重新上传整个文件。如果这个值为
       #  true，则:cpt_file会被忽略。
+      # @option opts [Callback] :callback 指定文件上传成功后OSS的
+      #  上传回调，上传成功后OSS会向用户的应用服务器发一个HTTP POST请
+      #  求，`:callback`参数指定这个请求的相关参数
       # @yield [Float] 如果调用的时候传递了block，则会将上传进度交由
       #  block处理，进度值是一个0-1之间的小数
       # @raise [CheckpointBrokenError] 如果cpt文件被损坏，则抛出此错误
       # @raise [FileInconsistentError] 如果指定的文件与cpt中记录的不一
       #  致，则抛出此错误
+      # @raise [CallbackError] 如果文件上传成功而Callback调用失败，抛
+      #  出此错误
       # @example
       #   bucket.resumable_upload('my-object', '/tmp/x') do |p|
       #     puts "Progress: #{(p * 100).round(2)} %"
       #   end
+      # @example 指定Callback
+      #   callback = Aliyun::OSS::Callback.new(
+      #     url: 'http://10.101.168.94:1234/callback',
+      #     query: {user: 'put_object'},
+      #     body: 'bucket=${bucket}&object=${object}'
+      #   )
+      #
+      #   bucket.resumable_upload('files/hello', '/tmp/x', callback: callback)
+      # @note 如果指定了`:callback`，则可能文件上传成功，但是callback
+      #  执行失败，此时会抛出{OSS::CallbackError}，用户可以选择接住这
+      #  个异常，以忽略Callback调用错误
       def resumable_upload(key, file, opts = {}, &block)
         args = opts.dup
 

@@ -66,6 +66,10 @@ module Aliyun
         end.to_xml
       end
 
+      def err(msg, reqid = '0000')
+        "#{msg} RequestId: #{reqid}"
+      end
+
       it "should upload file when all goes well" do
         stub_request(:post, /#{object_url}\?uploads.*/)
           .to_return(:body => mock_txn_id('upload_id'))
@@ -96,6 +100,98 @@ module Aliyun
           :post, /#{object_url}\?uploadId.*/).times(1)
 
         expect(File.exist?("#{@file}.cpt")).to be false
+        expect(prg.size).to eq(10)
+      end
+
+      it "should upload file with callback" do
+        stub_request(:post, /#{object_url}\?uploads.*/)
+          .to_return(:body => mock_txn_id('upload_id'))
+        stub_request(:put, /#{object_url}\?partNumber.*/)
+        stub_request(:post, /#{object_url}\?uploadId.*/)
+
+        callback = Callback.new(
+          url: 'http://app.server.com/callback',
+          query: {'id' => 1, 'name' => '杭州'},
+          body: 'hello world',
+          host: 'server.com'
+        )
+        prg = []
+        @bucket.resumable_upload(
+          @object_key, @file,
+          :part_size => 10, :callback => callback) { |p| prg << p }
+
+        expect(WebMock).to have_requested(
+          :post, /#{object_url}\?uploads.*/).times(1)
+
+        part_numbers = Set.new([])
+        upload_ids = Set.new([])
+
+        expect(WebMock).to have_requested(
+          :put, /#{object_url}\?partNumber.*/).with{ |req|
+          query = parse_query_from_uri(req.uri)
+          part_numbers << query['partNumber']
+          upload_ids << query['uploadId']
+        }.times(10)
+
+        expect(part_numbers.to_a).to match_array((1..10).map{ |x| x.to_s })
+        expect(upload_ids.to_a).to match_array(['upload_id'])
+
+        expect(WebMock)
+          .to have_requested(
+                :post, /#{object_url}\?uploadId.*/)
+               .with { |req| req.headers.key?('X-Oss-Callback') }
+               .times(1)
+
+        expect(File.exist?("#{@file}.cpt")).to be false
+        expect(prg.size).to eq(10)
+      end
+
+      it "should raise CallbackError when callback failed" do
+        stub_request(:post, /#{object_url}\?uploads.*/)
+          .to_return(:body => mock_txn_id('upload_id'))
+        stub_request(:put, /#{object_url}\?partNumber.*/)
+
+        code = 'CallbackFailed'
+        message = 'Error status: 502.'
+        stub_request(:post, /#{object_url}\?uploadId.*/)
+          .to_return(:status => 203, :body => mock_error(code, message))
+
+        callback = Callback.new(
+          url: 'http://app.server.com/callback',
+          query: {'id' => 1, 'name' => '杭州'},
+          body: 'hello world',
+          host: 'server.com'
+        )
+        prg = []
+        expect {
+          @bucket.resumable_upload(
+            @object_key, @file,
+            :part_size => 10, :callback => callback) { |p| prg << p }
+        }.to raise_error(CallbackError, err(message))
+
+        expect(WebMock).to have_requested(
+          :post, /#{object_url}\?uploads.*/).times(1)
+
+        part_numbers = Set.new([])
+        upload_ids = Set.new([])
+
+        expect(WebMock).to have_requested(
+          :put, /#{object_url}\?partNumber.*/).with{ |req|
+          query = parse_query_from_uri(req.uri)
+          part_numbers << query['partNumber']
+          upload_ids << query['uploadId']
+        }.times(10)
+
+        expect(part_numbers.to_a).to match_array((1..10).map{ |x| x.to_s })
+        expect(upload_ids.to_a).to match_array(['upload_id'])
+
+        expect(WebMock)
+          .to have_requested(
+                :post, /#{object_url}\?uploadId.*/)
+               .with { |req| req.headers.key?('X-Oss-Callback') }
+               .times(1)
+
+        expect(File.exist?("#{@file}.cpt")).to be true
         expect(prg.size).to eq(10)
       end
 
