@@ -414,3 +414,4 @@ SDK采用rspec进行测试，如果要对SDK进行修改，请确保没有break�
 [custom-domain]: https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/oss_cname.html
 [aliyun-sts]: https://help.aliyun.com/document_detail/ram/intro/concepts.html
 [sdk-api]: http://www.rubydoc.info/gems/aliyun-sdk/
+[oss-callback]: https://help.aliyun.com/document_detail/oss/user_guide/upload_object/upload_callback.html

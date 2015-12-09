@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.3.0
+
+- Add support for OSS Callback
+
 ### v0.2.0
 
 - Add aliyun/sts
