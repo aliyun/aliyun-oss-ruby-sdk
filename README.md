@@ -207,6 +207,7 @@ Common prefix让用户不需要遍历所有的object（可能数量巨大）而�
     end
 
 **注意**
+
 1. callback的url**不能**包含query string，而应该在`:query`参数中指定
 2. 可能出现文件上传成功，但是执行回调失败的情况，此时client会抛出
    `CallbackError`，用户如果要忽略此错误，需要显示接住这个异常。
