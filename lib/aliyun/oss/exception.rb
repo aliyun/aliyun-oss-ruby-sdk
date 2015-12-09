@@ -54,6 +54,9 @@ module Aliyun
 
     end # ServerError
 
+    class CallbackError < ServerError
+    end # CallbackError
+
     ##
     # ClientError represents client exceptions caused mostly by
     # invalid parameters.

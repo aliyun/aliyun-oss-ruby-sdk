@@ -1,5 +1,9 @@
 # -*- encoding: utf-8 -*-
 
+require 'base64'
+require 'json'
+require 'uri'
+
 module Aliyun
   module OSS
 
@@ -145,6 +149,60 @@ module Aliyun
             :expose_headers, :max_age_seconds
 
     end # CORSRule
+
+    ##
+    # Callback represents a HTTP call made by OSS to user's
+    # application server after an event happens, such as an object is
+    # successfully uploaded to OSS. See: {https://help.aliyun.com/document_detail/oss/api-reference/object/Callback.html}
+    # Attributes:
+    # * url [String] the URL *WITHOUT* the query string
+    # * query [Hash] the query to generate query string
+    # * body [String] the body of the request
+    # * content_type [String] the Content-Type of the request
+    # * host [String] the Host in HTTP header for this request
+    class Callback < Common::Struct::Base
+
+      attrs :url, :query, :body, :content_type, :host
+
+      include Common::Logging
+
+      def serialize
+        query_string = (query || {}).map { |k, v|
+          [CGI.escape(k.to_s), CGI.escape(v.to_s)].join('=') }.join('&')
+
+        cb = {
+          'callbackUrl' => "#{normalize_url(url)}?#{query_string}",
+          'callbackBody' => body,
+          'callbackBodyType' => content_type || default_content_type
+        }
+        cb['callbackHost'] = host if host
+
+        logger.debug("Callback json: #{cb}")
+
+        Base64.strict_encode64(cb.to_json)
+      end
+
+      private
+      def normalize_url(url)
+        uri = URI.parse(url)
+        uri = URI.parse("http://#{url}") unless uri.scheme
+
+        if uri.scheme != 'http' and uri.scheme != 'https'
+          fail ClientError, "Only HTTP and HTTPS endpoint are accepted."
+        end
+
+        unless uri.query.nil?
+          fail ClientError, "Query parameters should not appear in URL."
+        end
+
+        uri.to_s
+      end
+
+      def default_content_type
+        "application/x-www-form-urlencoded"
+      end
+
+    end # Callback
 
   end # OSS
 end # Aliyun

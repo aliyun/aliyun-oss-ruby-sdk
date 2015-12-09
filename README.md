@@ -185,6 +185,35 @@ Object的common prefix，包含在`list_objects`的结果中。
 Common prefix让用户不需要遍历所有的object（可能数量巨大）而找出前缀，
 在模拟目录结构时非常有用。
 
+## 上传回调
+
+在`put_object`和`resumable_upload`时可以指定一个`Callback`，这样在文件
+成功上传到OSS之后，OSS会向用户提供的服务器地址发起一个HTTP POST请求，
+以通知用户相应的事件发生了。用户可以在收到这个通知之后进行相应的动作，
+例如更新数据库、统计行为等。更多有关上传回调的内容请参考[OSS上传回调][oss-callback]。
+
+下面的例子将演示如何使用上传回调：
+
+    callback = Aliyun::OSS::Callback.new(
+      url: 'http://10.101.168.94:1234/callback',
+      query: {user: 'put_object'},
+      body: 'bucket=${bucket}&object=${object}'
+    )
+
+    begin
+      bucket.put_object('files/hello', callback: callback)
+    rescue Aliyun::OSS::CallbackError => e
+      puts "Callback failed: #{e.message}"
+    end
+
+**注意**
+
+1. callback的url**不能**包含query string，而应该在`:query`参数中指定
+2. 可能出现文件上传成功，但是执行回调失败的情况，此时client会抛出
+   `CallbackError`，用户如果要忽略此错误，需要显示接住这个异常。
+3. 详细的例子可以参考[callback.rb](examples/aliyun/oss/callback.rb)
+4. 接受回调的server可以参考[callback_server.rb](rails/aliyun_oss_callback_server.rb)
+
 ## 断点上传/下载
 
 OSS支持大文件的存储，用户如果上传/下载大文件(Object)的时候中断了（网络
@@ -386,3 +415,4 @@ SDK采用rspec进行测试，如果要对SDK进行修改，请确保没有break�
 [custom-domain]: https://help.aliyun.com/document_detail/oss/user_guide/oss_concept/oss_cname.html
 [aliyun-sts]: https://help.aliyun.com/document_detail/ram/intro/concepts.html
 [sdk-api]: http://www.rubydoc.info/gems/aliyun-sdk/
+[oss-callback]: https://help.aliyun.com/document_detail/oss/user_guide/upload_object/upload_callback.html

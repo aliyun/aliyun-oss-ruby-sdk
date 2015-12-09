@@ -737,6 +737,26 @@ module Aliyun
         end
       end # cors
 
+      context "callback" do
+        it "should encode callback" do
+          callback = Callback.new(
+            url: 'http://app.server.com/callback',
+            query: {'id' => 1, 'name' => '杭州'},
+            body: 'hello world',
+            host: 'server.com'
+          )
+
+          encoded = "eyJjYWxsYmFja1VybCI6Imh0dHA6Ly9hcHAuc2VydmVyLmNvbS9jYWxsYmFjaz9pZD0xJm5hbWU9JUU2JTlEJUFEJUU1JUI3JTlFIiwiY2FsbGJhY2tCb2R5IjoiaGVsbG8gd29ybGQiLCJjYWxsYmFja0JvZHlUeXBlIjoiYXBwbGljYXRpb24veC13d3ctZm9ybS11cmxlbmNvZGVkIiwiY2FsbGJhY2tIb3N0Ijoic2VydmVyLmNvbSJ9"
+          expect(callback.serialize).to eq(encoded)
+        end
+
+        it "should not accept url with query string" do
+          expect {
+            Callback.new(url: 'http://app.server.com/callback?id=1').serialize
+          }.to raise_error(ClientError, "Query parameters should not appear in URL.")
+        end
+
+      end
     end # Object
 
   end # OSS

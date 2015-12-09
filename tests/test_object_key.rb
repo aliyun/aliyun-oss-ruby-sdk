@@ -6,7 +6,7 @@ require 'aliyun/oss'
 
 class TestObjectKey < Minitest::Test
   def setup
-    Aliyun::OSS::Logging.set_log_level(Logger::DEBUG)
+    Aliyun::Common::Logging.set_log_level(Logger::DEBUG)
     conf_file = '~/.oss.yml'
     conf = YAML.load(File.read(File.expand_path(conf_file)))
     client = Aliyun::OSS::Client.new(
