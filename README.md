@@ -48,7 +48,7 @@ AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
 ### 创建Client
 
     client = Aliyun::OSS::Client.new(
-      :endpoint => endpoint,
+      :endpoint => 'endpoint',
       :access_key_id => 'access_key_id',
       :access_key_secret => 'access_key_secret')
 
@@ -98,10 +98,10 @@ aliyun-sdk中包含了STS的SDK，使用时只需要`require 'aliyun/sts'`即可
     token = sts.assume_role('role-arn', 'my-app')
 
     client = Aliyun::OSS::Client.new(
-      :endpoint => 'http://img.my-domain.com',
+      :endpoint => 'http://oss-cn-hangzhou.aliyuncs.com',
       :access_key_id => token.access_key_id,
       :access_key_secret => token.access_key_secret,
-      :sts_token => token.sts_token)
+      :sts_token => token.security_token)
 
 注意使用STS时必须指定`:sts_token`参数。用户还可以通过`STS::Client`申请
 带Policy的token，细节请参考[API文档][sdk-api]。
