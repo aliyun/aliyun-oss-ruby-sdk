@@ -101,7 +101,7 @@ aliyun-sdk中包含了STS的SDK，使用时只需要`require 'aliyun/sts'`即可
       :endpoint => 'http://oss-cn-hangzhou.aliyuncs.com',
       :access_key_id => token.access_key_id,
       :access_key_secret => token.access_key_secret,
-      :sts_token => token.sts_token)
+      :sts_token => token.security_token)
 
 注意使用STS时必须指定`:sts_token`参数。用户还可以通过`STS::Client`申请
 带Policy的token，细节请参考[API文档][sdk-api]。
