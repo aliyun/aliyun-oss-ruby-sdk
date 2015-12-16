@@ -5,7 +5,7 @@ require 'yaml'
 $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 require 'aliyun/oss'
 
-class TestObjectKey < Minitest::Test
+class TestLargeFile < Minitest::Test
   def setup
     conf_file = '~/.oss.yml'
     conf = YAML.load(File.read(File.expand_path(conf_file)))
@@ -23,6 +23,8 @@ class TestObjectKey < Minitest::Test
   end
 
   def test_large_file_1gb
+    skip "don't run it by default"
+
     key = get_key("large_file_1gb")
     Benchmark.bm(32) do |bm|
       bm.report("Upload with put_object: ") do
@@ -44,6 +46,8 @@ class TestObjectKey < Minitest::Test
   end
 
   def test_large_file_8gb
+    skip "don't run it by default"
+
     key = get_key("large_file_8gb")
     Benchmark.bm(32) do |bm|
       bm.report("Upload with put_object: ") do
