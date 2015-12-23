@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.3.3
+
+- Fix object key problem in batch_delete
+
 ### v0.3.2
 
 - Allow setting custom HTTP headers in put/append/resumable_upload
