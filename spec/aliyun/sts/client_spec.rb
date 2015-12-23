@@ -10,7 +10,7 @@ module Aliyun
       context "construct" do
         it "should setup a/k" do
           client = Client.new(
-            :access_key_id => 'xxx', :access_key_secret => 'yyy')
+            :access_key_id => ' xxx', :access_key_secret => ' yyy ')
 
           config = client.instance_variable_get('@config')
           expect(config.access_key_id).to eq('xxx')

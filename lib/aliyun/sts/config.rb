@@ -12,8 +12,8 @@ module Aliyun
       def initialize(opts = {})
         super(opts)
 
-        @access_key_id.strip! if @access_key_id
-        @access_key_secret.strip! if @access_key_secret
+        @access_key_id = @access_key_id.strip if @access_key_id
+        @access_key_secret = @access_key_secret.strip if @access_key_secret
       end
     end # Config
 
