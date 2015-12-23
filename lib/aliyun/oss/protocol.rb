@@ -919,7 +919,7 @@ module Aliyun
         body << '<Delete>'
         body << '<Quiet>' << (opts[:quiet]? true : false).to_s << '</Quiet>'
         object_names.each { |k|
-          body << '<Object><Key>' << k << '</Key></Object>'
+          body << '<Object><Key>' << CGI.escapeHTML(k) << '</Key></Object>'
         }
         body << '</Delete>'
 
