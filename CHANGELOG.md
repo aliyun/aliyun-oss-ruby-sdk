@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.3.1
+
+- Fix frozen string issue in OSSClient/STSClient config
+
 ### v0.3.0
 
 - Add support for OSS Callback
