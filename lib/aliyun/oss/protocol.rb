@@ -499,6 +499,8 @@ module Aliyun
       # @param bucket_name [String] the bucket name
       # @param object_name [String] the object name
       # @param opts [Hash] Options
+      # @option opts [String] :acl specify the object's ACL. See
+      #  {OSS::ACL}
       # @option opts [String] :content_type the HTTP Content-Type
       #  for the file, if not specified client will try to determine
       #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
@@ -522,6 +524,7 @@ module Aliyun
                      "#{object_name}, options: #{opts}")
 
         headers = {'content-type' => opts[:content_type]}
+        headers['x-oss-object-acl'] = opts[:acl] if opts.key?(:acl)
         to_lower_case(opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
@@ -551,6 +554,8 @@ module Aliyun
       # @param object_name [String] the object name
       # @param position [Integer] the position to append
       # @param opts [Hash] Options
+      # @option opts [String] :acl specify the object's ACL. See
+      #  {OSS::ACL}
       # @option opts [String] :content_type the HTTP Content-Type
       #  for the file, if not specified client will try to determine
       #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
@@ -575,6 +580,7 @@ module Aliyun
 
         sub_res = {'append' => nil, 'position' => position}
         headers = {'content-type' => opts[:content_type]}
+        headers['x-oss-object-acl'] = opts[:acl] if opts.key?(:acl)
         to_lower_case(opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 

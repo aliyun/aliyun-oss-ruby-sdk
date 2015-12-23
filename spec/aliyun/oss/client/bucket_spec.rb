@@ -239,6 +239,17 @@ module Aliyun
             .with(:body => content, :query => {})
         end
 
+        it "should put object with acl" do
+          key = 'ruby'
+          stub_request(:put, object_url(key))
+
+          @bucket.put_object(key, :acl => ACL::PUBLIC_READ)
+
+          expect(WebMock)
+            .to have_requested(:put, object_url(key))
+                 .with(:headers => {'X-Oss-Object-Acl' => ACL::PUBLIC_READ})
+        end
+
         it "should put object with callback" do
           key = 'ruby'
           stub_request(:put, object_url(key))
@@ -363,6 +374,19 @@ module Aliyun
           expect(WebMock).to have_requested(:post, object_url(key))
                          .with(:query => query, :body => content,
                                :headers => {'Content-Type' => 'text/html'})
+        end
+
+        it "should append object with acl" do
+          key = 'ruby'
+          query = {'append' => '', 'position' => 11}
+          stub_request(:post, object_url(key)).with(:query => query)
+
+          @bucket.append_object(key, 11, :acl => ACL::PUBLIC_READ_WRITE)
+
+          expect(WebMock)
+            .to have_requested(:post, object_url(key))
+                 .with(:query => query,
+                       :headers => {'X-Oss-Object-Acl' => ACL::PUBLIC_READ_WRITE})
         end
 
         it "should answer object exists?" do
