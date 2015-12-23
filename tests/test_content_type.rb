@@ -43,15 +43,15 @@ class TestContentType < Minitest::Test
     @types.each do |k, v|
       key = get_key('from_key', k)
       @bucket.put_object(key)
-      assert_equal v, @bucket.get_object(key).content_type
+      assert_equal v, @bucket.get_object(key).headers[:content_type]
 
       copy_key = get_key('copy.from_key', k)
       @bucket.copy_object(key, copy_key)
-      assert_equal v, @bucket.get_object(copy_key).content_type
+      assert_equal v, @bucket.get_object(copy_key).headers[:content_type]
 
       append_key = get_key('append.from_key', k)
       @bucket.append_object(append_key, 0)
-      assert_equal v, @bucket.get_object(append_key).content_type
+      assert_equal v, @bucket.get_object(append_key).headers[:content_type]
     end
   end
 
@@ -63,15 +63,15 @@ class TestContentType < Minitest::Test
 
       key = get_key('from_file', k)
       @bucket.put_object(key, :file => upload_file)
-      assert_equal v, @bucket.get_object(key).content_type
+      assert_equal v, @bucket.get_object(key).headers[:content_type]
 
       append_key = get_key('append.from_file', k)
       @bucket.append_object(append_key, 0, :file => upload_file)
-      assert_equal v, @bucket.get_object(append_key).content_type
+      assert_equal v, @bucket.get_object(append_key).headers[:content_type]
 
       multipart_key = get_key('multipart.from_file', k)
       @bucket.resumable_upload(multipart_key, upload_file)
-      assert_equal v, @bucket.get_object(multipart_key).content_type
+      assert_equal v, @bucket.get_object(multipart_key).headers[:content_type]
     end
   end
 
@@ -82,19 +82,19 @@ class TestContentType < Minitest::Test
 
       key = get_key('from_user', k)
       @bucket.put_object(key, :file => upload_file, :content_type => v)
-      assert_equal v, @bucket.get_object(key).content_type
+      assert_equal v, @bucket.get_object(key).headers[:content_type]
 
       copy_key = get_key('copy.from_user', k)
       @bucket.copy_object(key, copy_key, :content_type => v)
-      assert_equal v, @bucket.get_object(copy_key).content_type
+      assert_equal v, @bucket.get_object(copy_key).headers[:content_type]
 
       append_key = get_key('append.from_user', k)
       @bucket.append_object(append_key, 0, :file => upload_file, :content_type => v)
-      assert_equal v, @bucket.get_object(append_key).content_type
+      assert_equal v, @bucket.get_object(append_key).headers[:content_type]
 
       multipart_key = get_key('multipart.from_file', k)
       @bucket.resumable_upload(multipart_key, upload_file, :content_type => v)
-      assert_equal v, @bucket.get_object(multipart_key).content_type
+      assert_equal v, @bucket.get_object(multipart_key).headers[:content_type]
     end
   end
 end

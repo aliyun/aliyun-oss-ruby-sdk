@@ -276,6 +276,37 @@ module Aliyun
             .with { |req| req.headers.key?('X-Oss-Callback') }
         end
 
+        it "should set custom headers when put object" do
+          key = 'ruby'
+          stub_request(:put, object_url(key))
+
+          @bucket.put_object(
+            key, headers: {'cache-control' => 'xxx', 'expires' => 'yyy'})
+
+          headers = {}
+          expect(WebMock).to have_requested(:put, object_url(key))
+                              .with { |req| headers = req.headers }
+          expect(headers['Cache-Control']).to eq('xxx')
+          expect(headers['Expires']).to eq('yyy')
+        end
+
+        it "should set custom headers when append object" do
+          key = 'ruby'
+          query = {'append' => '', 'position' => 11}
+          stub_request(:post, object_url(key)).with(:query => query)
+
+          @bucket.append_object(
+            key, 11,
+            headers: {'CACHE-CONTROL' => 'nocache', 'EXPIRES' => 'seripxe'})
+
+          headers = {}
+          expect(WebMock).to have_requested(:post, object_url(key))
+                              .with(:query => query)
+                              .with { |req| headers = req.headers }
+          expect(headers['Cache-Control']).to eq('nocache')
+          expect(headers['Expires']).to eq('seripxe')
+        end
+
         it "should get object to file" do
           key = 'ruby'
           # 100 KB

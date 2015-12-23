@@ -181,6 +181,8 @@ module Aliyun
       # @option opts [Callback] :callback 指定操作成功后OSS的
       #  上传回调，上传成功后OSS会向用户的应用服务器发一个HTTP POST请
       #  求，`:callback`参数指定这个请求的相关参数
+      # @option opts [Hash] :headers 指定请求的HTTP Header，不区分大小
+      #  写。这里指定的值会覆盖通过`:content_type`和`:metas`设置的值。
       # @yield [HTTP::StreamWriter] 如果调用的时候传递了block，则写入
       #  到object的数据由block指定
       # @example 流式上传数据
@@ -315,6 +317,8 @@ module Aliyun
       # @option opts [Hash] :metas 设置object的meta，这是一些用户自定
       #  义的属性，它们会和object一起存储，在{#get_object}的时候会
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015' }
+      # @option opts [Hash] :headers 指定请求的HTTP Header，不区分大小
+      #  写。这里指定的值会覆盖通过`:content_type`和`:metas`设置的值。
       # @example 流式上传数据
       #   pos = append_object('x', 0){ |stream| 100.times { |i| stream << i.to_s } }
       #   append_object('x', pos){ |stream| stream << get_data }
@@ -439,6 +443,8 @@ module Aliyun
       # @option opts [Callback] :callback 指定文件上传成功后OSS的
       #  上传回调，上传成功后OSS会向用户的应用服务器发一个HTTP POST请
       #  求，`:callback`参数指定这个请求的相关参数
+      # @option opts [Hash] :headers 指定请求的HTTP Header，不区分大小
+      #  写。这里指定的值会覆盖通过`:content_type`和`:metas`设置的值。
       # @yield [Float] 如果调用的时候传递了block，则会将上传进度交由
       #  block处理，进度值是一个0-1之间的小数
       # @raise [CheckpointBrokenError] 如果cpt文件被损坏，则抛出此错误

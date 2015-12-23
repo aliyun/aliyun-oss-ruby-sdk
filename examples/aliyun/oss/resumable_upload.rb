@@ -30,11 +30,14 @@ demo "Resumable upload" do
     (1..1024*1024).each{ |i| f.puts i.to_s.rjust(99, '0') }
   end
 
+  cpt_file = '/tmp/x.cpt'
+  File.delete(cpt_file) if File.exist?(cpt_file)
+
   # 上传一个100M的文件
   start = Time.now
   puts "Start upload: /tmp/x => resumable"
   bucket.resumable_upload(
-    'resumable', '/tmp/x', :cpt_file => '/tmp/x.cpt') do |progress|
+    'resumable', '/tmp/x', :cpt_file => cpt_file) do |progress|
     puts "Progress: #{(progress * 100).round(2)} %"
   end
   puts "Upload complete. Cost: #{Time.now - start} seconds."
