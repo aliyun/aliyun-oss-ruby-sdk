@@ -24,9 +24,9 @@ module Aliyun
         def get_signature(key, verb, headers, resources)
           logger.debug("Sign, headers: #{headers}, resources: #{resources}")
 
-          content_md5 = headers['Content-MD5'] || ""
-          content_type = headers['Content-Type'] || ""
-          date = headers['Date']
+          content_md5 = headers['content-md5'] || ""
+          content_type = headers['content-type'] || ""
+          date = headers['date']
 
           cano_headers = headers.select { |k, v| k.start_with?(HEADER_PREFIX) }
                          .map { |k, v| [k.downcase.strip, v.strip] }

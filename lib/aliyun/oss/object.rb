@@ -8,7 +8,7 @@ module Aliyun
     #
     class Object < Common::Struct::Base
 
-      attrs :key, :type, :size, :etag, :metas, :last_modified, :content_type
+      attrs :key, :type, :size, :etag, :metas, :last_modified, :headers
 
     end # Object
   end # OSS

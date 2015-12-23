@@ -23,22 +23,22 @@ module Aliyun
         key = 'helloworld'
         date = 'Fri, 30 Oct 2015 07:21:00 GMT'
 
-        signature = Util.get_signature(key, 'GET', {'Date' => date}, {})
+        signature = Util.get_signature(key, 'GET', {'date' => date}, {})
         expect(signature).to eq("u8QKAAj/axKX4JhHXa5DYfYSPxE=")
 
         signature = Util.get_signature(
-          key, 'PUT', {'Date' => date}, {:path => '/bucket'})
+          key, 'PUT', {'date' => date}, {:path => '/bucket'})
         expect(signature).to eq("lMKrMCJIuGygd8UsdMA+S0QOAsQ=")
 
         signature = Util.get_signature(
           key, 'PUT',
-          {'Date' => date, 'x-oss-copy-source' => '/bucket/object-old'},
+          {'date' => date, 'x-oss-copy-source' => '/bucket/object-old'},
           {:path => '/bucket/object-new'})
         expect(signature).to eq("McYUmBaErN//yvE9voWRhCgvsIc=")
 
         signature = Util.get_signature(
           key, 'PUT',
-          {'Date' => date},
+          {'date' => date},
           {:path => '/bucket/object-new',
            :sub_res => {'append' => nil, 'position' => 0}})
         expect(signature).to eq("7Oh2wobzeg6dw/cWYbF/2m6s6qc=")

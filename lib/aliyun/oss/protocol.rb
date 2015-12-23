@@ -499,6 +499,8 @@ module Aliyun
       # @param bucket_name [String] the bucket name
       # @param object_name [String] the object name
       # @param opts [Hash] Options
+      # @option opts [String] :acl specify the object's ACL. See
+      #  {OSS::ACL}
       # @option opts [String] :content_type the HTTP Content-Type
       #  for the file, if not specified client will try to determine
       #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
@@ -508,6 +510,9 @@ module Aliyun
       #  with the object
       # @option opts [Callback] :callback the HTTP callback performed
       #  by OSS after `put_object` succeeds
+      # @option opts [Hash] :headers custom HTTP headers, case
+      #  insensitive. Headers specified here will overwrite `:metas`
+      #  and `:content_type`
       # @yield [HTTP::StreamWriter] a stream writer is
       #  yielded to the caller to which it can write chunks of data
       #  streamingly
@@ -518,13 +523,16 @@ module Aliyun
         logger.debug("Begin put object, bucket: #{bucket_name}, object: "\
                      "#{object_name}, options: #{opts}")
 
-        headers = {'Content-Type' => opts[:content_type]}
+        headers = {'content-type' => opts[:content_type]}
+        headers['x-oss-object-acl'] = opts[:acl] if opts.key?(:acl)
+        to_lower_case(opts[:metas] || {})
+          .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+
+        headers.merge!(to_lower_case(opts[:headers])) if opts.key?(:headers)
+
         if opts.key?(:callback)
           headers[CALLBACK_HEADER] = opts[:callback].serialize
         end
-
-        (opts[:metas] || {})
-          .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
         r = @http.put(
           {:bucket => bucket_name, :object => object_name},
@@ -546,6 +554,8 @@ module Aliyun
       # @param object_name [String] the object name
       # @param position [Integer] the position to append
       # @param opts [Hash] Options
+      # @option opts [String] :acl specify the object's ACL. See
+      #  {OSS::ACL}
       # @option opts [String] :content_type the HTTP Content-Type
       #  for the file, if not specified client will try to determine
       #  the type itself and fall back to HTTP::DEFAULT_CONTENT_TYPE
@@ -553,6 +563,9 @@ module Aliyun
       # @option opts [Hash<Symbol, String>] :metas key-value pairs
       #  that serve as the object meta which will be stored together
       #  with the object
+      # @option opts [Hash] :headers custom HTTP headers, case
+      #  insensitive. Headers specified here will overwrite `:metas`
+      #  and `:content_type`
       # @return [Integer] next position to append
       # @yield [HTTP::StreamWriter] a stream writer is
       #  yielded to the caller to which it can write chunks of data
@@ -566,9 +579,12 @@ module Aliyun
                       "#{object_name}, position: #{position}, options: #{opts}")
 
         sub_res = {'append' => nil, 'position' => position}
-        headers = {'Content-Type' => opts[:content_type]}
-        (opts[:metas] || {})
+        headers = {'content-type' => opts[:content_type]}
+        headers['x-oss-object-acl'] = opts[:acl] if opts.key?(:acl)
+        to_lower_case(opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+
+        headers.merge!(to_lower_case(opts[:headers])) if opts.key?(:headers)
 
         r = @http.post(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
@@ -721,7 +737,7 @@ module Aliyun
         rewrites = opts[:rewrite]
 
         headers = {}
-        headers['Range'] = get_bytes_range(range) if range
+        headers['range'] = get_bytes_range(range) if range
         headers.merge!(get_conditions(conditions)) if conditions
 
         sub_res = {}
@@ -758,7 +774,7 @@ module Aliyun
           :etag => h[:etag],
           :metas => metas,
           :last_modified => wrap(h[:last_modified]) { |x| Time.parse(x) },
-          :content_type => h[:content_type])
+          :headers => h)
 
         logger.debug("Done get object")
 
@@ -801,7 +817,7 @@ module Aliyun
           :etag => h[:etag],
           :metas => metas,
           :last_modified => wrap(h[:last_modified]) { |x| Time.parse(x) },
-          :content_type => h[:content_type])
+          :headers => h)
 
         logger.debug("Done get object meta")
 
@@ -840,7 +856,7 @@ module Aliyun
         headers = {
           'x-oss-copy-source' =>
             @http.get_resource_path(bucket_name, src_object_name),
-          'Content-Type' => opts[:content_type]
+          'content-type' => opts[:content_type]
         }
         (opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
@@ -982,9 +998,9 @@ module Aliyun
                      "headers: #{headers.join(',')}")
 
         h = {
-          'Origin' => origin,
-          'Access-Control-Request-Method' => method,
-          'Access-Control-Request-Headers' => headers.join(',')
+          'origin' => origin,
+          'access-control-request-method' => method,
+          'access-control-request-headers' => headers.join(',')
         }
 
         r = @http.options(
@@ -1017,15 +1033,20 @@ module Aliyun
       # @option opts [Hash<Symbol, String>] :metas key-value pairs
       #  that serve as the object meta which will be stored together
       #  with the object
+      # @option opts [Hash] :headers custom HTTP headers, case
+      #  insensitive. Headers specified here will overwrite `:metas`
+      #  and `:content_type`
       # @return [String] the upload id
       def initiate_multipart_upload(bucket_name, object_name, opts = {})
         logger.info("Begin initiate multipart upload, bucket: "\
                     "#{bucket_name}, object: #{object_name}, options: #{opts}")
 
         sub_res = {'uploads' => nil}
-        headers = {'Content-Type' => opts[:content_type]}
-        (opts[:metas] || {})
+        headers = {'content-type' => opts[:content_type]}
+        to_lower_case(opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
+
+        headers.merge!(to_lower_case(opts[:headers])) if opts.key?(:headers)
 
         r = @http.post(
           {:bucket => bucket_name, :object => object_name,
@@ -1092,7 +1113,7 @@ module Aliyun
           'x-oss-copy-source' =>
             @http.get_resource_path(bucket_name, source_object)
         }
-        headers['Range'] = get_bytes_range(range) if range
+        headers['range'] = get_bytes_range(range) if range
         headers.merge!(get_copy_conditions(conditions)) if conditions
 
         sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
@@ -1392,14 +1413,14 @@ module Aliyun
       # @return [Hash] conditions for HTTP headers
       def get_conditions(conditions)
         {
-          :if_modified_since => 'If-Modified-Since',
-          :if_unmodified_since => 'If-Unmodified-Since',
+          :if_modified_since => 'if-modified-since',
+          :if_unmodified_since => 'if-unmodified-since',
         }.reduce({}) { |h, (k, v)|
           conditions.key?(k)? h.merge(v => conditions[k].httpdate) : h
         }.merge(
           {
-            :if_match_etag => 'If-Match',
-            :if_unmatch_etag => 'If-None-Match'
+            :if_match_etag => 'if-match',
+            :if_unmatch_etag => 'if-none-match'
           }.reduce({}) { |h, (k, v)|
             conditions.key?(k)? h.merge(v => conditions[k]) : h
           }
@@ -1443,6 +1464,16 @@ module Aliyun
       # @param kv [Hash] keys & blocks to updated
       def update_if_exists(hash, kv)
         kv.each { |k, v| hash[k] = v.call(hash[k]) if hash.key?(k) }
+      end
+
+      # Convert hash keys to lower case Non-Recursively
+      # @param hash [Hash] the hash to be converted
+      # @return [Hash] hash with lower case keys
+      def to_lower_case(hash)
+        hash.reduce({}) do |result, (k, v)|
+          result[k.to_s.downcase] = v
+          result
+        end
       end
 
     end # Protocol

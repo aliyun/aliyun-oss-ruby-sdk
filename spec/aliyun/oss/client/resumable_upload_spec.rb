@@ -115,27 +115,15 @@ module Aliyun
           body: 'hello world',
           host: 'server.com'
         )
-        prg = []
         @bucket.resumable_upload(
-          @object_key, @file,
-          :part_size => 10, :callback => callback) { |p| prg << p }
+          @object_key, @file, part_size: 10, callback: callback)
 
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploads.*/).times(1)
 
-        part_numbers = Set.new([])
-        upload_ids = Set.new([])
-
         expect(WebMock).to have_requested(
-          :put, /#{object_url}\?partNumber.*/).with{ |req|
-          query = parse_query_from_uri(req.uri)
-          part_numbers << query['partNumber']
-          upload_ids << query['uploadId']
-        }.times(10)
-
-        expect(part_numbers.to_a).to match_array((1..10).map{ |x| x.to_s })
-        expect(upload_ids.to_a).to match_array(['upload_id'])
-
+                             :put, /#{object_url}\?partNumber.*/)
+                            .times(10)
         expect(WebMock)
           .to have_requested(
                 :post, /#{object_url}\?uploadId.*/)
@@ -143,7 +131,6 @@ module Aliyun
                .times(1)
 
         expect(File.exist?("#{@file}.cpt")).to be false
-        expect(prg.size).to eq(10)
       end
 
       it "should raise CallbackError when callback failed" do
@@ -162,28 +149,17 @@ module Aliyun
           body: 'hello world',
           host: 'server.com'
         )
-        prg = []
         expect {
           @bucket.resumable_upload(
-            @object_key, @file,
-            :part_size => 10, :callback => callback) { |p| prg << p }
+            @object_key, @file, part_size: 10, callback: callback)
         }.to raise_error(CallbackError, err(message))
 
         expect(WebMock).to have_requested(
           :post, /#{object_url}\?uploads.*/).times(1)
 
-        part_numbers = Set.new([])
-        upload_ids = Set.new([])
-
         expect(WebMock).to have_requested(
-          :put, /#{object_url}\?partNumber.*/).with{ |req|
-          query = parse_query_from_uri(req.uri)
-          part_numbers << query['partNumber']
-          upload_ids << query['uploadId']
-        }.times(10)
-
-        expect(part_numbers.to_a).to match_array((1..10).map{ |x| x.to_s })
-        expect(upload_ids.to_a).to match_array(['upload_id'])
+                             :put, /#{object_url}\?partNumber.*/)
+                            .times(10)
 
         expect(WebMock)
           .to have_requested(
@@ -192,7 +168,27 @@ module Aliyun
                .times(1)
 
         expect(File.exist?("#{@file}.cpt")).to be true
-        expect(prg.size).to eq(10)
+      end
+
+      it "should upload file with custom headers" do
+        stub_request(:post, /#{object_url}\?uploads.*/)
+          .to_return(:body => mock_txn_id('upload_id'))
+        stub_request(:put, /#{object_url}\?partNumber.*/)
+        stub_request(:post, /#{object_url}\?uploadId.*/)
+
+        @bucket.resumable_upload(
+          @object_key, @file,
+          part_size: 10,
+          headers: {'cache-CONTROL' => 'cacheit', 'CONTENT-disposition' => 'oh;yeah'})
+
+        headers = {}
+        expect(WebMock).to have_requested(
+                             :post, /#{object_url}\?uploads.*/)
+                           .with { |req| headers = req.headers }.times(1)
+
+        expect(headers['Cache-Control']).to eq('cacheit')
+        expect(headers['Content-Disposition']).to eq('oh;yeah')
+        expect(File.exist?("#{@file}.cpt")).to be false
       end
 
       it "should restart when begin txn fails" do

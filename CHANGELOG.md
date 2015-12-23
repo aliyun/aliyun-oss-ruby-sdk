@@ -1,5 +1,10 @@
 ## Change Log
 
+### v0.3.2
+
+- Allow setting custom HTTP headers in put/append/resumable_upload
+- Allow setting object acl in put/append
+
 ### v0.3.1
 
 - Fix frozen string issue in OSSClient/STSClient config

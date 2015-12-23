@@ -25,10 +25,12 @@ end
 
 demo "Resumable download" do
   # 下载一个100M的文件
+  cpt_file = '/tmp/y.cpt'
+  File.delete(cpt_file) if File.exist?(cpt_file)
   start = Time.now
   puts "Start download: resumable => /tmp/y"
   bucket.resumable_download(
-    'resumable', '/tmp/y', :cpt_file => '/tmp/y.cpt') do |progress|
+    'resumable', '/tmp/y', :cpt_file => cpt_file) do |progress|
     puts "Progress: #{(progress * 100).round(2)} %"
   end
   puts "Download complete. Cost: #{Time.now - start} seconds."

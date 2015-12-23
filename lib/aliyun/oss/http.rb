@@ -207,16 +207,16 @@ module Aliyun
         sub_res = resources[:sub_res]
 
         headers = http_options[:headers] || {}
-        headers['User-Agent'] = get_user_agent
-        headers['Date'] = Time.now.httpdate
-        headers['Content-Type'] ||= DEFAULT_CONTENT_TYPE
+        headers['user-agent'] = get_user_agent
+        headers['date'] = Time.now.httpdate
+        headers['content-type'] ||= DEFAULT_CONTENT_TYPE
         headers[STS_HEADER] = @config.sts_token if @config.sts_token
 
         if body = http_options[:body]
           if body.respond_to?(:read)
-            headers['Transfer-Encoding'] = 'chunked'
+            headers['transfer-encoding'] = 'chunked'
           else
-            headers['Content-MD5'] = Util.get_content_md5(body)
+            headers['content-md5'] = Util.get_content_md5(body)
           end
         end
 
@@ -227,7 +227,7 @@ module Aliyun
 
         if @config.access_key_id and @config.access_key_secret
           sig = Util.get_signature(@config.access_key_secret, verb, headers, res)
-          headers['Authorization'] = "OSS #{@config.access_key_id}:#{sig}"
+          headers['authorization'] = "OSS #{@config.access_key_id}:#{sig}"
         end
 
         logger.debug("Send HTTP request, verb: #{verb}, resources: " \
@@ -295,7 +295,7 @@ module RestClient
   module Payload
     class Base
       def headers
-        ({'Content-Length' => size.to_s} if size) || {}
+        ({'content-length' => size.to_s} if size) || {}
       end
     end
   end
