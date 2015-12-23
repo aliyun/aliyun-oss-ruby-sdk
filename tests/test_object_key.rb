@@ -20,7 +20,8 @@ class TestObjectKey < Minitest::Test
       simple: 'simple_key',
       chinese: '杭州・中国',
       space: '是 空格 yeah +-/\\&*#',
-      invisible: '' << 1 << 10 << 12 << 7,
+      invisible: '' << 1 << 10 << 12 << 7 << 80 << 99,
+      xml: 'a<b&c>d +'
     }
   end
 
