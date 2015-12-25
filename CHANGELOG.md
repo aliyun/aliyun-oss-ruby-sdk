@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.3.5
+
+- Fix the issue that StreamWriter will read more bytes than wanted
+
 ### v0.3.4
 
 - Fix handling gzip/deflate response

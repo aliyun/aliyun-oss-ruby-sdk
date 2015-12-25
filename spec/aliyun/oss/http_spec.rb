@@ -58,6 +58,24 @@ module Aliyun
           r = s.read
           expect(r).to eq('')
         end
+
+        it "should read exactly bytes" do
+          s = HTTP::StreamWriter.new do |sr|
+            100.times { sr << 'x' * 10 }
+          end
+
+          r = s.read(11)
+          expect(r.size).to eq(11)
+
+          r = s.read(25)
+          expect(r.size).to eq(25)
+
+          r = s.read(900)
+          expect(r.size).to eq(900)
+
+          r = s.read(1000)
+          expect(r.size).to eq(64)
+        end
       end # StreamWriter
 
     end # HTTP
