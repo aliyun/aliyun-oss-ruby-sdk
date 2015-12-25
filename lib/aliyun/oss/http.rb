@@ -52,8 +52,13 @@ module Aliyun
           ret = ""
           loop do
             if bytes
-              ret << @buffer.slice!(0, bytes)
-              break if ret.size >= bytes
+              piece = @buffer.slice!(0, bytes)
+              if piece
+                ret << piece
+                bytes -= piece.size
+              end
+              fail if bytes < 0
+              break if bytes == 0
             else
               ret << @buffer
               @buffer.clear
