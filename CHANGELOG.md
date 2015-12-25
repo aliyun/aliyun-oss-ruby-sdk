@@ -1,5 +1,11 @@
 ## Change Log
 
+### v0.3.4
+
+- Fix handling gzip/deflate response
+- Change the default accept-encoding to 'identity'
+- Allow setting custom HTTP headers in get_object
+
 ### v0.3.3
 
 - Fix object key problem in batch_delete
