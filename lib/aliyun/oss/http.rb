@@ -32,6 +32,7 @@ module Aliyun
     class HTTP
 
       DEFAULT_CONTENT_TYPE = 'application/octet-stream'
+      DEFAULT_ACCEPT_ENCODING = 'identity'
       STS_HEADER = 'x-oss-security-token'
       OPEN_TIMEOUT = 10
       READ_TIMEOUT = 120
@@ -156,8 +157,25 @@ module Aliyun
           r.read_body
         else
         # streaming read body on success
-          r.read_body do |chunk|
-            yield RestClient::Request.decode(r['content-encoding'], chunk)
+          encoding = r['content-encoding']
+          if encoding == 'gzip'
+            stream = StreamWriter.new { |s| r.read_body { |chunk| s << chunk } }
+            reader = Zlib::GzipReader.new(stream)
+            yield reader.read(16 * 1024) until reader.eof?
+          elsif encoding == 'deflate'
+            begin
+              stream = Zlib::Inflate.new
+              r.read_body { |chunk| stream << chunk }
+              stream.finish { |chunk| yield chunk }
+            rescue Zlib::DataError
+              # No luck with Zlib decompression. Let's try with raw deflate,
+              # like some broken web servers do.
+              stream = Zlib::Inflate.new(-Zlib::MAX_WBITS)
+              r.read_body { |chunk| stream << chunk }
+              stream.finish { |chunk| yield chunk }
+            end
+          else
+            r.read_body { |chunk| yield chunk }
           end
         end
       end
@@ -210,6 +228,7 @@ module Aliyun
         headers['user-agent'] = get_user_agent
         headers['date'] = Time.now.httpdate
         headers['content-type'] ||= DEFAULT_CONTENT_TYPE
+        headers['accept-encoding'] ||= DEFAULT_ACCEPT_ENCODING
         headers[STS_HEADER] = @config.sts_token if @config.sts_token
 
         if body = http_options[:body]

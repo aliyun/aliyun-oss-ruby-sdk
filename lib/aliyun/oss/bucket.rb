@@ -236,6 +236,8 @@ module Aliyun
       #   * :if_unmodified_since (Time) 指定如果object从这个时间后再无修改，则下载
       #   * :if_match_etag (String) 指定如果object的etag等于这个值，则下载
       #   * :if_unmatch_etag (String) 指定如果object的etag不等于这个值，则下载
+      # @option opts [Hash] :headers 指定请求的HTTP Header，不区分大小
+      #  写。这里指定的值会覆盖通过`:range`和`:condition`设置的值。
       # @option opts [Hash] :rewrite 指定下载object时Server端返回的响应头部字段的值
       #   * :content_type (String) 指定返回的响应中Content-Type的值
       #   * :content_language (String) 指定返回的响应中Content-Language的值
@@ -472,10 +474,7 @@ module Aliyun
 
         args[:content_type] ||= get_content_type(file)
         args[:content_type] ||= get_content_type(key)
-
-        unless cpt_file = args[:cpt_file]
-          cpt_file = get_cpt_file(file)
-        end
+        cpt_file = args[:cpt_file] || get_cpt_file(file)
 
         Multipart::Upload.new(
           @protocol, options: args,
@@ -507,6 +506,8 @@ module Aliyun
       #  则:cpt_file会被忽略。
       # @option opts [Hash] :condition 指定下载object需要满足的条件，
       #  同 {#get_object}
+      # @option opts [Hash] :headers 指定请求的HTTP Header，不区分大小
+      #  写。这里指定的值会覆盖通过`:condition`设置的值。
       # @option opts [Hash] :rewrite 指定下载object时Server端返回的响
       #  应头部字段的值，同 {#get_object}
       # @yield [Float] 如果调用的时候传递了block，则会将下载进度交由
@@ -529,10 +530,7 @@ module Aliyun
 
         args[:content_type] ||= get_content_type(file)
         args[:content_type] ||= get_content_type(key)
-
-        unless cpt_file = args[:cpt_file]
-          cpt_file = get_cpt_file(file)
-        end
+        cpt_file = args[:cpt_file] || get_cpt_file(file)
 
         Multipart::Download.new(
           @protocol, options: args,

@@ -718,6 +718,9 @@ module Aliyun
       #     specified
       #   * :if_unmatch_etag (String) get the object if its etag
       #     doesn't match specified
+      # @option opts [Hash] :headers custom HTTP headers, case
+      #  insensitive. Headers specified here will overwrite `:condition`
+      #  and `:range`
       # @option opts [Hash] :rewrite response headers to rewrite
       #   * :content_type (String) the Content-Type header
       #   * :content_language (String) the Content-Language header
@@ -739,6 +742,7 @@ module Aliyun
         headers = {}
         headers['range'] = get_bytes_range(range) if range
         headers.merge!(get_conditions(conditions)) if conditions
+        headers.merge!(to_lower_case(opts[:headers])) if opts.key?(:headers)
 
         sub_res = {}
         if rewrites
