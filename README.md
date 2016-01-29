@@ -1,5 +1,6 @@
 # Aliyun OSS SDK for Ruby
 
+[![Gem Version](https://badge.fury.io/rb/aliyun-sdk.svg)](https://badge.fury.io/rb/aliyun-sdk)
 [![Build Status](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk.svg)](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk)
 [![Coverage Status](https://coveralls.io/repos/aliyun/aliyun-oss-ruby-sdk/badge.svg?branch=master&service=github)](https://coveralls.io/github/aliyun/aliyun-oss-ruby-sdk?branch=master)
 
@@ -325,6 +326,7 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
     puts obj.metas
 
 关于meta信息有以下几点需要注意：
+
 1. meta信息的key和value都只能是简单的ASCII非换行字符，并且总的大小不能超过8KB。
 2. Copy object时默认将拷贝源object的meta信息，如果用户不希望这么做，需要
    显式地将`:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
@@ -395,14 +397,16 @@ SDK的examples/目录下有一些展示SDK功能的示例程序，用户稍加�
 
 ## 运行测试
 
-SDK采用rspec进行测试，如果要对SDK进行修改，请确保没有break现有测试。测
-试运行的方法是，在ruby-sdk/目录下运行：
+```bash
+bundle exec rake spec
 
-    rspec
+export RUBY_SDK_OSS_ENDPOINT=endpoint
+export RUBY_SDK_OSS_ID=AccessKeyId
+export RUBY_SDK_OSS_KEY=AccessKeySecret
+export RUBY_SDK_OSS_BUCKET=bucket-name
 
-或者用bundle和rake：
-
-    bundle exec rake spec
+bundle exec rake test
+```
 
 ## 更多
 

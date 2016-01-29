@@ -184,7 +184,7 @@ module Aliyun
         "#{msg} RequestId: #{reqid}"
       end
 
-      context "Create bucket" do
+      context "Create bucket", :focus => true do
 
         it "should PUT to create bucket" do
           stub_request(:put, request_path)
