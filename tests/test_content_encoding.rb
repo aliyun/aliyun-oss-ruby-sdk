@@ -28,7 +28,7 @@ class TestContentEncoding < Minitest::Test
       key, file: '/tmp/x', content_type: 'text/plain')
 
     @bucket.get_object(
-      key, file: '/tmp/y', headers: {'accept-encoding': 'gzip'})
+      key, file: '/tmp/y', headers: {'accept-encoding' => 'gzip'})
 
     assert File.exist?('/tmp/y')
     diff = `diff /tmp/x /tmp/y`
@@ -45,7 +45,7 @@ class TestContentEncoding < Minitest::Test
       key, file: '/tmp/x', content_type: 'text/plain')
 
     @bucket.get_object(
-      key, file: '/tmp/y', headers: {'accept-encoding': 'deflate'})
+      key, file: '/tmp/y', headers: {'accept-encoding' => 'deflate'})
 
     assert File.exist?('/tmp/y')
     diff = `diff /tmp/x /tmp/y`
