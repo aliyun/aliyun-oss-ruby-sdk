@@ -172,14 +172,24 @@ module Aliyun
           elsif encoding == 'deflate'
             begin
               stream = Zlib::Inflate.new
-              r.read_body { |chunk| stream << chunk }
-              stream.finish { |chunk| yield chunk }
+              # 1.9.x doesn't support streaming inflate
+              if RUBY_VERSION < '2.0.0'
+                yield stream.inflate(r.read_body)
+              else
+                r.read_body { |chunk| stream << chunk }
+                stream.finish { |chunk| yield chunk }
+              end
             rescue Zlib::DataError
               # No luck with Zlib decompression. Let's try with raw deflate,
               # like some broken web servers do.
               stream = Zlib::Inflate.new(-Zlib::MAX_WBITS)
-              r.read_body { |chunk| stream << chunk }
-              stream.finish { |chunk| yield chunk }
+              # 1.9.x doesn't support streaming inflate
+              if RUBY_VERSION < '2.0.0'
+                yield stream.inflate(r.read_body)
+              else
+                r.read_body { |chunk| stream << chunk }
+                stream.finish { |chunk| yield chunk }
+              end
             end
           else
             r.read_body { |chunk| yield chunk }
