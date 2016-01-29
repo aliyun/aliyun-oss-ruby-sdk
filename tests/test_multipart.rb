@@ -12,7 +12,7 @@ class TestMultipart < Minitest::Test
     @bucket_name = TestConf.bucket
     @bucket = client.get_bucket(TestConf.bucket)
 
-    @protocol = Aliyun::OSS::Protocol.new(Aliyun::OSS::TestConf.new(Config.creds))
+    @protocol = Aliyun::OSS::Protocol.new(Aliyun::OSS::Config.new(TestConf.creds))
     @prefix = 'tests/multipart/'
   end
 
