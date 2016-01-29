@@ -1,5 +1,12 @@
 ## Change Log
 
+### v0.3.6
+
+- Fix Zlib::Inflate in ruby-1.9.x
+- Add function test(tests/) in travis CI
+- Add Gem version badge
+- Support IP endpoint
+
 ### v0.3.5
 
 - Fix the issue that StreamWriter will read more bytes than wanted
