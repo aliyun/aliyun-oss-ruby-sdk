@@ -28,6 +28,9 @@ class TestResumable < Minitest::Test
       (10 * 1024).times { f.write(random_string(1024)) }
     end
 
+    # clear checkpoints
+    `rm -rf /tmp/x.cpt && rm -rf /tmp/y.cpt`
+
     @bucket.resumable_upload(key, '/tmp/x', :part_size => 100 * 1024)
     @bucket.resumable_download(key, '/tmp/y', :part_size => 100 * 1024)
 
