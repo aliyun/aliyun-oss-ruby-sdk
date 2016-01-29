@@ -1,4 +1,4 @@
-class Config
+class TestConf
   class << self
     def creds
       {

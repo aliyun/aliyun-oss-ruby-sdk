@@ -8,8 +8,8 @@ require_relative 'config'
 
 class TestLargeFile < Minitest::Test
   def setup
-    client = Aliyun::OSS::Client.new(Config.creds)
-    @bucket = client.get_bucket(Config.bucket)
+    client = Aliyun::OSS::Client.new(TestConf.creds)
+    @bucket = client.get_bucket(TestConf.bucket)
 
     @prefix = 'tests/large_file/'
   end

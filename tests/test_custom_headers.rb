@@ -8,8 +8,8 @@ require_relative 'config'
 class TestCustomHeaders < Minitest::Test
   def setup
     Aliyun::Common::Logging.set_log_level(Logger::DEBUG)
-    client = Aliyun::OSS::Client.new(Config.creds)
-    @bucket = client.get_bucket(Config.bucket)
+    client = Aliyun::OSS::Client.new(TestConf.creds)
+    @bucket = client.get_bucket(TestConf.bucket)
 
     @prefix = "tests/custom_headers/"
   end
