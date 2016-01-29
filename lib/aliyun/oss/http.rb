@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 require 'rest-client'
+require 'resolv'
 require 'fiber'
 
 module Aliyun
@@ -138,21 +139,22 @@ module Aliyun
       end
 
       def get_request_url(bucket, object)
-        url = ""
-        url += "#{@config.endpoint.scheme}://"
-        url += "#{bucket}." if bucket and not @config.cname
-        url += @config.endpoint.host
-        url += "/#{CGI.escape(object)}" if object
+        url = @config.endpoint.dup
+        isIP = !!(url.host =~ Resolv::IPv4::Regex)
+        url.host = "#{bucket}." + url.host if bucket && !@config.cname && !isIP
+        url.path = '/'
+        url.path << "#{bucket}/" if bucket && isIP
+        url.path << "#{CGI.escape(object)}" if object
 
-        url
+        url.to_s
       end
 
       def get_resource_path(bucket, object)
-        if bucket
-          res = "/#{bucket}/"
-          res += "#{object}" if object
-          res
-        end
+        res = '/'
+        res << "#{bucket}/" if bucket
+        res << "#{object}" if object
+
+        res
       end
 
       # Handle Net::HTTPRespoonse

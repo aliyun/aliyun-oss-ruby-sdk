@@ -22,3 +22,8 @@ Rake::TestTask.new do |t|
 end
 
 task :default => :spec
+
+task :smart_test do
+  Rake::Task[:spec].invoke
+  Rake::Task[:test].invoke if ENV.keys.include?('RUBY_SDK_OSS_KEY')
+end

@@ -4,17 +4,13 @@ require 'benchmark'
 require 'yaml'
 $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 require 'aliyun/oss'
+require_relative 'config'
 
 class TestLargeFile < Minitest::Test
   def setup
-    conf_file = '~/.oss.yml'
-    conf = YAML.load(File.read(File.expand_path(conf_file)))
-    client = Aliyun::OSS::Client.new(
-      :endpoint => conf['endpoint'],
-      :cname => conf['cname'],
-      :access_key_id => conf['access_key_id'],
-      :access_key_secret => conf['access_key_secret'])
-    @bucket = client.get_bucket(conf['bucket'])
+    client = Aliyun::OSS::Client.new(Config.creds)
+    @bucket = client.get_bucket(Config.bucket)
+
     @prefix = 'tests/large_file/'
   end
 

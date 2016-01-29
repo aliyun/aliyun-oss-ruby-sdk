@@ -3,21 +3,16 @@ require 'minitest/autorun'
 require 'yaml'
 $LOAD_PATH.unshift(File.expand_path("../../lib", __FILE__))
 require 'aliyun/oss'
+require_relative 'config'
 
 class TestMultipart < Minitest::Test
   def setup
-    conf_file = '~/.oss.yml'
-    conf = YAML.load(File.read(File.expand_path(conf_file)))
-    opts = {
-      endpoint: conf['endpoint'],
-      cname: conf['cname'],
-      access_key_id: conf['access_key_id'],
-      access_key_secret: conf['access_key_secret'],
-    }
-    client = Aliyun::OSS::Client.new(opts)
-    @bucket_name = conf['bucket']
-    @bucket = client.get_bucket(@bucket_name)
-    @protocol = Aliyun::OSS::Protocol.new(Aliyun::OSS::Config.new(opts))
+    Aliyun::Common::Logging.set_log_level(Logger::DEBUG)
+    client = Aliyun::OSS::Client.new(Config.creds)
+    @bucket_name = Config.bucket
+    @bucket = client.get_bucket(Config.bucket)
+
+    @protocol = Aliyun::OSS::Protocol.new(Aliyun::OSS::Config.new(Config.creds))
     @prefix = 'tests/multipart/'
   end
 
@@ -98,8 +93,5 @@ class TestMultipart < Minitest::Test
     after_5 = @bucket.list_uploads(
       id_marker: bar_ids[4], key_marker: get_key("bar")).to_a
     assert_equal foo_ids, after_5.map(&:id)
-  end
-
-  def test_prefix
   end
 end

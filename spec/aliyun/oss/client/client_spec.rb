@@ -24,6 +24,55 @@ module Aliyun
           expect(config.sts_token).to eq('sts-token')
         end
 
+        it "should work with CNAME endpoint" do
+          endpoint = 'rockuw.com'
+          bucket = 'rubysdk-bucket'
+          object = 'rubysdk-object'
+          client = Client.new(
+            access_key_id: 'xxx',
+            access_key_secret: 'yyy',
+            endpoint: endpoint,
+            cname: true)
+
+          # TODO: ignore queries here
+          # bucket operations
+          stub_request(:get, endpoint)
+            .with(:query => {'encoding-type' => 'url'})
+          client.get_bucket(bucket).list_objects.take(1)
+          expect(WebMock)
+            .to have_requested(:get, endpoint)
+                 .with(:query => {'encoding-type' => 'url'})
+
+          # object operations
+          stub_request(:get, "#{endpoint}/#{object}")
+          client.get_bucket(bucket).get_object(object) {}
+          expect(WebMock).to have_requested(:get, "#{endpoint}/#{object}")
+        end
+
+        it "should work with IP endpoint" do
+          endpoint = 'http://127.0.0.1:3000'
+          bucket = 'rubysdk-bucket'
+          object = 'rubysdk-object'
+          client = Client.new(
+            access_key_id: 'xxx',
+            access_key_secret: 'yyy',
+            endpoint: endpoint)
+
+          # TODO: ignore queries here
+          # bucket operations
+          stub_request(:get, "#{endpoint}/#{bucket}/")
+            .with(:query => {'encoding-type' => 'url'})
+          client.get_bucket(bucket).list_objects.take(1)
+          expect(WebMock)
+            .to have_requested(:get, "#{endpoint}/#{bucket}/")
+                 .with(:query => {'encoding-type' => 'url'})
+
+          # object operations
+          stub_request(:get, "#{endpoint}/#{bucket}/#{object}")
+          client.get_bucket(bucket).get_object(object) {}
+          expect(WebMock).to have_requested(:get, "#{endpoint}/#{bucket}/#{object}")
+        end
+
         it "should not set Authorization with anonymous client" do
           endpoint = 'oss-cn-hangzhou.aliyuncs.com'
           bucket = 'rubysdk-bucket'

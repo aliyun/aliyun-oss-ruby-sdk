@@ -158,7 +158,7 @@ module Aliyun
 
         it "should get bucket url" do
           expect(@bucket.bucket_url)
-            .to eq('http://rubysdk-bucket.oss-cn-hangzhou.aliyuncs.com')
+            .to eq('http://rubysdk-bucket.oss-cn-hangzhou.aliyuncs.com/')
         end
 
         it "should get access key id" do
