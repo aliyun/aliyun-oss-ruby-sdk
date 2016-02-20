@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.3.7
+
+- Remove monkey patch for Hash
+
 ### v0.3.6
 
 - Fix Zlib::Inflate in ruby-1.9.x
