@@ -43,7 +43,7 @@ module Aliyun
           @mutex.synchronize {
             states = JSON.load(File.read(file))
           }
-          states.symbolize_keys!
+          states = Util.symbolize(states)
           md5 = states.delete(:md5)
 
           fail CheckpointBrokenError, "Missing MD5 in checkpoint." unless md5

@@ -60,6 +60,21 @@ module Aliyun
           Base64.strict_encode64(OpenSSL::Digest::MD5.digest(content))
         end
 
+        # Symbolize keys in Hash, recursively
+        def symbolize(v)
+          if v.is_a?(Hash)
+            result = {}
+            v.each_key { |k| result[k.to_sym] = symbolize(v[k]) }
+            result
+          elsif v.is_a?(Array)
+            result = []
+            v.each { |x| result << symbolize(x) }
+            result
+          else
+            v
+          end
+        end
+
       end # self
     end # Util
   end # OSS
@@ -70,20 +85,5 @@ class String
   def to_bool
     return true if self =~ /^true$/i
     false
-  end
-end
-
-# Monkey patch to support #symbolize_keys!
-class Array
-  def symbolize_keys!
-    self.each { |v| v.symbolize_keys! if v.is_a?(Hash) or v.is_a?(Array) }
-  end
-end
-
-# Monkey patch to support #symbolize_keys!
-class Hash
-  def symbolize_keys!
-    self.keys.each { |k| self[k.to_sym] = self.delete(k) }
-    self.values.each { |v| v.symbolize_keys! if v.is_a?(Hash) or v.is_a?(Array) }
   end
 end
