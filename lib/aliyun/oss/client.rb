@@ -28,7 +28,7 @@ module Aliyun
       #  KEY SECRET，如果不填则会尝试匿名访问
       # @option opts [Boolean] :cname [可选] 指定endpoint是否是用户绑
       #  定的域名
-      # @option opts [Boolean] :sts_token [可选] 指定STS的
+      # @option opts [String] :sts_token [可选] 指定STS的
       #  SecurityToken，如果指定，则使用STS授权访问
       # @option opts [Fixnum] :open_timeout [可选] 指定建立连接的超时
       #  时间，默认为10秒
