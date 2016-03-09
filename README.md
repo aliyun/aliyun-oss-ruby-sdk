@@ -1,7 +1,7 @@
 # Aliyun OSS SDK for Ruby
 
 [![Gem Version](https://badge.fury.io/rb/aliyun-sdk.svg)](https://badge.fury.io/rb/aliyun-sdk)
-[![Build Status](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk.svg)](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk)
+[![Build Status](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk.svg?branch=master)](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk?branch=master)
 [![Coverage Status](https://coveralls.io/repos/aliyun/aliyun-oss-ruby-sdk/badge.svg?branch=master&service=github)](https://coveralls.io/github/aliyun/aliyun-oss-ruby-sdk?branch=master)
 
 -----
@@ -413,6 +413,7 @@ bundle exec rake test
 更多文档请查看：
 
 - 阿里云官网文档：http://help.aliyun.com/product/8314910_oss.html
+- OSS官网SDK文档：https://help.aliyun.com/document_detail/oss/sdk/ruby-sdk/install.html
 
 
 [region-list]: https://help.aliyun.com/document_detail/oss/user_guide/endpoint_region.html
