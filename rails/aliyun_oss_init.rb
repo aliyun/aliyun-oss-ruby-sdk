@@ -12,7 +12,7 @@ require 'aliyun/oss'
 module OSS
   def self.client
     unless @client
-      Aliyun::OSS::Logging.set_log_file('./log/oss_sdk.log')
+      Aliyun::Common::Logging.set_log_file('./log/oss_sdk.log')
 
       @client = Aliyun::OSS::Client.new(
         endpoint:
