@@ -44,12 +44,13 @@ post '/*' do
   authorization = Base64.decode64(get_header('authorization'))
   req_body = request.body.read
 
-  auth_str = CGI.unescape(request.path) +
-             '?' + request.query_string + "\n" +
-             req_body
+  auth_str = if request.query_string.empty?
+    CGI.unescape(request.path) + "\n" + req_body
+  else
+    CGI.unescape(request.path) + '?' + request.query_string + "\n" + req_body
+  end
 
-  valid = rsa.public_key.verify(
-    OpenSSL::Digest::MD5.new, authorization, auth_str)
+  valid = rsa.public_key.verify(OpenSSL::Digest::MD5.new, authorization, auth_str)
 
   if valid
     body({'Status' => 'OK'}.to_json)
