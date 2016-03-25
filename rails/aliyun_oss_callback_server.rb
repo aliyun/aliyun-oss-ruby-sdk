@@ -53,8 +53,8 @@ post '/*' do
   valid = rsa.public_key.verify(OpenSSL::Digest::MD5.new, authorization, auth_str)
 
   if valid
-    req_body_hash = URI.decode_www_form(req_body).to_h
-    body(req_body_hash.to_json)
+    req_body = URI.decode_www_form(req_body).to_h.to_json unless request.content_type == 'application/json'
+    body(req_body)
   else
     halt 400, "Authorization failed!"
   end
