@@ -157,20 +157,20 @@ aliyun-sdk中包含了STS的SDK，使用时只需要`require 'aliyun/sts'`即可
 ## 模拟目录结构
 
 OSS是Object存储服务，本身不支持目录结构，所有的object都是“平”的。但是
-用户可以通过设置object的key为"/foo/bar/file"这样的形式来模拟目录结构。
+用户可以通过设置object的key为"foo/bar/file"这样的形式来模拟目录结构。
 假设现在有以下Objects：
 
-    /foo/x
-    /foo/bar/f1
-    /foo/bar/dir/file
-    /foo/hello/file
+    foo/x
+    foo/bar/f1
+    foo/bar/dir/file
+    foo/hello/file
 
-列出"/foo/"目录下的所有文件就是以"/foo/"为prefix进行`list_objects`，但
-是这样也会把"/foo/bar/"下的所有object也列出来。为此需要用到delimiter参
+列出"foo/"目录下的所有文件就是以"foo/"为prefix进行`list_objects`，但
+是这样也会把"foo/bar/"下的所有object也列出来。为此需要用到delimiter参
 数，其含义是从prefix往后遇到第一个delimiter时停止，这中间的key作为
 Object的common prefix，包含在`list_objects`的结果中。
 
-    objs = bucket.list_objects(:prefix => '/foo/', :delimiter => '/')
+    objs = bucket.list_objects(:prefix => 'foo/', :delimiter => '/')
     objs.each do |i|
       if i.is_a?(Aliyun::OSS::Object) # a object
         puts "object: #{i.key}"
@@ -179,9 +179,9 @@ Object的common prefix，包含在`list_objects`的结果中。
       end
     end
     # output
-    object: /foo/x
-    common prefix: /foo/bar/
-    common prefix: /foo/hello/
+    object: foo/x
+    common prefix: foo/bar/
+    common prefix: foo/hello/
 
 Common prefix让用户不需要遍历所有的object（可能数量巨大）而找出前缀，
 在模拟目录结构时非常有用。
