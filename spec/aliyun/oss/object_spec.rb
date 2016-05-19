@@ -23,8 +23,8 @@ module Aliyun
         p
       end
 
-      def get_resource_path(object)
-        "/#{@bucket}/#{object}"
+      def get_resource_path(object, bucket = nil)
+        "/#{bucket || @bucket}/#{object}"
       end
 
       def mock_copy_object(last_modified, etag)
@@ -309,6 +309,28 @@ module Aliyun
           expect(WebMock).to have_requested(:put, url)
             .with(:body => nil, :headers => {
                     'x-oss-copy-source' => get_resource_path(src_object)})
+
+          expect(result[:last_modified]).to eq(last_modified)
+          expect(result[:etag]).to eq(etag)
+        end
+
+        it "should copy object of different buckets" do
+          src_bucket = 'source-bucket'
+          src_object = 'ruby'
+          dst_object = 'rails'
+          url = get_request_path(dst_object)
+
+          last_modified = Time.parse(Time.now.rfc822)
+          etag = '0000'
+          stub_request(:put, url).to_return(
+            :body => mock_copy_object(last_modified, etag))
+
+          result = @protocol.copy_object(
+            @bucket, src_object, dst_object, :src_bucket => src_bucket)
+
+          expect(WebMock).to have_requested(:put, url)
+            .with(:body => nil, :headers => {
+                    'x-oss-copy-source' => get_resource_path(src_object, src_bucket)})
 
           expect(result[:last_modified]).to eq(last_modified)
           expect(result[:etag]).to eq(etag)

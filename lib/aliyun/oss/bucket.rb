@@ -355,6 +355,8 @@ module Aliyun
       # @param source [String] 源object名字
       # @param dest [String] 目标object名字
       # @param opts [Hash] 拷贝object时的选项（可选）
+      # @option opts [String] :src_bucket 源object所属的Bucket，默认与
+      #  目标文件为同一个Bucket。源Bucket与目标Bucket必须属于同一个Region。
       # @option opts [String] :acl 目标文件的acl属性，默认为private
       # @option opts [String] :meta_directive 指定是否拷贝源object的
       #  meta信息，默认为{OSS::MetaDirective::COPY}：即拷贝object的时

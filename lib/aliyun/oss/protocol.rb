@@ -829,11 +829,14 @@ module Aliyun
       end
 
       # Copy an object in the bucket. The source object and the dest
-      # object must be in the same bucket.
+      # object may be from different buckets of the same region.
       # @param bucket_name [String] the bucket name
       # @param src_object_name [String] the source object name
       # @param dst_object_name [String] the dest object name
       # @param opts [Hash] options
+      # @option opts [String] :src_bucket specify the source object's
+      #  bucket. It MUST be in the same region as the dest bucket. It
+      #  defaults to dest bucket if not specified.
       # @option opts [String] :acl specify the dest object's
       #  ACL. See {OSS::ACL}
       # @option opts [String] :meta_directive specify what to do
@@ -857,9 +860,10 @@ module Aliyun
                      "source object: #{src_object_name}, dest object: "\
                      "#{dst_object_name}, options: #{opts}")
 
+        src_bucket = opts[:src_bucket] || bucket_name
         headers = {
           'x-oss-copy-source' =>
-            @http.get_resource_path(bucket_name, src_object_name),
+            @http.get_resource_path(src_bucket, src_object_name),
           'content-type' => opts[:content_type]
         }
         (opts[:metas] || {})
@@ -1096,8 +1100,11 @@ module Aliyun
       # @param part_no [Integer] the part number
       # @param source_object [String] the source object name to copy from
       # @param opts [Hash] options
+      # @option opts [String] :src_bucket specify the source object's
+      #  bucket. It MUST be in the same region as the dest bucket. It
+      #  defaults to dest bucket if not specified.
       # @option opts [Array<Integer>] :range the bytes range to
-      #  copy, int the format: [begin(inclusive), end(exclusive]
+      #  copy, int the format: [begin(inclusive), end(exclusive)]
       # @option opts [Hash] :condition preconditions to copy the
       #  object. See #get_object
       def upload_part_by_copy(
@@ -1113,9 +1120,10 @@ module Aliyun
           fail ClientError, "Range must be an array containing 2 Integers."
         end
 
+        src_bucket = opts[:src_bucket] || bucket_name
         headers = {
           'x-oss-copy-source' =>
-            @http.get_resource_path(bucket_name, source_object)
+            @http.get_resource_path(src_bucket, source_object)
         }
         headers['range'] = get_bytes_range(range) if range
         headers.merge!(get_copy_conditions(conditions)) if conditions
