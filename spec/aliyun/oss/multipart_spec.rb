@@ -228,6 +228,25 @@ module Aliyun
             .with(:body => nil, :query => query, :headers => headers)
         end
 
+        it "should upload a part by copy object from different bucket" do
+          txn_id = 'xxxyyyzzz'
+          part_no = 1
+          src_bucket = 'source-bucket'
+          copy_source = "/#{src_bucket}/src_obj"
+
+          query = {'partNumber' => part_no, 'uploadId' => txn_id}
+          headers = {'x-oss-copy-source' => copy_source}
+
+          stub_request(:put, request_path)
+            .with(:query => query, :headers => headers)
+
+          @protocol.upload_part_by_copy(
+            @bucket, @object, txn_id, part_no, 'src_obj', :src_bucket => src_bucket)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:body => nil, :query => query, :headers => headers)
+        end
+
         it "should return part etag" do
           txn_id = 'xxxyyyzzz'
           part_no = 1
