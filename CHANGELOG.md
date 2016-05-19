@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.4.0 / 2016-05-19
+
+- Enable copy objects of different buckets(but in the same region)
+
 ### v0.3.7
 
 - Remove monkey patch for Hash
