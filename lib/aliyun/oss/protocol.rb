@@ -1365,6 +1365,12 @@ module Aliyun
         @config.access_key_id
       end
 
+      # Get user's STS token
+      # @return [String] the STS token
+      def get_sts_token
+        @config.sts_token
+      end
+
       # Sign a string using the stored access key secret
       # @param [String] string_to_sign the string to sign
       # @return [String] the signature
