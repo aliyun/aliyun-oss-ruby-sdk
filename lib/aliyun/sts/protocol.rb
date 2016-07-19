@@ -86,7 +86,7 @@ module Aliyun
 
         r = RestClient::Request.execute(
           :method => 'POST',
-          :url => ENDPOINT,
+          :url => @config.endpoint || ENDPOINT,
           :payload => query
         ) do |response, request, result, &blk|
 

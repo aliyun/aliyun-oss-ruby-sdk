@@ -41,8 +41,6 @@ module Aliyun
             "#{verb}\n#{content_md5}\n#{content_type}\n#{date}\n" +
             "#{cano_headers}#{cano_res}"
 
-          logger.debug("String to sign: #{string_to_sign}")
-
           Util.sign(key, string_to_sign)
         end
 
@@ -51,6 +49,8 @@ module Aliyun
         # @param [String] string_to_sign the string to sign
         # @return [String] the signature
         def sign(key, string_to_sign)
+          logger.debug("String to sign: #{string_to_sign}")
+
           Base64.strict_encode64(
             OpenSSL::HMAC.digest('sha1', key, string_to_sign))
         end

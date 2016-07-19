@@ -595,17 +595,33 @@ module Aliyun
         return url unless sign
 
         expires = Time.now.to_i + expiry
-        string_to_sign = "GET\n" +
-                         "\n\n" +
-                         "#{expires}\n" +
-                         "/#{name}/#{key}"
-        signature = sign(string_to_sign)
-
-        query_string = {
+        query = {
           'Expires' => expires.to_s,
-          'OSSAccessKeyId' => CGI.escape(access_key_id),
-          'Signature' => CGI.escape(signature)
-        }.map { |k, v| "#{k}=#{v}" }.join('&')
+          'OSSAccessKeyId' => CGI.escape(access_key_id)
+        }
+
+        sub_res = []
+        if @protocol.get_sts_token
+          sub_res << "security-token=#{@protocol.get_sts_token}"
+          query['security-token'] = CGI.escape(@protocol.get_sts_token)
+        end
+
+        resource = "/#{name}/#{key}"
+        unless sub_res.empty?
+          resource << "?#{sub_res.join('&')}"
+        end
+
+        string_to_sign = "" <<
+                         "GET\n" << # method
+                         "\n" <<    # Content-MD5
+                         "\n" <<    # Content-Type
+                         "#{expires}\n" <<
+                         "#{resource}"
+
+        signature = sign(string_to_sign)
+        query_string =
+          query.merge('Signature' => CGI.escape(signature))
+          .map { |k, v| "#{k}=#{v}" }.join('&')
 
         [url, query_string].join('?')
       end

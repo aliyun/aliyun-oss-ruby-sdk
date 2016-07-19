@@ -466,6 +466,30 @@ module Aliyun
           sig = Util.sign('yyy', string_to_sign)
           expect(signature).to eq(sig)
         end
+
+        it "should get object url with STS" do
+          sts_bucket = Client.new(
+            :endpoint => @endpoint,
+            :access_key_id => 'xxx',
+            :access_key_secret => 'yyy',
+            :sts_token => 'zzz').get_bucket(@bucket_name)
+
+          object_url = 'http://rubysdk-bucket.oss-cn-hangzhou.aliyuncs.com/yeah'
+
+          url = sts_bucket.object_url('yeah')
+          path = url[0, url.index('?')]
+          expect(path).to eq(object_url)
+
+          query = {}
+          url[url.index('?') + 1, url.size].split('&')
+            .each { |s| k, v = s.split('='); query[k] = v }
+
+          expect(query.key?('Expires')).to be true
+          expect(query.key?('Signature')).to be true
+          expect(query['OSSAccessKeyId']).to eq('xxx')
+          expect(query['security-token']).to eq('zzz')
+        end
+
       end # object operations
 
       context "multipart operations" do
