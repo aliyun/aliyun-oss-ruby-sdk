@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.4.1 / 2016-07-19
+
+- Support signature object url with STS
+
 ### v0.4.0 / 2016-05-19
 
 - Enable copy objects of different buckets(but in the same region)
