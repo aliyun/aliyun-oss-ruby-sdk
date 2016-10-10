@@ -44,6 +44,56 @@ module Aliyun
         expect(signature).to eq("7Oh2wobzeg6dw/cWYbF/2m6s6qc=")
       end
 
+      # 测试CRC计算是否正确
+      it "should calculate a correct data crc" do
+        content = ""
+        crc = Util.crc(content)
+        expect(crc).to eq(0)
+
+        content = "hello world"
+        crc = Util.crc(content)
+        expect(crc).to eq(5981764153023615706)
+
+        content = "test\0hello\1world\2!\3"
+        crc = Util.crc(content)
+        expect(crc).to eq(6745424696046691431)
+      end
+
+      # 测试CRC Combine计算是否正确
+      it "should calculate a correct crc that crc_a combine with crc_b" do
+        content_a = "test\0hello\1world\2!\3"
+        crc_a = Util.crc(content_a)
+        expect(crc_a).to eq(6745424696046691431)
+
+        content_b = "hello world"
+        crc_b = Util.crc(content_b)
+        expect(crc_b).to eq(5981764153023615706)
+
+        crc_c = Util.crc_combine(crc_a, crc_b, content_b.size)
+        expect(crc_c).to eq(13027479509578346683)
+
+        crc_ab = Util.crc(content_a + content_b)
+        expect(crc_ab).to eq(crc_c)
+
+        crc_ab = Util.crc(content_b, crc_a)
+        expect(crc_ab).to eq(crc_c)
+      end
+
+      # 测试CRC校验和异常处理是否正确
+      it "should check inconsistent crc" do
+        expect {
+          Util.crc_check(6745424696046691431, 6745424696046691431, 'put')
+        }.not_to raise_error
+        
+        expect {
+          Util.crc_check(6745424696046691431, 5981764153023615706, 'append')
+        }.to raise_error(CrcInconsistentError, "The crc of append between client and oss is not inconsistent.")
+
+        expect {
+          Util.crc_check(6745424696046691431, -1, 'post')
+        }.to raise_error(CrcInconsistentError, "The crc of post between client and oss is not inconsistent.")
+      end
+
     end # Util
 
   end # OSS

@@ -76,6 +76,32 @@ module Aliyun
           r = s.read(1000)
           expect(r.size).to eq(64)
         end
+
+        it "should read with a correct crc" do
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+          s = HTTP::StreamWriter.new(true) do |sr|
+            sr << content
+          end
+
+          r = s.read(content.size + 1)
+          expect(r.size).to eq(content.size)
+          expect(s.data_crc).to eq(content_crc)
+        end
+
+        it "should read with a correct crc when setting init_crc" do
+          content = "hello world"
+          init_crc = 100
+          content_crc = Aliyun::OSS::Util.crc(content, init_crc)
+
+          s = HTTP::StreamWriter.new(true, init_crc) do |sr|
+            sr << content
+          end
+
+          r = s.read(content.size + 1)
+          expect(r.size).to eq(content.size)
+          expect(s.data_crc).to eq(content_crc)
+        end
       end # StreamWriter
 
     end # HTTP

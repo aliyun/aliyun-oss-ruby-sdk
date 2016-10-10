@@ -65,6 +65,12 @@ module Aliyun
     end # ClientError
 
     ##
+    # CrcInconsistentError will be raised after a upload operation,
+    # when the local crc is inconsistent with the response crc from server. 
+    #
+    class CrcInconsistentError < Common::Exception; end
+
+    ##
     # FileInconsistentError happens in a resumable upload transaction,
     # when the file to upload has changed during the uploading
     # process. Which means the transaction cannot go on. Or user may
