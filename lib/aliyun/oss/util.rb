@@ -7,6 +7,7 @@ require 'digest/md5'
 
 module Aliyun
   module OSS
+
     ##
     # Util functions to help generate formatted Date, signatures,
     # etc.
@@ -72,6 +73,23 @@ module Aliyun
             result
           else
             v
+          end
+        end
+
+        # Get a crc value of the data
+        def crc(data, init_crc = 0)
+          CrcX::crc64(init_crc, data, data.size)
+        end
+
+        # Calculate a value of the crc1 combine with crc2. 
+        def crc_combine(crc1, crc2, len2)
+          CrcX::crc64_combine(crc1, crc2, len2)
+        end
+
+        def crc_check(crc_a, crc_b, operation)
+          if crc_a.nil? || crc_b.nil? || crc_a.to_i != crc_b.to_i
+            logger.error("The crc of #{operation} between client and oss is not inconsistent. crc_a=#{crc_a} crc_b=#{crc_b}")
+            fail CrcInconsistentError.new("The crc of #{operation} between client and oss is not inconsistent.")
           end
         end
 

@@ -14,3 +14,6 @@ require_relative 'oss/iterator'
 require_relative 'oss/object'
 require_relative 'oss/bucket'
 require_relative 'oss/client'
+require_relative 'crcx'
+
+include CrcX
