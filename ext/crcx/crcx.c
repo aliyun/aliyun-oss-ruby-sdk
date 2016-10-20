@@ -1,10 +1,15 @@
 #include "crcx.h"
 
-VALUE CrcX = Qnil;
 void Init_crcx(){
-    CrcX = rb_define_module("CrcX");
-    rb_define_method(CrcX, "crc64", crc64_wrapper, 3);
-    rb_define_method(CrcX, "crc64_combine", crc64_combine_wrapper, 3);
+    VALUE mAliyun = Qnil;
+    VALUE CrcX = Qnil;
+
+    crc64_init_once();
+
+    mAliyun = rb_define_module("Aliyun");
+    CrcX = rb_define_module_under(mAliyun, "CrcX");
+    rb_define_module_function(CrcX, "crc64", crc64_wrapper, 3);
+    rb_define_module_function(CrcX, "crc64_combine", crc64_combine_wrapper, 3);
 }
 
 void check_num_type(VALUE crc_value)
@@ -15,7 +20,7 @@ void check_num_type(VALUE crc_value)
     else {
         Check_Type(crc_value, T_FIXNUM);
     }
-    return ; 
+    return ;
 }
 
 VALUE crc64_wrapper(VALUE self, VALUE init_crc, VALUE buffer, VALUE size)
@@ -38,4 +43,3 @@ VALUE crc64_combine_wrapper(VALUE self, VALUE crc1, VALUE crc2, VALUE len2)
     crc_value = crc64_combine(NUM2ULL(crc1), NUM2ULL(crc2), NUM2ULL(len2));
     return ULL2NUM(crc_value);
 }
-

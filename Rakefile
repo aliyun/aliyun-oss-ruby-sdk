@@ -27,12 +27,15 @@ rescue LoadError
 error
 end
 
-gemspec = Gem::Specification::load(File.expand_path('../aliyun-sdk.gemspec', __FILE__))
+gemspec = Gem::Specification::load(
+  File.expand_path('../aliyun-sdk.gemspec', __FILE__))
 
 Gem::PackageTask.new(gemspec) do |pkg|
 end
 
 Rake::ExtensionTask.new('crcx', gemspec) do |ext|
+  ext.name = 'crcx'
+  ext.ext_dir = 'ext/crcx'
   ext.lib_dir = 'lib/aliyun'
 end
 
@@ -43,17 +46,17 @@ end
 task :default => [:compile, :spec]
 
 task :smart_test do
-  
+
   # run spec test
   Rake::Task[:spec].invoke
-  
+
   if ENV.keys.include?('RUBY_SDK_OSS_KEY')
     begin
       env_crc_enable = ENV['RUBY_SDK_OSS_CRC_ENABLE']
 
       # run test without crc
       ENV['RUBY_SDK_OSS_CRC_ENABLE'] = nil if ENV['RUBY_SDK_OSS_CRC_ENABLE']
-      Rake::Task[:test].invoke 
+      Rake::Task[:test].invoke
 
       # run test with crc
       ENV['RUBY_SDK_OSS_CRC_ENABLE'] = 'true'
