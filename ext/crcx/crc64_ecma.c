@@ -41,14 +41,6 @@
 #include <inttypes.h>
 #include <assert.h>
 
-/* The include of pthread.h below can be commented out in order to not use the
-   pthread library for table initialization.  In that case, the initialization
-   will not be thread-safe.  That's fine, so long as it can be assured that
-   there is only one thread using crc64(). */
-#ifndef _WIN32 || _WIN64
-#include <pthread.h>            /* link with -lpthread */
-#endif
-
 /* 64-bit CRC polynomial with these coefficients, but reversed:
     64, 62, 57, 55, 54, 53, 52, 47, 46, 45, 40, 39, 38, 37, 35, 33, 32,
     31, 29, 27, 24, 23, 22, 21, 19, 17, 13, 12, 10, 9, 7, 4, 1, 0 */
@@ -117,37 +109,18 @@ static void crc64_big_init(void)
             crc64_big_table[k][n] = rev8(crc64_big_table[k][n]);
 }
 
-/* Run the init() function exactly once.  If pthread.h is not included, then
-   this macro will use a simple static state variable for the purpose, which is
-   not thread-safe.  The init function must be of the type void init(void). */
-#ifdef PTHREAD_ONCE_INIT
-#  define ONCE(init) \
-    do { \
-        static pthread_once_t once = PTHREAD_ONCE_INIT; \
-        pthread_once(&once, init); \
-    } while (0)
-#else
-#  define ONCE(init) \
-    do { \
-        static volatile int once = 1; \
-        if (once) { \
-            if (once++ == 1) { \
-                init(); \
-                once = 0; \
-            } \
-            else \
-                while (once) \
-                    ; \
-        } \
-    } while (0)
-#endif
+/* init table once */
+void crc64_init_once(void)
+{
+    crc64_little_init();
+    crc64_big_init();
+}
 
 /* Calculate a CRC-64 eight bytes at a time on a little-endian architecture. */
 static inline uint64_t crc64_little(uint64_t crc, void *buf, size_t len)
 {
     unsigned char *next = (unsigned char *) buf;
 
-    ONCE(crc64_little_init);
     crc = ~crc;
     while (len && ((uintptr_t)next & 7) != 0) {
         crc = crc64_little_table[0][(crc ^ *next++) & 0xff] ^ (crc >> 8);
@@ -178,7 +151,6 @@ static inline uint64_t crc64_big(uint64_t crc, void *buf, size_t len)
 {
     unsigned char *next = (unsigned char *) buf;
 
-    ONCE(crc64_big_init);
     crc = ~rev8(crc);
     while (len && ((uintptr_t)next & 7) != 0) {
         crc = crc64_big_table[0][(crc >> 56) ^ *next++] ^ (crc << 8);
