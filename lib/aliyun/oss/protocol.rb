@@ -7,6 +7,7 @@ require 'time'
 module Aliyun
   module OSS
 
+
     ##
     # Protocol implement the OSS Open API which is low-level. User
     # should refer to {OSS::Client} for normal use.
@@ -534,14 +535,20 @@ module Aliyun
           headers[CALLBACK_HEADER] = opts[:callback].serialize
         end
 
+        payload = HTTP::StreamPayload.new(@config.crc_enable, opts[:init_crc], &block)
         r = @http.put(
           {:bucket => bucket_name, :object => object_name},
-          {:headers => headers, :body => HTTP::StreamPayload.new(&block)})
+          {:headers => headers, :body => payload})
 
         if r.code == 203
           e = CallbackError.new(r)
           logger.error(e.to_s)
           raise e
+        end
+
+        if @config.crc_enable 
+          data_crc = payload.read.data_crc
+          Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'put')
         end
 
         logger.debug('Done put object')
@@ -586,9 +593,16 @@ module Aliyun
 
         headers.merge!(to_lower_case(opts[:headers])) if opts.key?(:headers)
 
+        payload = HTTP::StreamPayload.new(@config.crc_enable && !opts[:init_crc].nil?, opts[:init_crc], &block)
+
         r = @http.post(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-          {:headers => headers, :body => HTTP::StreamPayload.new(&block)})
+          {:headers => headers, :body => payload})
+
+        if @config.crc_enable && !opts[:init_crc].nil?
+          data_crc = payload.read.data_crc
+          Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'append')
+        end
 
         logger.debug('Done append object')
 
@@ -1082,9 +1096,16 @@ module Aliyun
                      "#{object_name}, txn id: #{txn_id}, part No: #{part_no}")
 
         sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
+
+        payload = HTTP::StreamPayload.new(@config.crc_enable, &block)
         r = @http.put(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
-          {:body => HTTP::StreamPayload.new(&block)})
+          {:body => payload})
+
+        if @config.crc_enable
+          data_crc = payload.read.data_crc
+          Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'put')
+        end
 
         logger.debug("Done upload part")
 
@@ -1377,6 +1398,12 @@ module Aliyun
       def sign(string_to_sign)
         Util.sign(@config.access_key_secret, string_to_sign)
       end
+      
+      # Get the crc status
+      # @return true(crc enable) or false(crc disable)
+      def crc_enable
+        @config.crc_enable
+      end
 
       private
 
@@ -1493,7 +1520,6 @@ module Aliyun
           result
         end
       end
-
     end # Protocol
   end # OSS
 end # Aliyun

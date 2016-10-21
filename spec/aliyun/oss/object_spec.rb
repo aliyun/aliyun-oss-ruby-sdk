@@ -17,6 +17,14 @@ module Aliyun
         @bucket = 'rubysdk-bucket'
       end
 
+      def crc_protocol
+        Protocol.new(
+          Config.new(:endpoint => @endpoint,
+                     :access_key_id => 'xxx', 
+                     :access_key_secret => 'yyy', 
+                     :crc_enable => true))
+      end
+
       def get_request_path(object = nil)
         p = "#{@bucket}.#{@endpoint}/"
         p += CGI.escape(object) if object
@@ -190,6 +198,36 @@ module Aliyun
                     'x-oss-meta-people' => 'mary'})
         end
 
+        it "should raise crc exception on error" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+          stub_request(:put, url).to_return(
+            :status => 200, :headers => {:x_oss_hash_crc64ecma => content_crc.to_i + 1})
+
+          expect(crc_protocol.crc_enable).to eq(true)
+          expect {
+            crc_protocol.put_object(@bucket, object_name) do |c|
+              c << content
+            end
+          }.to raise_error(CrcInconsistentError, "The crc of put between client and oss is not inconsistent.")
+        end
+
+        it "should not raise crc exception on error" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+          stub_request(:put, url).to_return(
+            :status => 200, :headers => {:x_oss_hash_crc64ecma => content_crc})
+          expect(crc_protocol.crc_enable).to eq(true)
+          expect {
+            crc_protocol.put_object(@bucket, object_name) do |c|
+              c << content
+            end
+          }.not_to raise_error
+        end
       end # put object
 
       context "Append object" do
@@ -289,6 +327,72 @@ module Aliyun
                                :headers => {
                                  'x-oss-meta-year' => '2015',
                                  'x-oss-meta-people' => 'mary'})
+        end
+
+        it "should raise crc exception on error" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+
+          query = {'append' => '', 'position' => 11}
+          return_headers = {'x-oss-next-append-position' => '101', :x_oss_hash_crc64ecma => content_crc.to_i + 1}
+          stub_request(:post, url).with(:query => query)
+            .to_return(:headers => return_headers)
+          expect(crc_protocol.crc_enable).to eq(true)
+          expect {
+            crc_protocol.append_object(@bucket, object_name, 11, :init_crc => 0) do |c|
+              c << content
+            end
+          }.to raise_error(CrcInconsistentError, "The crc of append between client and oss is not inconsistent.")
+        end
+
+        it "should not raise crc exception with init_crc" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+
+          query = {'append' => '', 'position' => 11}
+          return_headers = {'x-oss-next-append-position' => '101', :x_oss_hash_crc64ecma => content_crc}
+          stub_request(:post, url).with(:query => query)
+            .to_return(:headers => return_headers)
+
+          expect(crc_protocol.crc_enable).to eq(true)
+          next_pos = 0
+          expect {
+            next_pos = crc_protocol.append_object(@bucket, object_name, 11, :init_crc => 0) do |c|
+              c << content
+            end
+          }.not_to raise_error
+
+          expect(WebMock).to have_requested(:post, url)
+            .with(:body => content, :query => query)
+          expect(next_pos).to eq(101)
+        end
+
+        it "should not raise crc exception without init_crc" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+
+          query = {'append' => '', 'position' => 11}
+          return_headers = {'x-oss-next-append-position' => '101', :x_oss_hash_crc64ecma => content_crc + 1}
+          stub_request(:post, url).with(:query => query)
+            .to_return(:headers => return_headers)
+            
+          expect(crc_protocol.crc_enable).to eq(true)
+          next_pos = 0
+          expect {
+            next_pos = crc_protocol.append_object(@bucket, object_name, 11) do |c|
+              c << content
+            end
+          }.not_to raise_error
+
+          expect(WebMock).to have_requested(:post, url)
+            .with(:body => content, :query => query)
+          expect(next_pos).to eq(101)
         end
       end # append object
 

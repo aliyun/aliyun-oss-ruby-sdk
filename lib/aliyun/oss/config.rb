@@ -11,7 +11,8 @@ module Aliyun
 
       attrs :endpoint, :cname, :sts_token,
             :access_key_id, :access_key_secret,
-            :open_timeout, :read_timeout
+            :open_timeout, :read_timeout,
+            :crc_enable
 
       def initialize(opts = {})
         super(opts)
@@ -19,6 +20,7 @@ module Aliyun
         @access_key_id = @access_key_id.strip if @access_key_id
         @access_key_secret = @access_key_secret.strip if @access_key_secret
         normalize_endpoint if endpoint
+        @crc_enable ||= false
       end
 
       private

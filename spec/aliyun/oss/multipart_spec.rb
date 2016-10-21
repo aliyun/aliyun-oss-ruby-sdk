@@ -23,6 +23,14 @@ module Aliyun
         "#{@bucket}.#{@endpoint}/#{@object}"
       end
 
+      def crc_protocol
+        Protocol.new(
+          Config.new(:endpoint => @endpoint,
+                     :access_key_id => 'xxx', 
+                     :access_key_secret => 'yyy', 
+                     :crc_enable => true))
+      end
+
       def mock_txn_id(txn_id)
         Nokogiri::XML::Builder.new do |xml|
           xml.InitiateMultipartUploadResult {
@@ -205,6 +213,42 @@ module Aliyun
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:body => nil, :query => query)
+        end
+
+        it "should raise crc exception on error" do
+          txn_id = 'xxxyyyzzz'
+          part_no = 1
+          query = {'partNumber' => part_no, 'uploadId' => txn_id}
+
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+
+          stub_request(:put, request_path).with(:query => query).to_return(
+            :status => 200, :headers => {:x_oss_hash_crc64ecma => content_crc + 1})
+
+          expect {
+            crc_protocol.upload_part(@bucket, @object, txn_id, part_no) do |body|
+              body << content
+            end
+          }.to raise_error(CrcInconsistentError, "The crc of put between client and oss is not inconsistent.")
+        end
+
+        it "should not raise crc exception on error" do
+          txn_id = 'xxxyyyzzz'
+          part_no = 1
+          query = {'partNumber' => part_no, 'uploadId' => txn_id}
+
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+
+          stub_request(:put, request_path).with(:query => query).to_return(
+            :status => 200, :headers => {:x_oss_hash_crc64ecma => content_crc})
+
+          expect {
+            crc_protocol.upload_part(@bucket, @object, txn_id, part_no) do |body|
+              body << content
+            end
+          }.not_to raise_error
         end
 
       end # upload part

@@ -43,10 +43,14 @@ module Aliyun
       # A stream is any class that responds to :read(bytes, outbuf)
       #
       class StreamWriter
-        def initialize
+        attr_reader :data_crc
+
+        def initialize(crc_enable = false, init_crc = 0)
           @buffer = ""
           @producer = Fiber.new { yield self if block_given? }
           @producer.resume
+          @data_crc = init_crc.to_i
+          @crc_enable = crc_enable
         end
 
         def read(bytes = nil, outbuf = nil)
@@ -84,6 +88,8 @@ module Aliyun
           # "". ios.read(positive-integer) returns nil.
           return nil if ret.empty? && !bytes.nil? && bytes > 0
 
+          @data_crc = Aliyun::OSS::Util.crc(ret, @data_crc) if @crc_enable
+
           ret
         end
 
@@ -115,8 +121,8 @@ module Aliyun
       #     net_http_do_request(http, req, payload ? payload.to_s : nil,
       #                     &@block_response)
       class StreamPayload
-        def initialize(&block)
-          @stream = StreamWriter.new(&block)
+        def initialize(crc_enable = false, init_crc = 0, &block)
+          @stream = StreamWriter.new(crc_enable, init_crc, &block)
         end
 
         def read(bytes = nil)
@@ -129,7 +135,6 @@ module Aliyun
         def closed?
           false
         end
-
       end
 
       include Common::Logging

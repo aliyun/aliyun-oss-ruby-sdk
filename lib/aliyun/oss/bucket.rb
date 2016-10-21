@@ -639,6 +639,12 @@ module Aliyun
         @protocol.sign(string_to_sign)
       end
 
+      # Get the crc status
+      # @return true(crc enable) or false(crc disable)
+      def crc_enable
+        @protocol.crc_enable
+      end
+
       private
       # Infer the file's content type using MIME::Types
       # @param file [String] the file path
@@ -655,7 +661,6 @@ module Aliyun
       def get_cpt_file(file)
         "#{File.expand_path(file)}.cpt"
       end
-
     end # Bucket
   end # OSS
 end # Aliyun
