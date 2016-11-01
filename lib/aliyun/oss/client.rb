@@ -28,6 +28,10 @@ module Aliyun
       #  KEY SECRET，如果不填则会尝试匿名访问
       # @option opts [Boolean] :cname [可选] 指定endpoint是否是用户绑
       #  定的域名
+      # @option opts [Boolean] :upload_crc_enable [可选]指定上传处理
+      #  是否开启CRC校验，默认为开启(true)
+      # @option opts [Boolean] :download_crc_enable [可选]指定下载处理
+      #  是否开启CRC校验，默认为不开启(false)
       # @option opts [String] :sts_token [可选] 指定STS的
       #  SecurityToken，如果指定，则使用STS授权访问
       # @option opts [Fixnum] :open_timeout [可选] 指定建立连接的超时

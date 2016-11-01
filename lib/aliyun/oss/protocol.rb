@@ -535,7 +535,7 @@ module Aliyun
           headers[CALLBACK_HEADER] = opts[:callback].serialize
         end
 
-        payload = HTTP::StreamPayload.new(@config.crc_enable, opts[:init_crc], &block)
+        payload = HTTP::StreamPayload.new(@config.upload_crc_enable, opts[:init_crc], &block)
         r = @http.put(
           {:bucket => bucket_name, :object => object_name},
           {:headers => headers, :body => payload})
@@ -546,7 +546,7 @@ module Aliyun
           raise e
         end
 
-        if @config.crc_enable 
+        if @config.upload_crc_enable && !r.headers[:x_oss_hash_crc64ecma].nil?
           data_crc = payload.read.data_crc
           Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'put')
         end
@@ -593,13 +593,15 @@ module Aliyun
 
         headers.merge!(to_lower_case(opts[:headers])) if opts.key?(:headers)
 
-        payload = HTTP::StreamPayload.new(@config.crc_enable && !opts[:init_crc].nil?, opts[:init_crc], &block)
+        payload = HTTP::StreamPayload.new(@config.upload_crc_enable && !opts[:init_crc].nil?, opts[:init_crc], &block)
 
         r = @http.post(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:headers => headers, :body => payload})
 
-        if @config.crc_enable && !opts[:init_crc].nil?
+        if @config.upload_crc_enable && 
+          !r.headers[:x_oss_hash_crc64ecma].nil? && 
+          !opts[:init_crc].nil?
           data_crc = payload.read.data_crc
           Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'append')
         end
@@ -773,11 +775,22 @@ module Aliyun
             rewrites[:expires].httpdate if rewrites.key?(:expires)
         end
 
+        data_crc = opts[:init_crc].nil? ? 0 : opts[:init_crc]
         r = @http.get(
           {:bucket => bucket_name, :object => object_name,
            :sub_res => sub_res},
           {:headers => headers}
-        ) { |chunk| yield chunk if block_given? }
+        ) do |chunk| 
+          if block_given?
+            # crc enable and no range and oss server support crc
+            data_crc = Aliyun::OSS::Util.crc(chunk, data_crc) if @config.download_crc_enable && range.nil?
+            yield chunk
+          end
+        end
+
+        if @config.download_crc_enable && range.nil? && !r.headers[:x_oss_hash_crc64ecma].nil?
+          Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'get')
+        end
 
         h = r.headers
         metas = {}
@@ -1097,12 +1110,12 @@ module Aliyun
 
         sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
 
-        payload = HTTP::StreamPayload.new(@config.crc_enable, &block)
+        payload = HTTP::StreamPayload.new(@config.upload_crc_enable, &block)
         r = @http.put(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:body => payload})
 
-        if @config.crc_enable
+        if @config.upload_crc_enable && !r.headers[:x_oss_hash_crc64ecma].nil?
           data_crc = payload.read.data_crc
           Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'put')
         end
@@ -1398,11 +1411,17 @@ module Aliyun
       def sign(string_to_sign)
         Util.sign(@config.access_key_secret, string_to_sign)
       end
-      
-      # Get the crc status
-      # @return true(crc enable) or false(crc disable)
-      def crc_enable
-        @config.crc_enable
+
+      # Get the download crc status
+      # @return true(download crc enable) or false(download crc disable)
+      def download_crc_enable
+        @config.download_crc_enable
+      end
+
+      # Get the upload crc status
+      # @return true(upload crc enable) or false(upload crc disable)
+      def upload_crc_enable
+        @config.upload_crc_enable
       end
 
       private

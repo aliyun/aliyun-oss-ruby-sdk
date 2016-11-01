@@ -639,10 +639,16 @@ module Aliyun
         @protocol.sign(string_to_sign)
       end
 
-      # Get the crc status
-      # @return true(crc enable) or false(crc disable)
-      def crc_enable
-        @protocol.crc_enable
+      # Get the download crc status
+      # @return true(download crc enable) or false(download crc disable)
+      def download_crc_enable
+        @protocol.download_crc_enable
+      end
+
+      # Get the upload crc status
+      # @return true(upload crc enable) or false(upload crc disable)
+      def upload_crc_enable
+        @protocol.upload_crc_enable
       end
 
       private
