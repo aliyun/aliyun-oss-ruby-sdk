@@ -30,7 +30,7 @@ module Aliyun
           md5= Util.get_content_md5(states.to_json)
 
           @mutex.synchronize {
-            File.open(file, 'w') {
+            File.open(file, 'wb') {
               |f| f.write(states.merge(md5: md5).to_json)
             }
           }
