@@ -591,6 +591,60 @@ module Aliyun
 
       end # acl, logging, cors, etc
 
+      context "crc" do
+        it "should download crc enable equal config setting" do
+          protocol = Protocol.new(
+                      Config.new(:endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :download_crc_enable => 'true'))
+          expect(protocol.download_crc_enable).to eq(true)
+
+          protocol = Protocol.new(
+                      Config.new(:endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :download_crc_enable => true))
+          expect(protocol.download_crc_enable).to eq(true)
+
+          protocol = Protocol.new(
+                      Config.new(:endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :download_crc_enable => 'false'))
+          expect(protocol.download_crc_enable).to eq(false)
+
+          protocol = Protocol.new(
+                      Config.new(:endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :download_crc_enable => false))
+          expect(protocol.download_crc_enable).to eq(false)
+        end
+
+        it "should upload crc enable equal config setting" do
+          protocol = Protocol.new(
+                      Config.new(:endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :upload_crc_enable => 'true'))
+          expect(protocol.upload_crc_enable).to eq(true)
+
+          protocol = Protocol.new(
+                      Config.new(:endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :upload_crc_enable => true))
+          expect(protocol.upload_crc_enable).to eq(true)
+
+          protocol = Protocol.new(
+                      Config.new(:endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :upload_crc_enable => 'false'))
+          expect(protocol.upload_crc_enable).to eq(false)
+
+          protocol = Protocol.new(
+                      Config.new(:endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :upload_crc_enable => false))
+          expect(protocol.upload_crc_enable).to eq(false)
+        end
+      end # crc
+
     end # Bucket
 
   end # OSS

@@ -22,7 +22,8 @@ module Aliyun
           Config.new(:endpoint => @endpoint,
                      :access_key_id => 'xxx', 
                      :access_key_secret => 'yyy', 
-                     :crc_enable => true))
+                     :upload_crc_enable => true,
+                     :download_crc_enable => true))
       end
 
       def get_request_path(object = nil)
@@ -205,8 +206,7 @@ module Aliyun
           content_crc = Aliyun::OSS::Util.crc(content)
           stub_request(:put, url).to_return(
             :status => 200, :headers => {:x_oss_hash_crc64ecma => content_crc.to_i + 1})
-
-          expect(crc_protocol.crc_enable).to eq(true)
+          expect(crc_protocol.upload_crc_enable).to eq(true)
           expect {
             crc_protocol.put_object(@bucket, object_name) do |c|
               c << content
@@ -221,7 +221,7 @@ module Aliyun
           content_crc = Aliyun::OSS::Util.crc(content)
           stub_request(:put, url).to_return(
             :status => 200, :headers => {:x_oss_hash_crc64ecma => content_crc})
-          expect(crc_protocol.crc_enable).to eq(true)
+          expect(crc_protocol.upload_crc_enable).to eq(true)
           expect {
             crc_protocol.put_object(@bucket, object_name) do |c|
               c << content
@@ -339,7 +339,7 @@ module Aliyun
           return_headers = {'x-oss-next-append-position' => '101', :x_oss_hash_crc64ecma => content_crc.to_i + 1}
           stub_request(:post, url).with(:query => query)
             .to_return(:headers => return_headers)
-          expect(crc_protocol.crc_enable).to eq(true)
+          expect(crc_protocol.upload_crc_enable).to eq(true)
           expect {
             crc_protocol.append_object(@bucket, object_name, 11, :init_crc => 0) do |c|
               c << content
@@ -358,7 +358,7 @@ module Aliyun
           stub_request(:post, url).with(:query => query)
             .to_return(:headers => return_headers)
 
-          expect(crc_protocol.crc_enable).to eq(true)
+          expect(crc_protocol.upload_crc_enable).to eq(true)
           next_pos = 0
           expect {
             next_pos = crc_protocol.append_object(@bucket, object_name, 11, :init_crc => 0) do |c|
@@ -382,7 +382,7 @@ module Aliyun
           stub_request(:post, url).with(:query => query)
             .to_return(:headers => return_headers)
             
-          expect(crc_protocol.crc_enable).to eq(true)
+          expect(crc_protocol.upload_crc_enable).to eq(true)
           next_pos = 0
           expect {
             next_pos = crc_protocol.append_object(@bucket, object_name, 11) do |c|
@@ -660,6 +660,55 @@ module Aliyun
 
           expect(WebMock).to have_requested(:get, url)
             .with(:body => nil, :query => query)
+        end
+
+
+        it "should raise crc exception on error" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+          stub_request(:get, url).to_return(
+            :status => 200, :body => content, :headers => {:x_oss_hash_crc64ecma => content_crc.to_i + 1})
+          response_content = ""
+          expect(crc_protocol.download_crc_enable).to eq(true)
+          expect {
+            crc_protocol.get_object(@bucket, object_name) {|c| response_content << c}
+          }.to raise_error(CrcInconsistentError, "The crc of get between client and oss is not inconsistent.")
+        end
+
+        it "should not raise crc exception on error" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          content = "hello world"
+          content_crc = Aliyun::OSS::Util.crc(content)
+          stub_request(:get, url).to_return(
+            :status => 200, :body => content, :headers => {:x_oss_hash_crc64ecma => content_crc})
+          response_content = ""
+          expect(crc_protocol.download_crc_enable).to eq(true)
+          expect {
+            crc_protocol.get_object(@bucket, object_name) {|c| response_content << c}
+          }.not_to raise_error
+          expect(response_content).to eq(content)
+        end
+
+        it "should not raise crc exception on error when setting range" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          content = "hello world 0123456789"
+          content_crc = Aliyun::OSS::Util.crc(content)
+          stub_request(:get, url).to_return(
+            :status => 200, :body => content, :headers => {:x_oss_hash_crc64ecma => content_crc.to_i + 1})
+          response_content = ""
+          expect(crc_protocol.download_crc_enable).to eq(true)
+          expect {
+            crc_protocol.get_object(@bucket, object_name, {range: [0, 10]}) {|c| response_content << c}
+          }.not_to raise_error
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {},
+                  :headers => {
+                    'Range' => 'bytes=0-9'
+                  })
         end
       end # Get object
 

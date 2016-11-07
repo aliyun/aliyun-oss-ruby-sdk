@@ -36,6 +36,7 @@ class TestCustomHeaders < Minitest::Test
 
     content_encoding = 'deflate'
     expires = (Time.now + 3600).httpdate
+
     @bucket.put_object(
       key,
       headers: {'cache-control' => cache_control,
@@ -46,12 +47,19 @@ class TestCustomHeaders < Minitest::Test
     end
 
     content = ''
-    obj = @bucket.get_object(key) { |c| content << c }
-    assert_equal 'hello world', content
-    assert_equal cache_control, obj.headers[:cache_control]
-    assert_equal content_disposition, obj.headers[:content_disposition]
-    assert_equal content_encoding, obj.headers[:content_encoding]
-    assert_equal expires, obj.headers[:expires]
+    obj = nil
+    if @bucket.download_crc_enable
+      assert_raises Aliyun::OSS::CrcInconsistentError do
+        obj = @bucket.get_object(key) { |c| content << c }
+      end
+    else
+      obj = @bucket.get_object(key) { |c| content << c }
+      assert_equal 'hello world', content
+      assert_equal cache_control, obj.headers[:cache_control]
+      assert_equal content_disposition, obj.headers[:content_disposition]
+      assert_equal content_encoding, obj.headers[:content_encoding]
+      assert_equal expires, obj.headers[:expires]
+    end
   end
 
   def test_headers_overwrite

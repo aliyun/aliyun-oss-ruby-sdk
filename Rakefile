@@ -52,17 +52,21 @@ task :smart_test do
 
   if ENV.keys.include?('RUBY_SDK_OSS_KEY')
     begin
-      env_crc_enable = ENV['RUBY_SDK_OSS_CRC_ENABLE']
-
-      # run test without crc
-      ENV['RUBY_SDK_OSS_CRC_ENABLE'] = nil if ENV['RUBY_SDK_OSS_CRC_ENABLE']
-      Rake::Task[:test].invoke
+      env_upload_crc_enable = ENV['RUBY_SDK_OSS_UPLOAD_CRC_ENABLE']
+      env_download_crc_enable = ENV['RUBY_SDK_OSS_DOWNLOAD_CRC_ENABLE']
 
       # run test with crc
-      ENV['RUBY_SDK_OSS_CRC_ENABLE'] = 'true'
+      ENV['RUBY_SDK_OSS_UPLOAD_CRC_ENABLE'] = 'true'
+      ENV['RUBY_SDK_OSS_DOWNLOAD_CRC_ENABLE'] = 'true'
+      Rake::Task[:test].invoke
+
+      # run test without crc
+      ENV['RUBY_SDK_OSS_UPLOAD_CRC_ENABLE'] = 'false'
+      ENV['RUBY_SDK_OSS_DOWNLOAD_CRC_ENABLE'] = 'false'
       Rake::Task[:test].invoke
     ensure
-      ENV['RUBY_SDK_OSS_CRC_ENABLE'] = env_crc_enable
+      ENV['RUBY_SDK_OSS_UPLOAD_CRC_ENABLE'] = env_upload_crc_enable
+      ENV['RUBY_SDK_OSS_DOWNLOAD_CRC_ENABLE'] = env_download_crc_enable
     end
   end
 end

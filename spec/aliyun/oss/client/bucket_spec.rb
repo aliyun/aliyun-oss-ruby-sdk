@@ -549,6 +549,72 @@ module Aliyun
         end
       end # multipart operations
 
+      context "crc" do
+        it "should download crc enable equal config setting" do
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :download_crc_enable => 'true').get_bucket(@bucket_name)
+          expect(bucket.download_crc_enable).to eq(true)
+
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :download_crc_enable => true).get_bucket(@bucket_name)
+          expect(bucket.download_crc_enable).to eq(true)
+
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :download_crc_enable => 'false').get_bucket(@bucket_name)
+          expect(bucket.download_crc_enable).to eq(false)
+
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :download_crc_enable => false).get_bucket(@bucket_name)
+          expect(bucket.download_crc_enable).to eq(false)
+
+          # check default value
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy').get_bucket(@bucket_name)
+          expect(bucket.download_crc_enable).to eq(false)
+        end
+
+        it "should upload crc enable equal config setting" do
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :upload_crc_enable => 'true').get_bucket(@bucket_name)
+          expect(bucket.upload_crc_enable).to eq(true)
+
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :upload_crc_enable => true).get_bucket(@bucket_name)
+          expect(bucket.upload_crc_enable).to eq(true)
+
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :upload_crc_enable => 'false').get_bucket(@bucket_name)
+          expect(bucket.upload_crc_enable).to eq(false)
+
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy',
+                      :upload_crc_enable => false).get_bucket(@bucket_name)
+          expect(bucket.upload_crc_enable).to eq(false)
+
+          # check default value
+          bucket = Client.new(
+                      :endpoint => @endpoint,
+                      :access_key_id => 'xxx', :access_key_secret => 'yyy').get_bucket(@bucket_name)
+          expect(bucket.upload_crc_enable).to eq(true)
+        end
+      end # crc
+
     end # Bucket
   end # OSS
 end # Aliyun
