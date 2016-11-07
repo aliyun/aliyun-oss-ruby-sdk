@@ -4,7 +4,8 @@ class TestConf
       {
         access_key_id: ENV['RUBY_SDK_OSS_ID'],
         access_key_secret: ENV['RUBY_SDK_OSS_KEY'],
-        crc_enable: ENV['RUBY_SDK_OSS_CRC_ENABLE'],
+        download_crc_enable: ENV['RUBY_SDK_OSS_DOWNLOAD_CRC_ENABLE'],
+        upload_crc_enable: ENV['RUBY_SDK_OSS_UPLOAD_CRC_ENABLE'],
         endpoint: ENV['RUBY_SDK_OSS_ENDPOINT']
       }
     end

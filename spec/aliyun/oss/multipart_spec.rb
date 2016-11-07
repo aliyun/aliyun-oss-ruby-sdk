@@ -28,7 +28,8 @@ module Aliyun
           Config.new(:endpoint => @endpoint,
                      :access_key_id => 'xxx', 
                      :access_key_secret => 'yyy', 
-                     :crc_enable => true))
+                     :upload_crc_enable => true,
+                     :download_crc_enable => true))
       end
 
       def mock_txn_id(txn_id)
