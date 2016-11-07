@@ -114,7 +114,7 @@ module Aliyun
 
           parts = sync_get_all_parts
           # concat all part files into the target file
-          File.open(@file, 'w') do |w|
+          File.open(@file, 'wb') do |w|
             parts.sort{ |x, y| x[:number] <=> y[:number] }.each do |p|
               File.open(get_part_file(p)) do |r|
                   w.write(r.read(READ_SIZE)) until r.eof?
@@ -177,7 +177,7 @@ module Aliyun
           logger.debug("Begin download part: #{p}")
 
           part_file = get_part_file(p)
-          File.open(part_file, 'w') do |w|
+          File.open(part_file, 'wb') do |w|
             @protocol.get_object(
               bucket, object,
               @options.merge(range: p[:range])) { |chunk| w.write(chunk) }
