@@ -1,5 +1,10 @@
 ## Change Log
 
+### v0.5.0 / 2016-11-08
+
+- feat: add crc check for uploading(enabled by default) and downloading(disabled by default)
+- bug: fix file open mode for multipart
+
 ### v0.4.1 / 2016-07-19
 
 - Support signature object url with STS
