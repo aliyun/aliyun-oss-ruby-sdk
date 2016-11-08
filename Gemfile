@@ -4,5 +4,6 @@ gemspec
 
 gem 'coveralls', require: false
 
-# term-ansicolor 1.4.0 requires ruby version >= 2.0, which is incompatible with 1.9.x
-gem 'term-ansicolor', '< 1.4.0'
+# for 1.9.x compatibility
+gem 'term-ansicolor', '~> 1.3.2'
+gem 'addressable', '~> 2.3.6'
