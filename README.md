@@ -44,8 +44,6 @@ AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
     sudo apt-get install ruby-dev
     sudo apt-get install zlib1g-dev
 
-其他系统类似。
-
 ### 创建Client
 
     client = Aliyun::OSS::Client.new(
