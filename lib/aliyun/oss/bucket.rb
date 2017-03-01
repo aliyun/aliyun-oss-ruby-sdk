@@ -590,26 +590,34 @@ module Aliyun
       # @param [Boolean] sign 是否对URL进行签名，默认为是
       # @param [Fixnum] expiry URL的有效时间，单位为秒，默认为60s
       # @return [String] 用于直接访问Object的URL
-      def object_url(key, sign = true, expiry = 60)
+      def object_url(key, sign = true, expiry = 60, sub_res = {})
         url = @protocol.get_request_url(name, key)
         return url unless sign
+
+        sub_res = sub_res.slice(*%w(
+          x-oss-process
+          response-content-type
+          response-content-language
+          response-expires
+          response-cache-control
+          response-content-disposition
+          response-content-encoding
+        ))
 
         expires = Time.now.to_i + expiry
         query = {
           'Expires' => expires.to_s,
           'OSSAccessKeyId' => CGI.escape(access_key_id)
-        }
+        }.merge sub_res
 
-        sub_res = []
         if @protocol.get_sts_token
-          sub_res << "security-token=#{@protocol.get_sts_token}"
+          sub_res['security-token'] = @protocol.get_sts_token
           query['security-token'] = CGI.escape(@protocol.get_sts_token)
         end
 
         resource = "/#{name}/#{key}"
-        unless sub_res.empty?
-          resource << "?#{sub_res.join('&')}"
-        end
+        resource << "?#{sub_res.map { |k, v| "#{k}=#{v}" }.sort.join('&')}" \
+          unless sub_res.empty?
 
         string_to_sign = "" <<
                          "GET\n" << # method
@@ -621,7 +629,7 @@ module Aliyun
         signature = sign(string_to_sign)
         query_string =
           query.merge('Signature' => CGI.escape(signature))
-          .map { |k, v| "#{k}=#{v}" }.join('&')
+               .map { |k, v| "#{k}=#{v}" }.sort.join('&')
 
         [url, query_string].join('?')
       end
