@@ -594,21 +594,12 @@ module Aliyun
         url = @protocol.get_request_url(name, key)
         return url unless sign
 
-        sub_res = sub_res.slice(*%w(
-          x-oss-process
-          response-content-type
-          response-content-language
-          response-expires
-          response-cache-control
-          response-content-disposition
-          response-content-encoding
-        ))
-
         expires = Time.now.to_i + expiry
         query = {
           'Expires' => expires.to_s,
           'OSSAccessKeyId' => CGI.escape(access_key_id)
-        }.merge sub_res
+        }
+        sub_res.each { |k, v| query[k] = CGI.escape(v) }
 
         if @protocol.get_sts_token
           sub_res['security-token'] = @protocol.get_sts_token
