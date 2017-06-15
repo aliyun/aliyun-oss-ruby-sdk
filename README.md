@@ -1,75 +1,76 @@
-# Aliyun OSS SDK for Ruby
+﻿# Alibaba Cloud OSS SDK for Ruby
 
 [![Gem Version](https://badge.fury.io/rb/aliyun-sdk.svg)](https://badge.fury.io/rb/aliyun-sdk)
 [![Build Status](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk.svg?branch=master)](https://travis-ci.org/aliyun/aliyun-oss-ruby-sdk?branch=master)
 [![Coverage Status](https://coveralls.io/repos/aliyun/aliyun-oss-ruby-sdk/badge.svg?branch=master&service=github)](https://coveralls.io/github/aliyun/aliyun-oss-ruby-sdk?branch=master)
 
------
+## [README of Chinese](https://github.com/aliyun/aliyun-oss-ruby-sdk/blob/master/README-CN.md)
 
-Aliyun OSS SDK for Ruby是用于方便访问阿里云OSS（Object Storage Service）
-RESTful API的Ruby客户端程序。了解OSS的的更多信息请访问OSS官网：
-http://www.aliyun.com/product/oss
+## About
 
-## 运行环境
+Alibaba Cloud OSS SDK for Ruby is a Ruby client program for convenient access to Alibaba Cloud OSS (Object Storage Service)
+RESTful APIs. For more information about OSS, visit [the OSS official website]( http://www.aliyun.com/product/oss).
 
-- Ruby版本 >= 1.9.3
-- 支持Ruby运行环境的Windows/Linux/OS X
+## Run environment
 
-安装Ruby请参考：https://www.ruby-lang.org/zh_cn/downloads/
+- Ruby 1.9.3 or above. 
+- Windows, Linux or OS X system that supports Ruby. 
 
-## 快速开始
+To learn how to install Ruby, refer to: https://www.ruby-lang.org/zh_cn/downloads/. 
 
-### 开通OSS账号
+## Quick start
 
-登录官网：http://www.aliyun.com/product/oss ，点击“立即开通”。按照提示
-开通OSS服务。开通服务之后请在“管理控制台”中查看您的AccessKeyId和
-AccessKeySecret，在使用Aliyun OSS SDK时需要提供您的这两个信息。
+### Activate an OSS account
 
-### 安装Aliyun OSS SDK for Ruby
+Log onto the official website: http://www.aliyun.com/product/oss and click "Activate Now". Follow the prompts 
+to activate OSS. After the service is activated, go to "Console" to view your AccessKeyId and 
+AccessKeySecret. These two information items are required when you use Alibaba Cloud OSS SDK. 
+
+### Install Alibaba Cloud OSS SDK for Ruby
 
     gem install aliyun-sdk
 
-并在你的程序中或者`irb`命令下包含：
+Include the following in your project or 'irb' command: 
 
     require 'aliyun/oss'
 
-**注意：**
+**Note:**
 
-1. SDK依赖的一些gem是本地扩展的形式，因此安装完Ruby之后还需要安装
-   ruby-dev以支持编译本地扩展的gem
-2. SDK依赖的处理XML的gem(nokogiri)要求环境中包含zlib库
+1. Some gems on which the SDK depends are local extensions, and you need to install ruby-dev to compile locally
+   extended gems after you install Ruby. 
+2. The environment for running the SDK-dependent gem (nokogiri) for processing XML must have the zlib library.
 
-以Ubuntu为例，安装上述依赖的方法：
+The following method is used to install the preceding dependencies taking Ubuntu as an example:
 
     sudo apt-get install ruby-dev
     sudo apt-get install zlib1g-dev
 
-其他系统类似。
+The practices for other systems are similar. 
 
-### 创建Client
+### Create a client
 
     client = Aliyun::OSS::Client.new(
       :endpoint => 'endpoint',
       :access_key_id => 'access_key_id',
       :access_key_secret => 'access_key_secret')
 
-其中`endpoint`是OSS服务的地址，根据节点区域不同，这个地址可能不一样，例如
-杭州节点的地址是：`http://oss-cn-hangzhou.aliyuncs.com`，其他节点的地址见：
-[节点列表][region-list]
+In specific, the 'endpoint' is the OSS service address. The address may vary based on different regions for the node. For example, 
+the address for a Hangzhou node is: 'http://oss-cn-hangzhou.aliyuncs.com'. For addresses for other nodes, see:  
+[Node List][region-list]. 
 
-`access_key_id`和`access_key_secret`是您的服务凭证，在官网的“管理控制
-台”上面可以查看。**请妥善保管您的AccessKeySecret，泄露之后可能影响您的
-数据安全**
+The 'access_key_id' and 'access_key_secret' are credentials for your service. You can view the 'access_key_id' and 'access_key_secret' in "Console" 
+on the official website.** Please keep your AccessKeySecret safe. Disclosing the AccessKeySecret may compromise your 
+data security**. 
 
-#### 使用用户绑定的域名作为endpoint
+#### Use a bound domain as the endpoint
 
-OSS支持自定义域名绑定，允许用户将自己的域名指向阿里云OSS的服务地址
-（CNAME），这样用户迁移到OSS上时应用内资源的路径可以不用修改。绑定的域
-名指向OSS的一个bucket。绑定域名的操作只能在OSS控制台进行。更多关于自定
-义域名绑定的内容请到官网了解：[OSS自定义域名绑定][custom-domain]
+OSS supports binding a custom domain name and allows you to direct your domain name to the OSS service address 
+(CNAME) of Alibaba Cloud. In this way, you don't need to change the resource path in your app when migrating your data to the OSS. The bound domain name 
+points to a bucket in the OSS. The domain name binding operation can only be carried out in the OSS console. For more information about 
+binding a custom domain name, visit the official website: [Binding Custom Domain Names in OSS][custom-domain]. 
 
-用户绑定了域名后，使用SDK时指定的endpoint可以使用标准的OSS服务地址，也
-可以使用用户绑定的域名：
+After you have bound a custom domain name, you can use the standard OSS service address as the specified endpoint of the OSS, 
+or use the bound domain name: 
 
     client = Aliyun::OSS::Client.new(
       :endpoint => 'http://img.my-domain.com',
@@ -77,19 +78,19 @@ OSS支持自定义域名绑定，允许用户将自己的域名指向阿里云OS
       :access_key_secret => 'access_key_secret',
       :cname => true)
 
-有以下几点需要注意：
+Several notes worth attention:
 
-1. 在Client初始化时必须指定:cname为true
-2. 自定义域名绑定了OSS的一个bucket，所以用这种方式创建的client不能进行
-   list_buckets操作
-3. 在{Aliyun::OSS::Client#get_bucket}时仍需要指定bucket名字，并且要与
-   域名所绑定的bucket名字相同
+1. You must set the "cname" to "true" when initializing the client. 
+2. The custom domain name is bound to a bucket of the OSS, so the client created in this method does not support 
+   List_buckets operations. 
+3. You still need to specify the bucket name during the {Aliyun::OSS::Client#get_bucket} operation and the bucket name should be the same as that 
+   bound to the domain name. 
 
-#### 使用STS创建Client
+#### Create a client using STS
 
-OSS支持用户使用STS进行访问，更多有关STS的内容，请参考 [阿里云STS][aliyun-sts]。
-在使用STS之前需要先向STS申请一个临时token，
-aliyun-sdk中包含了STS的SDK，使用时只需要`require 'aliyun/sts'`即可：
+OSS supports access via STS. For more information about STS, refer to [Alibaba Cloud STS][Alibaba Cloud-sts]. 
+Before using STS, you must apply for a temporary token from the STS. 
+Alibaba Cloud-sdk contains the STS SDK, and you only need to 'require 'aliyun/sts'' for usage: 
 
     require 'aliyun/sts'
     sts = Aliyun::STS::Client.new(
@@ -104,71 +105,71 @@ aliyun-sdk中包含了STS的SDK，使用时只需要`require 'aliyun/sts'`即可
       :access_key_secret => token.access_key_secret,
       :sts_token => token.security_token)
 
-注意使用STS时必须指定`:sts_token`参数。用户还可以通过`STS::Client`申请
-带Policy的token，细节请参考[API文档][sdk-api]。
+Note the ':sts_token' parameter must be specified for using STS. You can also apply for a token with a policy through 'STS::Client' 
+For details, refer to [API Documentation][sdk-api]. 
 
-### 列出当前所有的Bucket
+### List all the current buckets
 
     buckets = client.list_buckets
     buckets.each{ |b| puts b.name }
 
-`list_buckets`返回的是一个迭代器，用户依次获取每个Bucket的信息。Bucket
-对象的结构请查看API文档中的{Aliyun::OSS::Bucket}
+The 'list_buckets' command returns an iterator for you to get the information of each bucket in order. Bucket
+For the object structure, see {Aliyun::OSS::Bucket} in the API documentation. 
 
-### 创建一个Bucket
+### Create a bucket
 
     bucket = client.create_bucket('my-bucket')
 
-### 列出Bucket中所有的Object
+### List all the objects in a bucket
 
     bucket = client.get_bucket('my-bucket')
     objects = bucket.list_objects
     objects.each{ |o| puts o.key }
 
-`list_objects`返回的是一个迭代器，用户依次获取每个Object的信息。Object
-对象的结构请查看API文档中的{Aliyun::OSS::Object}
+The 'list_objects' command returns an iterator for you to get the information of each object in order. Object
+For the object structure, see {Aliyun::OSS::Object} in the API documentation.
 
-### 在Bucket中创建一个Object
+### Create an object in the bucket
 
     bucket.put_object(object_key){ |stream| stream << 'hello world' }
 
-用户也可以通过上传本地文件创建一个Object：
+You can also create an object by uploading a local file: 
 
     bucket.put_object(object_key, :file => local_file)
 
-### 从Bucket中下载一个Object
+### Download an object from the bucket
 
     bucket.get_object(object_key){ |content| puts content }
 
-用户也可以将Object下载到本地文件中：
+You can also download the object to a local file: 
 
     bucket.get_object(object_key, :file => local_file)
 
-### 拷贝Object
+### Copy an object
 
     bucket.copy_object(from_key, to_key)
 
-### 判断一个Object是否存在
+### Identify whether an object exists
 
     bucket.object_exists?(object_key)
 
-更多Bucket的操作请参考API文档中的{Aliyun::OSS::Bucket}
+For more operations on buckets, refer to {Aliyun::OSS::Bucket} in the API documentation.
 
-## 模拟目录结构
+## Simulate the directory structure
 
-OSS是Object存储服务，本身不支持目录结构，所有的object都是“平”的。但是
-用户可以通过设置object的key为"foo/bar/file"这样的形式来模拟目录结构。
-假设现在有以下Objects：
+OSS is a storage service for objects and does not support the directory structure. All objects are flatly structured. But 
+you can simulate the directory structure by setting the object key in the format "foo/bar/file". 
+Suppose there are several objects as follows: 
 
     foo/x
     foo/bar/f1
     foo/bar/dir/file
     foo/hello/file
 
-列出"foo/"目录下的所有文件就是以"foo/"为prefix进行`list_objects`，但
-是这样也会把"foo/bar/"下的所有object也列出来。为此需要用到delimiter参
-数，其含义是从prefix往后遇到第一个delimiter时停止，这中间的key作为
-Object的common prefix，包含在`list_objects`的结果中。
+Listing all the objects under the "foo/" directory means to perform the 'list_objects' operation with "foo/" as the prefix. 
+But this method will also list all the objects under "foo/bar/". That's why we need the delimiter parameter. 
+This parameter means to stop processing at the first delimiter after the prefix. The key during the process acts as 
+the common prefix of objects, objects with the prefix will be included in the 'list_objects' result. 
 
     objs = bucket.list_objects(:prefix => 'foo/', :delimiter => '/')
     objs.each do |i|
@@ -183,17 +184,17 @@ Object的common prefix，包含在`list_objects`的结果中。
     common prefix: foo/bar/
     common prefix: foo/hello/
 
-Common prefix让用户不需要遍历所有的object（可能数量巨大）而找出前缀，
-在模拟目录结构时非常有用。
+Common prefixes free you from traversing all the objects (the number of objects may be huge) to determine the prefix, 
+and is quite helpful for simulating the directory structure. 
 
-## 上传回调
+## Upload callback
 
-在`put_object`和`resumable_upload`时可以指定一个`Callback`，这样在文件
-成功上传到OSS之后，OSS会向用户提供的服务器地址发起一个HTTP POST请求，
-以通知用户相应的事件发生了。用户可以在收到这个通知之后进行相应的动作，
-例如更新数据库、统计行为等。更多有关上传回调的内容请参考[OSS上传回调][oss-callback]。
+You can specify a 'callback' for 'put_object' and 'resumable_upload' so that after the file 
+is successfully uploaded to the OSS, the OSS will initiate an HTTP POST request to the server address you provided 
+to notify you that the corresponding event has occurred. You can perform desired actions after receiving the notification, 
+such as updating the database and making statistics. For more details about upload callback, refer to [OSS Upload Callback][oss-callback]. 
 
-下面的例子将演示如何使用上传回调：
+The example below demonstrates how to use the upload callback: 
 
     callback = Aliyun::OSS::Callback.new(
       url: 'http://10.101.168.94:1234/callback',
@@ -207,31 +208,31 @@ Common prefix让用户不需要遍历所有的object（可能数量巨大）而�
       puts "Callback failed: #{e.message}"
     end
 
-**注意**
+**Note**
 
-1. callback的url**不能**包含query string，而应该在`:query`参数中指定
-2. 可能出现文件上传成功，但是执行回调失败的情况，此时client会抛出
-   `CallbackError`，用户如果要忽略此错误，需要显式接住这个异常。
-3. 详细的例子可以参考[callback.rb](examples/aliyun/oss/callback.rb)
-4. 接受回调的server可以参考[callback_server.rb](rails/aliyun_oss_callback_server.rb)
+1. The callback URL **must not** contain the query string which must be specified in the ':query' parameter.
+2. In the event that the file is successfully uploaded but callback execution fails, the client will throw
+   'CallbackError'. To ignore the error, you need to explicitly catch the exception.
+3. For detailed examples, refer to [callback.rb](examples/aliyun/oss/callback.rb).
+4. For servers that support callback, refer to [callback_server.rb](rails/aliyun_oss_callback_server.rb).
 
-## 断点上传/下载
+## Resumable upload/download
 
-OSS支持大文件的存储，用户如果上传/下载大文件(Object)的时候中断了（网络
-闪断、程序崩溃、机器断电等），重新上传/下载是件很费资源的事情。OSS支持
-Multipart的功能，可以在上传/下载时将大文件进行分片传输。Aliyun OSS SDK
-基于此提供了断点上传/下载的功能。如果发生中断，可以从上次中断的地方继
-续进行上传/下载。对于文件大小超过100MB的文件，都建议采用断点上传/下载
-的方式进行。
+OSS supports the storage of large objects. If the upload/download task of a large object is interrupted (due to network 
+transient disconnections, program crashes, or machine power-off), the re-upload/re-download is taxing on system resources. The OSS supports 
+multipart upload/download to divide a large object into multiple parts for upload/download. Alibaba Cloud OSS SDK
+provides the resumable upload/download feature based on this principle. If an interruption occurs, you can resume the upload/download task 
+beginning with the interrupted part. Resumable upload/download is recommended for objects 
+larger than 100 MB. 
 
-### 断点上传
+### Resumable upload
 
     bucket.resumable_upload(object_key, local_file, :cpt_file => cpt_file)
 
-其中`:cpt_file`指定保存上传中间状态的checkpoint文件所在的位置，如果用户
-没有指定，SDK将为用户在`local_file`所在的目录生成一个
-`local_file.cpt`。上传中断后，只需要提供相同的cpt文件，上传将会从
-中断的点继续上传。所以典型的上传代码是：
+In specific, ':cpt_file' specifies the location of the checkpoint object which stores the intermediate state of the upload. 
+If no object is specified, the SDK will generate a 
+'local_file.cpt' in the directory of the '`local_file'. After the upload interruption, you only need to provide the same cpt object for the upload task to resume from 
+the interrupted part. The typical upload code is: 
 
     retry_times = 5
     retry_times.times do
@@ -242,21 +243,21 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
       end
     end
 
-注意：
+Notes:
 
-1. SDK会将上传的中间状态信息记录在cpt文件中，所以要确保用户对cpt文
-   件有写权限
-2. cpt文件记录了上传的中间状态信息并自带了校验，用户不能去编辑它，如
-   果cpt文件损坏则上传无法继续。整个上传完成后cpt文件会被删除。
+1. The SDK records the upload intermediate states in the cpt object. Therefore, ensure that you have
+   write permission on the cpt object.
+2. The cpt object records the intermediate state information of the upload and has a self-checking function. You cannot edit the object.
+   Upload will fail if the cpt object is corrupted. When the upload is completed, the 'checkpoint' object will be deleted.
 
-### 断点下载
+### Resumable download
 
     bucket.resumable_download(object_key, local_file, :cpt_file => cpt_file)
 
-其中`:cpt_file`指定保存下载中间状态的checkpoint文件所在的位置，如果用户
-没有指定，SDK将为用户在`local_file`所在的目录生成一个
-`local_file.cpt`。下载中断后，只需要提供相同的cpt文件，下载将会从
-中断的点继续下载。所以典型的下载代码是：
+In specific, ':cpt_file' specifies the location of the checkpoint object which stores the intermediate state of the download.
+If no object is specified, the SDK will generate a
+'local_file.cpt' in the directory of the '`local_file'. After the download interruption, you only need to provide the same cpt object for the download task to resume from
+the interrupted part. The typical download code is:
 
     retry_times = 5
     retry_times.times do
@@ -267,55 +268,55 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
       end
     end
 
-注意：
+Notes:
 
-1. 在下载过程中，对于下载完成的每个分片，会在`local_file`所在的目录生
-   成一个`local_file.part.N`的临时文件。整个下载完成后这些文件会被删除。
-   用户不能去编辑或删除part文件，否则下载不能继续。
-2. SDK会将下载的中间状态信息记录在cpt文件中，所以要确保用户对cpt文
-   件有写权限
-3. cpt文件记录了下载的中间状态信息并自带了校验，用户不能去编辑它，如
-   果cpt文件损坏则下载无法继续。整个下载完成后cpt文件会被删除。
+1. During the download process, a temporary object of 'local_file.part.N' will be generated in the directory of the 'local_file' 
+   for each part downloaded. When the download is completed, the objects will be deleted.
+   You cannot edit or delete the part objects, otherwise the download will not proceed. 
+2. The SDK records the download intermediate states in the cpt object; therefore, ensure that you have
+   write permission on the cpt object.
+3. The cpt object records the intermediate state information of the download and has a self-checking function. You cannot edit the object.
+   Download will fail if the cpt object is corrupted. When the download is completed, the 'checkpoint' object will be deleted.
 
 
-## 可追加的文件
+# Appendable object
 
-阿里云OSS中的Object分为两种类型：Normal和Appendable。
+Objects in Alibaba Cloud OSS can be divided into two types: Normal and Appendable. 
 
-- 对于Normal Object，每次上传都是作为一个整体，如果一个Object已存在，
-  两次上传相同key的Object将会覆盖原有的Object
-- 对于Appendable Object，第一次通过`append_object`创建它，后续的
-  `append_object`不会覆盖原有的内容，而是在Object末尾追加内容
-- 不能向Normal Object追加内容
-- 不能拷贝一个Appendable Object
+- A normal object functions as a whole for every upload. If an object already exists, 
+  the later uploaded object will overwrite the previous object with the same key. 
+- An appendable object is created through 'append_object' for the first time. The later uploaded 
+  object through 'append_object' will not overwrite the previous one, but will append content to the end of the object. 
+- You cannot append content to a normal object. 
+- You cannot copy an appendable object. 
 
-### 创建一个Appendable Object
+### Create an appendable object
 
     bucket.append_object(object_key, 0){ |stream| stream << "hello world" }
 
-第二个参数是追加的位置，对一个Object第一次追加时，这个参数为0。后续的
-追加这个参数要求是追加前Object的长度。
+The second parameter indicates the position to append the content. This parameter is "0" for the first append to the object. In later 
+append operations, the value of this parameter is the length of the object before the append. 
 
-当然，也可以从文件中读取追加的内容：
+Of course, you can also read the appended content from the object: 
 
     bucket.append_object(object_key, 0, :file => local_file)
 
-### 向Object追加内容
+### Append content to the object
 
     pos = bucket.get_object(object_key).size
     next_pos = bucket.append_object(object_key, pos, :file => local_file)
 
-程序第一次追加时，可以通过{Aliyun::OSS::Bucket#get_object}获取文件的长度，
-后续追加时，可以根据{Aliyun::OSS::Bucket#append_object}返回的下次追加长度。
+During the first append, you can use {Aliyun::OSS::Bucket#get_object} to get the object length. 
+For later append operations, you can refer to the response of {Aliyun::OSS::Bucket#append_object} to determine the length value for next append. 
 
-注意：如果并发地`append_object`，`next_pos`并不总是对的。
+Note: Concurrent 'append_object' and 'next_pos' operations do not always produce correct results. 
 
-## Object meta信息
+## Object meta information
 
-在上传Object时，除了Object内容，OSS还允许用户为Object设置一些"meta信息
-"，这些meta信息是一个个的Key-Value对，用于标识Object特有的属性信息。这
-些meta信息会跟Object一起存储，并在`get_object`和`get_object`时返
-回给用户。
+Besides the object content, the OSS also allows you to set some "meta information" for the object during object uploading. 
+The meta information is a key-value pair to identify the specific attributes of the object. The 
+meta information will be stored together with the object and returned to users in 'get_object' and 'get_object' 
+operations. 
 
     bucket.put_object(object_key, :file => local_file,
                       :metas => {
@@ -325,36 +326,36 @@ Multipart的功能，可以在上传/下载时将大文件进行分片传输。A
     obj = bucket.get_object(object_key, :file => localfile)
     puts obj.metas
 
-关于meta信息有以下几点需要注意：
+Note the following for meta information: 
 
-1. meta信息的key和value都只能是简单的ASCII非换行字符，并且总的大小不能超过8KB。
-2. Copy object时默认将拷贝源object的meta信息，如果用户不希望这么做，需要
-   显式地将`:meta_directive`设置成{Aliyun::OSS::MetaDirective::REPLACE}
+1. The key and value of the meta information can only be simple ASCII non-newline characters and the total size must not exceed 8 KB. 
+2. In the copy object operation, the meta information of the source object will be copied by default. If you don't want this, explicitly set the 
+   ':meta_directive' to {Aliyun::OSS::MetaDirective::REPLACE}.
 
-## 权限控制
+## Permission control
 
-OSS允许用户对Bucket和Object分别设置访问权限，方便用户控制自己的资源可
-以被如何访问。对于Bucket，有三种访问权限：
+OSS allows you to set access permissions for buckets and objects respectively, so that you can conveniently control
+external access to your resources. A bucket is enabled with three types of access permissions:
 
-- public-read-write 允许匿名用户向该Bucket中创建/获取/删除Object
-- public-read 允许匿名用户获取该Bucket中的Object
-- private 不允许匿名访问，所有的访问都要经过签名
+- public-read-write: Anonymous users are allowed to create/retrieve/delete objects in the bucket. 
+- public-read: Anonymous users are allowed to retrieve objects in the bucket. 
+- private: Anonymous users are not allowed to access the bucket. Signature is required for all accesses. 
 
-创建Bucket时，默认是private权限。之后用户可以通过`bucket.acl=`来设置
-Bucket的权限。
+When a bucket is created, the private permission applies by default. You can use 'bucket.acl=' to set
+the ACL of the bucket.
 
     bucket.acl = Aliyun::OSS::ACL::PUBLIC_READ
     puts bucket.acl # public-read
 
-对于Object，有四种访问权限：
+An object is enabled with four types of access permissions:
 
-- default 继承所属的Bucket的访问权限，即与所属Bucket的权限值一样
-- public-read-write 允许匿名用户读写该Object
-- public-read 允许匿名用户读该Object
-- private 不允许匿名访问，所有的访问都要经过签名
+- default: The object inherits the access permissions of the bucket it belongs to, that is, the access permission of the object is the same as that of the bucket where the object is stored. 
+- public-read-write: Anonymous users are allowed to read/write the object. 
+- public-read: Anonymous users are allowed to read the object. 
+- private: Anonymous users are not allowed to access the object. Signature is required for all accesses.
 
-创建Object时，默认为default权限。之后用户可以通过
-`bucket.set_object_acl`来设置Object的权限。
+When an object is created, the default permission applies by default. You can use
+'bucket.set_object_acl' to configure the ACL of the object.
 
     acl = bucket.get_object_acl(object_key)
     puts acl # default
@@ -362,28 +363,28 @@ Bucket的权限。
     acl = bucket.get_object_acl(object_key)
     puts acl # public-read
 
-需要注意的是：
+Notes:
 
-1. 如果设置了Object的权限，则访问该Object时进行权限认证时会优先判断
-   Object的权限，而Bucket的权限设置会被忽略。
-2. 允许匿名访问时（设置了public-read或者public-read-write权限），用户
-   可以直接通过浏览器访问，例如：
+1. If an object is configured with an ACL policy, the object ACL takes priority during permission authentication
+   when the object is accessed. The bucket ACL will be ignored.
+2. If anonymous access is allowed (public-read or public-read-write is configured for the object), you
+   can directly access the object using a browser. For example, 
 
         http://bucket-name.oss-cn-hangzhou.aliyuncs.com/object.jpg
 
-3. 访问具有public权限的Bucket/Object时，也可以通过创建匿名的Client来进行：
+3. A bucket or an object with the public permission can be accessed by an anonymous client which is created with the following code:
 
-        # 不填access_key_id和access_key_secret，将创建匿名Client，只能访问
-        # 具有public权限的Bucket/Object
+        # If access_key_id and access_key_secret are not specified, an anonymous client will be created. The client can only access 
+        # the buckets and objects with the public permission.
         client = Client.new(:endpoint => 'oss-cn-hangzhou.aliyuncs.com')
         bucket = client.get_bucket('public-bucket')
         obj = bucket.get_object('public-object', :file => local_file)
 
-## 运行examples
+## Run examples
 
-SDK的examples/目录下有一些展示SDK功能的示例程序，用户稍加配置就可以直
-接运行。examples需要的权限信息和bucket信息从用户`HOME`目录下的配置文件
-`~/.oss.yml`中读取，其中应该包含以下字段（**注意冒号后面需要有一个空格**）：
+Some example projects are provided in the examples/ directory of the SDK to demonstrate the SDK features. You can run the examples 
+after some configuration. The permission information and the bucket information required by the examples are available in the 
+'~/.oss.yml' configuration file under the 'HOME' directory. The information should include the following fields (**Note the space after the colon**): 
 
     endpoint: oss-cn-hangzhou.aliyuncs.com
     cname: false
@@ -391,11 +392,11 @@ SDK的examples/目录下有一些展示SDK功能的示例程序，用户稍加�
     access_key_secret: <ACCESS KEY SECRET>
     bucket: <BUCKET NAME>
 
-用户需要创建（如果不存在）或者修改其中的内容，然后运行：
+You need to create (if not in existence) or modify the content and run the example project: 
 
     ruby examples/aliyun/oss/bucket.rb
 
-## 运行测试
+## Run test
 
 ```bash
 bundle exec rake spec
@@ -408,12 +409,12 @@ export RUBY_SDK_OSS_BUCKET=bucket-name
 bundle exec rake test
 ```
 
-## 更多
+## More
 
-更多文档请查看：
+For more documentation, see:
 
-- 阿里云官网文档：http://help.aliyun.com/product/8314910_oss.html
-- OSS官网SDK文档：https://help.aliyun.com/document_detail/oss/sdk/ruby-sdk/install.html
+- Alibaba Cloud official documentation: http://help.aliyun.com/product/8314910_oss.html 
+- OSS official SDK documentation: https://help.aliyun.com/document_detail/oss/sdk/ruby-sdk/install.html
 
 
 [region-list]: https://help.aliyun.com/document_detail/oss/user_guide/endpoint_region.html
@@ -421,3 +422,4 @@ bundle exec rake test
 [aliyun-sts]: https://help.aliyun.com/document_detail/ram/intro/concepts.html
 [sdk-api]: http://www.rubydoc.info/gems/aliyun-sdk/
 [oss-callback]: https://help.aliyun.com/document_detail/oss/user_guide/upload_object/upload_callback.html
+
