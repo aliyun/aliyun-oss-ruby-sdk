@@ -13,18 +13,18 @@ RESTful APIs. For more information about OSS, visit [the OSS official website]( 
 
 ## Run environment
 
-- Ruby 1.9.3 or above. 
-- Windows, Linux or OS X system that supports Ruby. 
+- Ruby ***1.9.3*** or above. 
+- *Windows*, *Linux* or *OS X* system that supports Ruby. 
 
-To learn how to install Ruby, refer to: https://www.ruby-lang.org/zh_cn/downloads/. 
+To learn how to install Ruby, refer to: [ruby-lang](https://www.ruby-lang.org/en/documentation/installation/). 
 
 ## Quick start
 
 ### Activate an OSS account
 
-Log onto the official website: http://www.aliyun.com/product/oss and click "Activate Now". Follow the prompts 
-to activate OSS. After the service is activated, go to "Console" to view your AccessKeyId and 
-AccessKeySecret. These two information items are required when you use Alibaba Cloud OSS SDK. 
+Log onto [the official website](http://www.aliyun.com/product/oss) and click *Activate Now*. Follow the prompts 
+to activate OSS. After the service is activated, go to *Console* to view your `AccessKeyId` and 
+`AccessKeySecret`. These two information items are required when you use Alibaba Cloud OSS SDK. 
 
 ### Install Alibaba Cloud OSS SDK for Ruby
 
@@ -36,11 +36,11 @@ Include the following in your project or 'irb' command:
 
 **Note:**
 
-1. Some gems on which the SDK depends are local extensions, and you need to install ruby-dev to compile locally
+- Some gems on which the SDK depends are local extensions, and you need to install ruby-dev to compile locally
    extended gems after you install Ruby. 
-2. The environment for running the SDK-dependent gem (nokogiri) for processing XML must have the zlib library.
+- The environment for running the SDK-dependent gem (nokogiri) for processing XML must have the zlib library.
 
-The following method is used to install the preceding dependencies taking Ubuntu as an example:
+The following method is used to install the preceding dependencies taking *Ubuntu* as an example:
 
     sudo apt-get install ruby-dev
     sudo apt-get install zlib1g-dev
@@ -54,13 +54,10 @@ The practices for other systems are similar.
       :access_key_id => 'access_key_id',
       :access_key_secret => 'access_key_secret')
 
-In specific, the 'endpoint' is the OSS service address. The address may vary based on different regions for the node. For example, 
-the address for a Hangzhou node is: 'http://oss-cn-hangzhou.aliyuncs.com'. For addresses for other nodes, see:  
-[Node List][region-list]. 
+In specific, the `endpoint` is the OSS service address. The address may vary based on different regions for the node. For example, 
+the address for a Hangzhou node is: `http://oss-cn-hangzhou.aliyuncs.com`. For addresses for other nodes, see:  [Node List][region-list]. 
 
-The 'access_key_id' and 'access_key_secret' are credentials for your service. You can view the 'access_key_id' and 'access_key_secret' in "Console" 
-on the official website.** Please keep your AccessKeySecret safe. Disclosing the AccessKeySecret may compromise your 
-data security**. 
+The `access_key_id` and `access_key_secret` are credentials for your service. You can view them in `Console` on the official website. **Please keep your AccessKeySecret safe. Disclosing the AccessKeySecret may compromise your data security**. 
 
 #### Use a bound domain as the endpoint
 
@@ -78,19 +75,19 @@ or use the bound domain name:
       :access_key_secret => 'access_key_secret',
       :cname => true)
 
-Several notes worth attention:
+**Note:**
 
-1. You must set the "cname" to "true" when initializing the client. 
-2. The custom domain name is bound to a bucket of the OSS, so the client created in this method does not support 
+- You must set the `cname` to ***true*** when initializing the client. 
+- The custom domain name is bound to a bucket of the OSS, so the client created in this method does not support 
    List_buckets operations. 
-3. You still need to specify the bucket name during the {Aliyun::OSS::Client#get_bucket} operation and the bucket name should be the same as that 
+- You still need to specify the bucket name during the {Aliyun::OSS::Client#get_bucket} operation and the bucket name should be the same as that 
    bound to the domain name. 
 
 #### Create a client using STS
 
-OSS supports access via STS. For more information about STS, refer to [Alibaba Cloud STS][Alibaba Cloud-sts]. 
+OSS supports access via STS. For more information about STS, refer to [Alibaba Cloud STS][aliyun-sts]. 
 Before using STS, you must apply for a temporary token from the STS. 
-Alibaba Cloud-sdk contains the STS SDK, and you only need to 'require 'aliyun/sts'' for usage: 
+Alibaba Cloud Ruby SDK contains the STS SDK, and you only need to `require 'aliyun/sts'` for usage: 
 
     require 'aliyun/sts'
     sts = Aliyun::STS::Client.new(
@@ -105,15 +102,14 @@ Alibaba Cloud-sdk contains the STS SDK, and you only need to 'require 'aliyun/st
       :access_key_secret => token.access_key_secret,
       :sts_token => token.security_token)
 
-Note the ':sts_token' parameter must be specified for using STS. You can also apply for a token with a policy through 'STS::Client' 
-For details, refer to [API Documentation][sdk-api]. 
+**Note:** the `:sts_token` parameter must be specified for using STS. You can also apply for a token with a policy through `STS::Client`, for details, refer to [API Documentation][sdk-api]. 
 
 ### List all the current buckets
 
     buckets = client.list_buckets
     buckets.each{ |b| puts b.name }
 
-The 'list_buckets' command returns an iterator for you to get the information of each bucket in order. Bucket
+The `list_buckets` command returns an iterator for you to get the information of each bucket in order. Bucket
 For the object structure, see {Aliyun::OSS::Bucket} in the API documentation. 
 
 ### Create a bucket
@@ -126,7 +122,7 @@ For the object structure, see {Aliyun::OSS::Bucket} in the API documentation.
     objects = bucket.list_objects
     objects.each{ |o| puts o.key }
 
-The 'list_objects' command returns an iterator for you to get the information of each object in order. Object
+The `list_objects` command returns an iterator for you to get the information of each object in order. Object
 For the object structure, see {Aliyun::OSS::Object} in the API documentation.
 
 ### Create an object in the bucket
@@ -166,10 +162,10 @@ Suppose there are several objects as follows:
     foo/bar/dir/file
     foo/hello/file
 
-Listing all the objects under the "foo/" directory means to perform the 'list_objects' operation with "foo/" as the prefix. 
+Listing all the objects under the "foo/" directory means to perform the *list_objects* operation with "foo/" as the prefix. 
 But this method will also list all the objects under "foo/bar/". That's why we need the delimiter parameter. 
 This parameter means to stop processing at the first delimiter after the prefix. The key during the process acts as 
-the common prefix of objects, objects with the prefix will be included in the 'list_objects' result. 
+the common prefix of objects, objects with the prefix will be included in the *list_objects* result. 
 
     objs = bucket.list_objects(:prefix => 'foo/', :delimiter => '/')
     objs.each do |i|
@@ -189,8 +185,8 @@ and is quite helpful for simulating the directory structure.
 
 ## Upload callback
 
-You can specify a 'callback' for 'put_object' and 'resumable_upload' so that after the file 
-is successfully uploaded to the OSS, the OSS will initiate an HTTP POST request to the server address you provided 
+You can specify a *callback* for `put_object` and `resumable_upload` so that after the file 
+is successfully uploaded to the OSS, the OSS will initiate an *HTTP POST* request to the server address you provided 
 to notify you that the corresponding event has occurred. You can perform desired actions after receiving the notification, 
 such as updating the database and making statistics. For more details about upload callback, refer to [OSS Upload Callback][oss-callback]. 
 
@@ -208,30 +204,30 @@ The example below demonstrates how to use the upload callback:
       puts "Callback failed: #{e.message}"
     end
 
-**Note**
+**Note:**
 
-1. The callback URL **must not** contain the query string which must be specified in the ':query' parameter.
-2. In the event that the file is successfully uploaded but callback execution fails, the client will throw
-   'CallbackError'. To ignore the error, you need to explicitly catch the exception.
-3. For detailed examples, refer to [callback.rb](examples/aliyun/oss/callback.rb).
-4. For servers that support callback, refer to [callback_server.rb](rails/aliyun_oss_callback_server.rb).
+- The callback URL **must not** contain the query string which must be specified in the `:query` parameter.
+- In the event that the file is successfully uploaded but callback execution fails, the client will throw
+   `CallbackError`. To ignore the error, you need to explicitly catch the exception.
+- For detailed examples, refer to [callback.rb](examples/aliyun/oss/callback.rb).
+- For servers that support callback, refer to [callback_server.rb](rails/aliyun_oss_callback_server.rb).
 
 ## Resumable upload/download
 
-OSS supports the storage of large objects. If the upload/download task of a large object is interrupted (due to network 
-transient disconnections, program crashes, or machine power-off), the re-upload/re-download is taxing on system resources. The OSS supports 
+OSS supports the storage of large objects. If the upload/download task of a large object is interrupted (due to network transient disconnections, program crashes, or machine power-off), 
+the re-upload/re-download is taxing on system resources. The OSS supports 
 multipart upload/download to divide a large object into multiple parts for upload/download. Alibaba Cloud OSS SDK
 provides the resumable upload/download feature based on this principle. If an interruption occurs, you can resume the upload/download task 
-beginning with the interrupted part. Resumable upload/download is recommended for objects 
-larger than 100 MB. 
+beginning with the interrupted part. ***Resumable upload/download is recommended for objects 
+larger than 100MB***. 
 
 ### Resumable upload
 
     bucket.resumable_upload(object_key, local_file, :cpt_file => cpt_file)
 
-In specific, ':cpt_file' specifies the location of the checkpoint object which stores the intermediate state of the upload. 
+In specific, `:cpt_file` specifies the location of the checkpoint object which stores the intermediate state of the upload. 
 If no object is specified, the SDK will generate a 
-'local_file.cpt' in the directory of the '`local_file'. After the upload interruption, you only need to provide the same cpt object for the upload task to resume from 
+`local_file.cpt` in the directory of the `local_file`. After the upload interruption, you only need to provide the same cpt object for the upload task to resume from 
 the interrupted part. The typical upload code is: 
 
     retry_times = 5
@@ -243,20 +239,20 @@ the interrupted part. The typical upload code is:
       end
     end
 
-Notes:
+**Notes:**
 
-1. The SDK records the upload intermediate states in the cpt object. Therefore, ensure that you have
+- The SDK records the upload intermediate states in the cpt object. Therefore, ensure that you have
    write permission on the cpt object.
-2. The cpt object records the intermediate state information of the upload and has a self-checking function. You cannot edit the object.
-   Upload will fail if the cpt object is corrupted. When the upload is completed, the 'checkpoint' object will be deleted.
+- The cpt object records the intermediate state information of the upload and has a self-checking function. You cannot edit the object.
+Upload will fail if the cpt object is corrupted. When the upload is completed, the checkpoint file will be deleted.
 
 ### Resumable download
 
     bucket.resumable_download(object_key, local_file, :cpt_file => cpt_file)
 
-In specific, ':cpt_file' specifies the location of the checkpoint object which stores the intermediate state of the download.
+In specific, `:cpt_file` specifies the location of the checkpoint object which stores the intermediate state of the download.
 If no object is specified, the SDK will generate a
-'local_file.cpt' in the directory of the '`local_file'. After the download interruption, you only need to provide the same cpt object for the download task to resume from
+`local_file.cpt` in the directory of the `local_file`. After the download interruption, you only need to provide the same cpt object for the download task to resume from
 the interrupted part. The typical download code is:
 
     retry_times = 5
@@ -268,15 +264,15 @@ the interrupted part. The typical download code is:
       end
     end
 
-Notes:
+**Notes:**
 
-1. During the download process, a temporary object of 'local_file.part.N' will be generated in the directory of the 'local_file' 
+- During the download process, a temporary object of `local_file.part.N` will be generated in the directory of the `local_file` 
    for each part downloaded. When the download is completed, the objects will be deleted.
    You cannot edit or delete the part objects, otherwise the download will not proceed. 
-2. The SDK records the download intermediate states in the cpt object; therefore, ensure that you have
+- The SDK records the download intermediate states in the cpt object; therefore, ensure that you have
    write permission on the cpt object.
-3. The cpt object records the intermediate state information of the download and has a self-checking function. You cannot edit the object.
-   Download will fail if the cpt object is corrupted. When the download is completed, the 'checkpoint' object will be deleted.
+- The cpt object records the intermediate state information of the download and has a self-checking function. You cannot edit the object.
+   Download will fail if the cpt object is corrupted. When the download is completed, the `checkpoint` object will be deleted.
 
 
 # Appendable object
@@ -285,8 +281,8 @@ Objects in Alibaba Cloud OSS can be divided into two types: Normal and Appendabl
 
 - A normal object functions as a whole for every upload. If an object already exists, 
   the later uploaded object will overwrite the previous object with the same key. 
-- An appendable object is created through 'append_object' for the first time. The later uploaded 
-  object through 'append_object' will not overwrite the previous one, but will append content to the end of the object. 
+- An appendable object is created through `append_object` for the first time. The later uploaded 
+  object through `append_object` will not overwrite the previous one, but will append content to the end of the object. 
 - You cannot append content to a normal object. 
 - You cannot copy an appendable object. 
 
@@ -294,7 +290,7 @@ Objects in Alibaba Cloud OSS can be divided into two types: Normal and Appendabl
 
     bucket.append_object(object_key, 0){ |stream| stream << "hello world" }
 
-The second parameter indicates the position to append the content. This parameter is "0" for the first append to the object. In later 
+The second parameter indicates the position to append the content. This parameter is ***0*** for the first append to the object. In later 
 append operations, the value of this parameter is the length of the object before the append. 
 
 Of course, you can also read the appended content from the object: 
@@ -309,13 +305,13 @@ Of course, you can also read the appended content from the object:
 During the first append, you can use {Aliyun::OSS::Bucket#get_object} to get the object length. 
 For later append operations, you can refer to the response of {Aliyun::OSS::Bucket#append_object} to determine the length value for next append. 
 
-Note: Concurrent 'append_object' and 'next_pos' operations do not always produce correct results. 
+***Note:*** Concurrent `append_object` and `next_pos` operations do not always produce correct results. 
 
 ## Object meta information
 
-Besides the object content, the OSS also allows you to set some "meta information" for the object during object uploading. 
+Besides the object content, the OSS also allows you to set some *meta information* for the object during object uploading. 
 The meta information is a key-value pair to identify the specific attributes of the object. The 
-meta information will be stored together with the object and returned to users in 'get_object' and 'get_object' 
+meta information will be stored together with the object and returned to users in `get_object` and `get_object_meta` 
 operations. 
 
     bucket.put_object(object_key, :file => local_file,
@@ -326,11 +322,11 @@ operations.
     obj = bucket.get_object(object_key, :file => localfile)
     puts obj.metas
 
-Note the following for meta information: 
+**Note:**
 
-1. The key and value of the meta information can only be simple ASCII non-newline characters and the total size must not exceed 8 KB. 
-2. In the copy object operation, the meta information of the source object will be copied by default. If you don't want this, explicitly set the 
-   ':meta_directive' to {Aliyun::OSS::MetaDirective::REPLACE}.
+- The key and value of the meta information can only be simple ASCII non-newline characters and the total size must not exceed ***8KB***. 
+- In the copy object operation, the meta information of the source object will be copied by default. If you don't want this, explicitly set the 
+   `:meta_directive` to {Aliyun::OSS::MetaDirective::REPLACE}.
 
 ## Permission control
 
@@ -363,16 +359,16 @@ When an object is created, the default permission applies by default. You can us
     acl = bucket.get_object_acl(object_key)
     puts acl # public-read
 
-Notes:
+**Notes:**
 
-1. If an object is configured with an ACL policy, the object ACL takes priority during permission authentication
+- If an object is configured with an ACL policy, the object ACL takes priority during permission authentication
    when the object is accessed. The bucket ACL will be ignored.
-2. If anonymous access is allowed (public-read or public-read-write is configured for the object), you
+- If anonymous access is allowed (public-read or public-read-write is configured for the object), you
    can directly access the object using a browser. For example, 
 
         http://bucket-name.oss-cn-hangzhou.aliyuncs.com/object.jpg
 
-3. A bucket or an object with the public permission can be accessed by an anonymous client which is created with the following code:
+- A bucket or an object with the public permission can be accessed by an anonymous client which is created with the following code:
 
         # If access_key_id and access_key_secret are not specified, an anonymous client will be created. The client can only access 
         # the buckets and objects with the public permission.
@@ -384,7 +380,7 @@ Notes:
 
 Some example projects are provided in the examples/ directory of the SDK to demonstrate the SDK features. You can run the examples 
 after some configuration. The permission information and the bucket information required by the examples are available in the 
-'~/.oss.yml' configuration file under the 'HOME' directory. The information should include the following fields (**Note the space after the colon**): 
+`~/.oss.yml` configuration file under the *HOME* directory. The information should include the following fields (**Note the space after the colon**):
 
     endpoint: oss-cn-hangzhou.aliyuncs.com
     cname: false
@@ -409,12 +405,16 @@ export RUBY_SDK_OSS_BUCKET=bucket-name
 bundle exec rake test
 ```
 
+## License
+
+- MIT
+
 ## More
 
 For more documentation, see:
 
-- Alibaba Cloud official documentation: http://help.aliyun.com/product/8314910_oss.html 
-- OSS official SDK documentation: https://help.aliyun.com/document_detail/oss/sdk/ruby-sdk/install.html
+- Alibaba Cloud OSS Ruby SDK [documentation](https://help.aliyun.com/document_detail/oss/sdk/ruby-sdk/install.html).
+- Alibaba Cloud OSS [documentation](http://help.aliyun.com/product/8314910_oss.html).
 
 
 [region-list]: https://help.aliyun.com/document_detail/oss/user_guide/endpoint_region.html
