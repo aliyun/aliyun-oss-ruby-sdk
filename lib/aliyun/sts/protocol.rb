@@ -95,7 +95,7 @@ module Aliyun
             logger.error(e.to_s)
             raise e
           else
-            response.return!(request, result, &blk)
+            response.return!(&blk)
           end
         end
 
