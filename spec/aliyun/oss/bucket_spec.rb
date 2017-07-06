@@ -356,7 +356,7 @@ module Aliyun
 
       context "acl, logging, website, referer, lifecycle" do
         it "should update acl" do
-          query = {'acl' => ''}
+          query = {'acl' => nil}
           stub_request(:put, request_path).with(:query => query)
 
           @protocol.put_bucket_acl(@bucket, ACL::PUBLIC_READ)
@@ -366,7 +366,7 @@ module Aliyun
         end
 
         it "should get acl" do
-          query = {'acl' => ''}
+          query = {'acl' => nil}
           return_acl = ACL::PUBLIC_READ
           stub_request(:get, request_path)
             .with(:query => query)
@@ -380,7 +380,7 @@ module Aliyun
         end
 
         it "should enable logging" do
-          query = {'logging' => ''}
+          query = {'logging' => nil}
           stub_request(:put, request_path).with(:query => query)
 
           logging_opts = BucketLogging.new(
@@ -393,7 +393,7 @@ module Aliyun
         end
 
         it "should disable logging" do
-          query = {'logging' => ''}
+          query = {'logging' => nil}
           stub_request(:put, request_path).with(:query => query)
 
           logging_opts = BucketLogging.new(:enable => false)
@@ -404,7 +404,7 @@ module Aliyun
         end
 
         it "should get logging" do
-          query = {'logging' => ''}
+          query = {'logging' => nil}
           logging_opts = BucketLogging.new(
             :enable => true,
             :target_bucket => 'target-bucket', :target_prefix => 'foo')
@@ -421,7 +421,7 @@ module Aliyun
         end
 
         it "should delete logging" do
-          query = {'logging' => ''}
+          query = {'logging' => nil}
           stub_request(:delete, request_path).with(:query => query)
 
           @protocol.delete_bucket_logging(@bucket)
@@ -431,7 +431,7 @@ module Aliyun
         end
 
         it "should update website" do
-          query = {'website' => ''}
+          query = {'website' => nil}
           stub_request(:put, request_path).with(:query => query)
 
           website_opts = BucketWebsite.new(
@@ -443,7 +443,7 @@ module Aliyun
         end
 
         it "should get website" do
-          query = {'website' => ''}
+          query = {'website' => nil}
           website_opts = BucketWebsite.new(
             :enable => true, :index => 'index.html', :error => 'error.html')
 
@@ -459,7 +459,7 @@ module Aliyun
         end
 
         it "should delete website" do
-          query = {'website' => ''}
+          query = {'website' => nil}
           stub_request(:delete, request_path).with(:query => query)
 
           @protocol.delete_bucket_website(@bucket)
@@ -469,7 +469,7 @@ module Aliyun
         end
 
         it "should update referer" do
-          query = {'referer' => ''}
+          query = {'referer' => nil}
           stub_request(:put, request_path).with(:query => query)
 
           referer_opts = BucketReferer.new(
@@ -481,7 +481,7 @@ module Aliyun
         end
 
         it "should get referer" do
-          query = {'referer' => ''}
+          query = {'referer' => nil}
           referer_opts = BucketReferer.new(
             :allow_empty => true, :whitelist => ['xxx', 'yyy'])
 
@@ -497,7 +497,7 @@ module Aliyun
         end
 
         it "should update lifecycle" do
-          query = {'lifecycle' => ''}
+          query = {'lifecycle' => nil}
           stub_request(:put, request_path).with(:query => query)
 
           rules = (1..5).map do |i|
@@ -513,7 +513,7 @@ module Aliyun
         end
 
         it "should get lifecycle" do
-          query = {'lifecycle' => ''}
+          query = {'lifecycle' => nil}
           return_rules = (1..5).map do |i|
             LifeCycleRule.new(
               :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
@@ -532,7 +532,7 @@ module Aliyun
         end
 
         it "should delete lifecycle" do
-          query = {'lifecycle' => ''}
+          query = {'lifecycle' => nil}
           stub_request(:delete, request_path).with(:query => query)
 
           @protocol.delete_bucket_lifecycle(@bucket)
@@ -542,7 +542,7 @@ module Aliyun
         end
 
         it "should set cors" do
-          query = {'cors' => ''}
+          query = {'cors' => nil}
           stub_request(:put, request_path).with(:query => query)
 
           rules = (1..5).map do |i|
@@ -559,7 +559,7 @@ module Aliyun
         end
 
         it "should get cors" do
-          query = {'cors' => ''}
+          query = {'cors' => nil}
           return_rules = (1..5).map do |i|
             CORSRule.new(
               :allowed_origins => (1..3).map {|x| "origin-#{x}"},
@@ -580,7 +580,7 @@ module Aliyun
         end
 
         it "should delete cors" do
-          query = {'cors' => ''}
+          query = {'cors' => nil}
 
           stub_request(:delete, request_path).with(:query => query)
 

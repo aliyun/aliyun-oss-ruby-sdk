@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '~> 10.4'
   spec.add_development_dependency 'rake-compiler', '~> 0.9.0'
   spec.add_development_dependency 'rspec', '~> 3.3'
-  spec.add_development_dependency 'webmock', '~> 1.22'
+  spec.add_development_dependency 'webmock', '~> 3.0'
   spec.add_development_dependency 'simplecov', '~> 0.10.0'
   spec.add_development_dependency 'minitest', '~> 5.8'
 

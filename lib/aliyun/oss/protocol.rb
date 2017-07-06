@@ -535,7 +535,7 @@ module Aliyun
           headers[CALLBACK_HEADER] = opts[:callback].serialize
         end
 
-        payload = HTTP::StreamPayload.new(@config.upload_crc_enable, opts[:init_crc], &block).read
+        payload = HTTP::StreamPayload.new(@config.upload_crc_enable, opts[:init_crc], &block)
         r = @http.put(
           {:bucket => bucket_name, :object => object_name},
           {:headers => headers, :body => payload})

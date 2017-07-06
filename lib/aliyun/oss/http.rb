@@ -281,16 +281,16 @@ module Aliyun
         headers[:params] = (sub_res || {}).merge(http_options[:query] || {})
 
         block_response = ->(r) { handle_response(r, &block) } if block
-        r = RestClient::Request.execute(
+        request = RestClient::Request.new(
           :method => verb,
           :url => get_request_url(bucket, object),
           :headers => headers,
           :payload => http_options[:body],
           :block_response => block_response,
           :open_timeout => @config.open_timeout || OPEN_TIMEOUT,
-          :timeout => @config.read_timeout || READ_TIMEOUT
-        ) do |response, request, result, &blk|
-
+          :read_timeout => @config.read_timeout || READ_TIMEOUT
+        )
+        response = request.execute do |response, &blk|
           if response.code >= 300
             e = ServerError.new(response)
             logger.error(e.to_s)
@@ -302,23 +302,23 @@ module Aliyun
 
         # If streaming read_body is used, we need to create the
         # RestClient::Response ourselves
-        unless r.is_a?(RestClient::Response)
-          if r.code.to_i >= 300
-            r = RestClient::Response.create(
-              RestClient::Request.decode(r['content-encoding'], r.body),
-              r, nil, nil)
-            e = ServerError.new(r)
+        unless response.is_a?(RestClient::Response)
+          if response.code.to_i >= 300
+            response = RestClient::Response.create(
+              RestClient::Request.decode(response['content-encoding'], response.body),
+              response, request)
+            e = ServerError.new(response)
             logger.error(e.to_s)
             raise e
           end
-          r = RestClient::Response.create(nil, r, nil, nil)
-          r.return!
+          response = RestClient::Response.create(nil, response, request)
+          response.return!
         end
 
-        logger.debug("Received HTTP response, code: #{r.code}, headers: " \
-                      "#{r.headers}, body: #{r.body}")
+        logger.debug("Received HTTP response, code: #{response.code}, headers: " \
+                      "#{response.headers}, body: #{response.body}")
 
-        r
+        response
       end
 
       def get_user_agent

@@ -247,7 +247,7 @@ module Aliyun
         end
 
         it "should test bucket existence" do
-          query = {'acl' => ''}
+          query = {'acl' => nil}
           return_acl = ACL::PUBLIC_READ
           stub_request(:get, bucket_url)
             .with(:query => query)
