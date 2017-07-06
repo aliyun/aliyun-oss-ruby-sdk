@@ -13,7 +13,7 @@ RESTful APIs. For more information about OSS, visit [the OSS official website]( 
 
 ## Run environment
 
-- Ruby ***1.9.3*** or above. 
+- Ruby ***2.0*** or above. For Ruby 1.9, please use v0.5.0.
 - *Windows*, *Linux* or *OS X* system that supports Ruby. 
 
 To learn how to install Ruby, refer to: [ruby-lang](https://www.ruby-lang.org/en/documentation/installation/). 

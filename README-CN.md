@@ -13,7 +13,7 @@ Aliyun OSS SDK for Ruby是用于方便访问阿里云OSS（Object Storage Servic
 
 ## 运行环境
 
-- Ruby版本 >= 1.9.3
+- Ruby版本 >= 2.0, Ruby1.9请使用 v0.5.0.
 - 支持Ruby运行环境的Windows/Linux/OS X
 
 安装Ruby请参考：https://www.ruby-lang.org/zh_cn/downloads/
