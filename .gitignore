@@ -1,0 +1,16 @@
+/.bundle/
+/.yardoc
+/Gemfile.lock
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+.pryrc
+.versions.conf
+
+aliyun_sdk.log
+download_file
+file_to_upload
+lib/aliyun/crcx.bundle
