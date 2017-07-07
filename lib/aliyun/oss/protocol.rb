@@ -599,8 +599,8 @@ module Aliyun
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:headers => headers, :body => payload})
 
-        if @config.upload_crc_enable && 
-          !r.headers[:x_oss_hash_crc64ecma].nil? && 
+        if @config.upload_crc_enable &&
+          !r.headers[:x_oss_hash_crc64ecma].nil? &&
           !opts[:init_crc].nil?
           data_crc = payload.read.data_crc
           Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'append')
@@ -780,7 +780,7 @@ module Aliyun
           {:bucket => bucket_name, :object => object_name,
            :sub_res => sub_res},
           {:headers => headers}
-        ) do |chunk| 
+        ) do |chunk|
           if block_given?
             # crc enable and no range and oss server support crc
             data_crc = Aliyun::OSS::Util.crc(chunk, data_crc) if @config.download_crc_enable && range.nil?

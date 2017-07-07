@@ -88,14 +88,14 @@ module Aliyun
           :method => 'POST',
           :url => @config.endpoint || ENDPOINT,
           :payload => query
-        ) do |response, request, result, &blk|
+        ) do |response, &blk|
 
           if response.code >= 300
             e = ServerError.new(response)
             logger.error(e.to_s)
             raise e
           else
-            response.return!(request, result, &blk)
+            response.return!(&blk)
           end
         end
 

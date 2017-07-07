@@ -120,7 +120,7 @@ module Aliyun
 
       context "bucket operations" do
         it "should get acl" do
-          query = {'acl' => ''}
+          query = {'acl' => nil}
           return_acl = ACL::PUBLIC_READ
 
           stub_request(:get, bucket_url)
@@ -135,7 +135,7 @@ module Aliyun
         end
 
         it "should set acl" do
-          query = {'acl' => ''}
+          query = {'acl' => nil}
 
           stub_request(:put, bucket_url).with(:query => query)
 
@@ -146,7 +146,7 @@ module Aliyun
         end
 
         it "should delete logging setting" do
-          query = {'logging' => ''}
+          query = {'logging' => nil}
 
           stub_request(:delete, bucket_url).with(:query => query)
 
@@ -303,7 +303,7 @@ module Aliyun
 
         it "should set custom headers when append object" do
           key = 'ruby'
-          query = {'append' => '', 'position' => 11}
+          query = {'append' => nil, 'position' => 11}
           stub_request(:post, object_url(key)).with(:query => query)
 
           @bucket.append_object(
@@ -362,7 +362,7 @@ module Aliyun
 
         it "should append object from file" do
           key = 'ruby'
-          query = {'append' => '', 'position' => 11}
+          query = {'append' => nil, 'position' => 11}
           stub_request(:post, object_url(key)).with(:query => query)
 
           content = (1..10).map{ |i| i.to_s.rjust(9, '0') }.join("\n")
@@ -378,7 +378,7 @@ module Aliyun
 
         it "should append object with acl" do
           key = 'ruby'
-          query = {'append' => '', 'position' => 11}
+          query = {'append' => nil, 'position' => 11}
           stub_request(:post, object_url(key)).with(:query => query)
 
           @bucket.append_object(key, 11, :acl => ACL::PUBLIC_READ_WRITE)
@@ -497,7 +497,7 @@ module Aliyun
           query_1 = {
             :prefix => 'list-',
             'encoding-type' => 'url',
-            'uploads' => ''
+            'uploads' => nil
           }
           return_up_1 = (1..5).map{ |i| Multipart::Transaction.new(
             :id => "txn-#{i}",
@@ -513,7 +513,7 @@ module Aliyun
             :prefix => 'list-',
             'upload-id-marker' => 'txn-5',
             'encoding-type' => 'url',
-            'uploads' => ''
+            'uploads' => nil
           }
           return_up_2 = (6..8).map{ |i| Multipart::Transaction.new(
             :id => "txn-#{i}",

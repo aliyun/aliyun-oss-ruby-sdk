@@ -26,8 +26,8 @@ module Aliyun
       def crc_protocol
         Protocol.new(
           Config.new(:endpoint => @endpoint,
-                     :access_key_id => 'xxx', 
-                     :access_key_secret => 'yyy', 
+                     :access_key_id => 'xxx',
+                     :access_key_secret => 'yyy',
                      :upload_crc_enable => true,
                      :download_crc_enable => true))
       end
@@ -111,7 +111,7 @@ module Aliyun
       context "Initiate multipart upload" do
 
         it "should POST to create transaction" do
-          query = {'uploads' => ''}
+          query = {'uploads' => nil}
           stub_request(:post, request_path).with(:query => query)
 
           @protocol.initiate_multipart_upload(
@@ -129,7 +129,7 @@ module Aliyun
         end
 
         it "should return transaction id" do
-          query = {'uploads' => ''}
+          query = {'uploads' => nil}
           return_txn_id = 'zyx'
           stub_request(:post, request_path).
             with(:query => query).
@@ -143,7 +143,7 @@ module Aliyun
         end
 
         it "should raise Exception on error" do
-          query = {'uploads' => ''}
+          query = {'uploads' => nil}
 
           code = 'InvalidArgument'
           message = 'Invalid argument.'
@@ -462,7 +462,7 @@ module Aliyun
 
         it "should GET to list multiparts" do
           request_path = "#{@bucket}.#{@endpoint}/"
-          query = {'uploads' => ''}
+          query = {'uploads' => nil}
 
           stub_request(:get, request_path).with(:query => query)
 
@@ -475,7 +475,7 @@ module Aliyun
         it "should send extra params when list multiparts" do
           request_path = "#{@bucket}.#{@endpoint}/"
           query = {
-            'uploads' => '',
+            'uploads' => nil,
             'prefix' => 'foo-',
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
@@ -501,7 +501,7 @@ module Aliyun
         it "should get multipart transactions" do
           request_path = "#{@bucket}.#{@endpoint}/"
           query = {
-            'uploads' => '',
+            'uploads' => nil,
             'prefix' => 'foo-',
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
@@ -548,7 +548,7 @@ module Aliyun
         it "should decode object key" do
           request_path = "#{@bucket}.#{@endpoint}/"
           query = {
-            'uploads' => '',
+            'uploads' => nil,
             'prefix' => 'foo-',
             'upload-id-marker' => 'id-marker',
             'key-marker' => 'key-marker',
@@ -614,7 +614,7 @@ module Aliyun
 
         it "should raise Exception on error" do
           request_path = "#{@bucket}.#{@endpoint}/"
-          query = {'uploads' => ''}
+          query = {'uploads' => nil}
 
           code = 'InvalidArgument'
           message = 'Invalid argument.'

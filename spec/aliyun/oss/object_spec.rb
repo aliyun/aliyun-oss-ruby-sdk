@@ -20,8 +20,8 @@ module Aliyun
       def crc_protocol
         Protocol.new(
           Config.new(:endpoint => @endpoint,
-                     :access_key_id => 'xxx', 
-                     :access_key_secret => 'yyy', 
+                     :access_key_id => 'xxx',
+                     :access_key_secret => 'yyy',
                      :upload_crc_enable => true,
                      :download_crc_enable => true))
       end
@@ -236,7 +236,7 @@ module Aliyun
           object_name = 'ruby'
           url = get_request_path(object_name)
 
-          query = {'append' => '', 'position' => 11}
+          query = {'append' => nil, 'position' => 11}
           return_headers = {'x-oss-next-append-position' => '101'}
           stub_request(:post, url).with(:query => query)
             .to_return(:headers => return_headers)
@@ -255,7 +255,7 @@ module Aliyun
           object_name = 'ruby'
           url = get_request_path(object_name)
 
-          query = {'append' => '', 'position' => 11}
+          query = {'append' => nil, 'position' => 11}
           code = 'ObjectNotAppendable'
           message = 'Normal object cannot be appended.'
           stub_request(:post, url).with(:query => query).
@@ -275,7 +275,7 @@ module Aliyun
         it "should use default content-type" do
           object_name = 'ruby'
           url = get_request_path(object_name)
-          query = {'append' => '', 'position' => 0}
+          query = {'append' => nil, 'position' => 0}
 
           stub_request(:post, url).with(:query => query)
 
@@ -292,7 +292,7 @@ module Aliyun
         it "should use customized content-type" do
           object_name = 'ruby'
           url = get_request_path(object_name)
-          query = {'append' => '', 'position' => 0}
+          query = {'append' => nil, 'position' => 0}
 
           stub_request(:post, url).with(:query => query)
 
@@ -311,7 +311,7 @@ module Aliyun
         it "should set user defined metas" do
           object_name = 'ruby'
           url = get_request_path(object_name)
-          query = {'append' => '', 'position' => 0}
+          query = {'append' => nil, 'position' => 0}
 
           stub_request(:post, url).with(:query => query)
 
@@ -335,7 +335,7 @@ module Aliyun
           content = "hello world"
           content_crc = Aliyun::OSS::Util.crc(content)
 
-          query = {'append' => '', 'position' => 11}
+          query = {'append' => nil, 'position' => 11}
           return_headers = {'x-oss-next-append-position' => '101', :x_oss_hash_crc64ecma => content_crc.to_i + 1}
           stub_request(:post, url).with(:query => query)
             .to_return(:headers => return_headers)
@@ -353,7 +353,7 @@ module Aliyun
           content = "hello world"
           content_crc = Aliyun::OSS::Util.crc(content)
 
-          query = {'append' => '', 'position' => 11}
+          query = {'append' => nil, 'position' => 11}
           return_headers = {'x-oss-next-append-position' => '101', :x_oss_hash_crc64ecma => content_crc}
           stub_request(:post, url).with(:query => query)
             .to_return(:headers => return_headers)
@@ -377,11 +377,11 @@ module Aliyun
           content = "hello world"
           content_crc = Aliyun::OSS::Util.crc(content)
 
-          query = {'append' => '', 'position' => 11}
+          query = {'append' => nil, 'position' => 11}
           return_headers = {'x-oss-next-append-position' => '101', :x_oss_hash_crc64ecma => content_crc + 1}
           stub_request(:post, url).with(:query => query)
             .to_return(:headers => return_headers)
-            
+
           expect(crc_protocol.upload_crc_enable).to eq(true)
           next_pos = 0
           expect {
@@ -804,7 +804,7 @@ module Aliyun
 
         it "should batch delete objects" do
           url = get_request_path
-          query = {'delete' => '', 'encoding-type' => KeyEncoding::URL}
+          query = {'delete' => nil, 'encoding-type' => KeyEncoding::URL}
 
           object_names = (1..5).map do |i|
             "object-#{i}"
@@ -824,7 +824,7 @@ module Aliyun
 
         it "should decode object key in batch delete response" do
           url = get_request_path
-          query = {'delete' => '', 'encoding-type' => KeyEncoding::URL}
+          query = {'delete' => nil, 'encoding-type' => KeyEncoding::URL}
 
           object_names = (1..5).map do |i|
             "对象-#{i}"
@@ -851,7 +851,7 @@ module Aliyun
           object_name = 'ruby'
           url = get_request_path(object_name)
 
-          query = {'acl' => ''}
+          query = {'acl' => nil}
           stub_request(:put, url).with(:query => query)
 
           @protocol.put_object_acl(@bucket, object_name, ACL::PUBLIC_READ)
@@ -866,7 +866,7 @@ module Aliyun
           object_name = 'ruby'
           url = get_request_path(object_name)
 
-          query = {'acl' => ''}
+          query = {'acl' => nil}
           return_acl = ACL::PUBLIC_READ
 
           stub_request(:get, url)
