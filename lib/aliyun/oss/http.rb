@@ -125,7 +125,7 @@ module Aliyun
           @stream = StreamWriter.new(crc_enable, init_crc, &block)
         end
 
-        def read(bytes = nil)
+        def read(bytes = nil,  outbuf = nil)
           @stream
         end
 
