@@ -535,7 +535,7 @@ module Aliyun
           headers[CALLBACK_HEADER] = opts[:callback].serialize
         end
 
-        payload = HTTP::StreamPayload.new(@config.upload_crc_enable, opts[:init_crc], &block)
+        payload = HTTP::StreamWriter.new(@config.upload_crc_enable, opts[:init_crc], &block)
         r = @http.put(
           {:bucket => bucket_name, :object => object_name},
           {:headers => headers, :body => payload})
@@ -547,7 +547,7 @@ module Aliyun
         end
 
         if @config.upload_crc_enable && !r.headers[:x_oss_hash_crc64ecma].nil?
-          data_crc = payload.read.data_crc
+          data_crc = payload.data_crc
           Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'put')
         end
 
@@ -593,7 +593,8 @@ module Aliyun
 
         headers.merge!(to_lower_case(opts[:headers])) if opts.key?(:headers)
 
-        payload = HTTP::StreamPayload.new(@config.upload_crc_enable && !opts[:init_crc].nil?, opts[:init_crc], &block)
+        payload = HTTP::StreamWriter.new(
+          @config.upload_crc_enable && !opts[:init_crc].nil?, opts[:init_crc], &block)
 
         r = @http.post(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
@@ -602,7 +603,7 @@ module Aliyun
         if @config.upload_crc_enable &&
           !r.headers[:x_oss_hash_crc64ecma].nil? &&
           !opts[:init_crc].nil?
-          data_crc = payload.read.data_crc
+          data_crc = payload.data_crc
           Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'append')
         end
 
@@ -1110,13 +1111,13 @@ module Aliyun
 
         sub_res = {'partNumber' => part_no, 'uploadId' => txn_id}
 
-        payload = HTTP::StreamPayload.new(@config.upload_crc_enable, &block)
+        payload = HTTP::StreamWriter.new(@config.upload_crc_enable, &block)
         r = @http.put(
           {:bucket => bucket_name, :object => object_name, :sub_res => sub_res},
           {:body => payload})
 
         if @config.upload_crc_enable && !r.headers[:x_oss_hash_crc64ecma].nil?
-          data_crc = payload.read.data_crc
+          data_crc = payload.data_crc
           Aliyun::OSS::Util.crc_check(data_crc, r.headers[:x_oss_hash_crc64ecma], 'put')
         end
 

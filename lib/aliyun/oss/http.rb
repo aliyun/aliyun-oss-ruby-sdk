@@ -105,35 +105,11 @@ module Aliyun
           false
         end
 
-        def inspect
-          "@buffer: " + @buffer[0, 32].inspect + "...#{@buffer.size} bytes"
-        end
-      end
-
-      # RestClient requires the payload to respones to :read(bytes)
-      # and return a stream.
-      # We are not doing the real read here, just return a
-      # readable stream for RestClient playload.rb treats it as:
-      #     def read(bytes=nil)
-      #       @stream.read(bytes)
-      #     end
-      #     alias :to_s :read
-      #     net_http_do_request(http, req, payload ? payload.to_s : nil,
-      #                     &@block_response)
-      class StreamPayload
-        def initialize(crc_enable = false, init_crc = 0, &block)
-          @stream = StreamWriter.new(crc_enable, init_crc, &block)
-        end
-
-        def read(bytes = nil)
-          @stream
-        end
-
         def close
         end
 
-        def closed?
-          false
+        def inspect
+          "@buffer: " + @buffer[0, 32].inspect + "...#{@buffer.size} bytes"
         end
       end
 
@@ -290,13 +266,13 @@ module Aliyun
           :open_timeout => @config.open_timeout || OPEN_TIMEOUT,
           :read_timeout => @config.read_timeout || READ_TIMEOUT
         )
-        response = request.execute do |response, &blk|
-          if response.code >= 300
-            e = ServerError.new(response)
+        response = request.execute do |resp, &blk|
+          if resp.code >= 300
+            e = ServerError.new(resp)
             logger.error(e.to_s)
             raise e
           else
-            response.return!(&blk)
+            resp.return!(&blk)
           end
         end
 
