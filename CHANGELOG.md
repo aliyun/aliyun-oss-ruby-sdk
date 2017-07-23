@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.6.0 / 2017-07-23
+
+- deps: upgrade rest-client to 2.x
+
 ### v0.5.0 / 2016-11-08
 
 - feat: add crc check for uploading(enabled by default) and downloading(disabled by default)
