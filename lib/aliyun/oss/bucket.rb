@@ -590,7 +590,7 @@ module Aliyun
       # @param [Boolean] sign 是否对URL进行签名，默认为是
       # @param [Fixnum] expiry URL的有效时间，单位为秒，默认为60s
       # @return [String] 用于直接访问Object的URL
-      def object_url(key, sign = true, expiry = 60, sub_res = {})
+      def object_url(key, sign = true, expiry = 60, sub_res: {})
         url = @protocol.get_request_url(name, key)
         return url unless sign
 
