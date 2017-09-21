@@ -320,7 +320,7 @@ module Aliyun
           raise e
         end
 
-        falseq
+        false
       end
 
       alias :object_exist? :object_exists?
