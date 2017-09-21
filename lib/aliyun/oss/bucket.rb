@@ -292,6 +292,18 @@ module Aliyun
           :condition => conditions)
       end
 
+      # 获取Object的meta
+      # @param key [String] Object的名字
+      # @param opts [Hash] 指定更新Object meta需要满足的条件，
+      #  同{#get_object}
+      # @return [Aliyun::OSS::Object] Object的meta信息
+      #  * :size [Numeric] Object的ETag
+      #  * :etag [String]  Object的ETag
+      #  * :last_modified [Time] Object的最后修改时间
+      def get_object_meta(object_name, opts = {})
+        @protocol.get_object_meta(name, object_name, opts)
+      end
+
       # 判断一个object是否存在
       # @param key [String] Object的名字
       # @return [Boolean] 如果Object存在返回true，否则返回false

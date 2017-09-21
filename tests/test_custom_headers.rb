@@ -75,4 +75,18 @@ class TestCustomHeaders < Minitest::Test
     assert_equal 'application/json', obj.headers[:content_type]
     assert_equal ({'hello' => 'bar'}), obj.metas
   end
+
+  def test_get_object_meta
+    key = get_key('meta')
+    object_content = 'hello, test_get_object_meta interface testing.'
+
+    @bucket.put_object(key)  { |s| s << object_content }
+    meta = @bucket.get_object_meta(key)
+
+    assert_equal meta.class, Aliyun::OSS::Object
+    assert_equal meta.key, key
+    assert_equal meta.size, object_content.size
+    assert meta.etag.upcase.include?(OpenSSL::Digest::MD5.hexdigest(object_content).upcase)
+  end
+
 end
