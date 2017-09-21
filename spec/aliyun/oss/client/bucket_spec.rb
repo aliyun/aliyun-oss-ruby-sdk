@@ -485,8 +485,8 @@ module Aliyun
           dict = {
             'object_name' => 'ruby', 
             'url' => object_url('ruby'), 
-            'time_if_modified_since' => (Time.now - 100000).rfc822, 
             'Last-Modified' => (Time.now - 50000).rfc822,
+            'time_if_modified_since' => (Time.now - 100000).rfc822, 
             'x-oss-object-type' => 'Normal',
             'ETag' => 'aaabbbcccdddeeefff11122334455',
             'Content-Length' => 1024,
@@ -524,8 +524,8 @@ module Aliyun
           dict = {
             'object_name' => 'ruby', 
             'url' => object_url('ruby'), 
-            'time_if_modified_since' => (Time.now - 30000).rfc822, 
             'Last-Modified' => (Time.now - 500000).rfc822,
+            'time_if_modified_since' => (Time.now - 30000).rfc822, 
             'x-oss-object-type' => 'Normal',
             'ETag' => 'aaabbbcccdddeeefff11122334455',
             'Content-Length' => 1024,
@@ -735,7 +735,7 @@ module Aliyun
             'object_name' => 'ruby', 
             'url' => object_url('ruby'), 
             'Last-Modified' => (Time.now - 10000).rfc822,
-            'if_unmatch_etag' => 'AAAAAAAAAAAACCCCCBBBBBBBBBB',
+            'if_unmatch_etag' => 'aaabbbcccdddeeefff11122334455',
             'x-oss-object-type' => 'Normal',
             'ETag' => 'aaabbbcccdddeeefff11122334455',
             'Content-Length' => 1024,
