@@ -294,12 +294,16 @@ module Aliyun
 
       # 获取Object的meta
       # @param key [String] Object的名字
-      # @param opts [Hash] 指定更新Object meta需要满足的条件，
-      #  同{#get_object}
-      # @return [Aliyun::OSS::Object] Object的meta信息
+      # @option opts [Hash] 指定获取Object meta需要满足的条件，同{#get_object}
+      #   * :if_modified_since (Time) 指定如果object的修改时间晚于这个值，则获取
+      #   * :if_unmodified_since (Time) 指定如果object从这个时间后再无修改，则获取
+      #   * :if_match_etag (String) 指定如果object的etag等于这个值，则获取
+      #   * :if_unmatch_etag (String) 指定如果object的etag不等于这个值，则获取
+      # @return [Aliyun::OSS::Object] 返回Object对象信息
       #  * :size [Numeric] Object的size
       #  * :etag [String]  Object的ETag
       #  * :last_modified [Time] Object的最后修改时间
+      #  * :headers [Hash] 以x-oss-meta-开头的Object属性值
       def get_object_meta(key, opts = {})
         @protocol.get_object_meta(name, key, opts)
       end
@@ -316,7 +320,7 @@ module Aliyun
           raise e
         end
 
-        false
+        falseq
       end
 
       alias :object_exist? :object_exists?
