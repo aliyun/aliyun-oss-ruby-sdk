@@ -297,11 +297,11 @@ module Aliyun
       # @param opts [Hash] 指定更新Object meta需要满足的条件，
       #  同{#get_object}
       # @return [Aliyun::OSS::Object] Object的meta信息
-      #  * :size [Numeric] Object的ETag
+      #  * :size [Numeric] Object的size
       #  * :etag [String]  Object的ETag
       #  * :last_modified [Time] Object的最后修改时间
-      def get_object_meta(object_name, opts = {})
-        @protocol.get_object_meta(name, object_name, opts)
+      def get_object_meta(key, opts = {})
+        @protocol.get_object_meta(name, key, opts)
       end
 
       # 判断一个object是否存在
