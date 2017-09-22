@@ -305,7 +305,7 @@ module Aliyun
       #  * :last_modified [Time] Object的最后修改时间
       #  * :headers [Hash] 以x-oss-meta-开头的Object属性值
       def get_object_meta(key, opts = {})
-        @protocol.get_object_meta(name, key, opts)
+        @protocol.get_object_meta(name, key, opts) 
       end
 
       # 判断一个object是否存在
