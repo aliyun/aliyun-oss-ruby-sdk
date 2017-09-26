@@ -29,18 +29,19 @@ module Aliyun
       def logger
         Logging.logger
       end
-
-      private
-
-      def self.logger
-        unless @logger
-          @logger = Logger.new(
-            @log_file ||= DEFAULT_LOG_FILE, MAX_NUM_LOG, ROTATE_SIZE)
-          @logger.level = Logger::INFO
+      
+      class << self
+        private
+        
+        def logger
+          unless @logger
+            @logger = Logger.new(
+              @log_file ||= DEFAULT_LOG_FILE, MAX_NUM_LOG, ROTATE_SIZE)
+            @logger.level = Logger::INFO
+          end
+          @logger
         end
-        @logger
       end
-
     end # logging
   end # Common
 end # Aliyun
