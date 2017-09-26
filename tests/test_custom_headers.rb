@@ -76,7 +76,7 @@ class TestCustomHeaders < Minitest::Test
     assert_equal ({'hello' => 'bar'}), obj.metas
   end
 
-  def test_get_object_meta
+  def test_get_object_detailed_meta
     key = get_key('meta')
     object_content = 'hello, test_get_object_meta interface testing.'
 
@@ -85,9 +85,10 @@ class TestCustomHeaders < Minitest::Test
       content_type: 'text/html',
       metas: {'world' => 'Ruby.World', 'year' => '2017', 'people' => 'Jackie'},
       headers: {'content-type' => 'application/json',
+                'Cache-Control' => '123456', 
                 'x-oss-meta-hello' => 'hello.Bar'}) { |s| s << object_content }
-            
-    meta = @bucket.get_object_meta(key)
+    
+    meta = @bucket.get_object_detailed_meta(key)
 
     assert_equal meta.class, Aliyun::OSS::Object
     assert_equal meta.key, key
@@ -96,6 +97,56 @@ class TestCustomHeaders < Minitest::Test
     assert_equal meta.headers[:x_oss_meta_year], '2017'
     assert_equal meta.headers[:x_oss_meta_people], 'Jackie'
     assert_equal meta.headers[:x_oss_meta_hello], 'hello.Bar'
+    assert_equal meta.headers[:x_oss_meta_world], 'Ruby.World'
+  end
+
+  def test_udpate_object_metas
+    p ""
+    p ""
+    p "===================== test_udpate_object_metas===================================="
+    key = get_key('meta')
+    object_content = 'hello, test_get_object_meta interface testing.'
+
+    @bucket.put_object(
+      key,
+      content_type: 'application/json',
+      metas: { 'year' => '2017', 'people' => 'Jackie' },
+      headers: {'content-type' => 'application/json',
+                'x-oss-meta-hello' => 'hello.x-oss'}) { |s| s << object_content }
+    
+    p @bucket.get_object_detailed_meta(key)
+    p "-------------------"
+    headers_dict = {
+      'Cache-Control' => '123456',
+      'Content_Type': 'text/html',
+      'Content-Encoding' => 'downloading_code', 
+      'Content-Language' => 'downloading_language_code', 
+      'Content-Disposition' => 'downloading_name_in_put', 
+      'Expires' => '2019-09-26' 
+    }
+
+    metas_dict = {
+      'world': 'Ruby.World',
+      'people': 'alibaba.man'
+    }
+
+    @bucket.update_object_metas(key, metas: metas_dict, headers: headers_dict)
+
+    p meta = @bucket.get_object_detailed_meta(key)
+
+    puts "meta.headers = #{meta.headers}"
+    puts "meta.metas = #{meta.metas}"
+
+    assert_equal meta.class, Aliyun::OSS::Object
+    assert_equal meta.key, key
+    assert_equal meta.size, object_content.size
+    assert meta.etag.upcase.include?(OpenSSL::Digest::MD5.hexdigest(object_content).upcase)
+    assert_equal meta.headers[:cache_control], '123456'
+    assert_equal meta.headers[:content_disposition], 'downloading_name'
+    assert_equal meta.headers[:content_encoding], 'downloading_code'
+    assert_equal meta.headers[:content_language], 'downloading_language_code'
+    assert_equal meta.headers[:expires], '2019-09-26'
+    assert_equal meta.headers[:x_oss_meta_people], 'alibaba.man'
     assert_equal meta.headers[:x_oss_meta_world], 'Ruby.World'
   end
 

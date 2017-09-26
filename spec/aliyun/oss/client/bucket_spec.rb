@@ -431,19 +431,37 @@ module Aliyun
 
           stub_request(:put, object_url(key))
 
-          @bucket.update_object_metas(
-            key, {'people' => 'mary', 'year' => '2016'})
+          headers_dict = {
+            'Cache-Control' => '123456',
+            'Content_Type': 'text/html',
+            'Content-Encoding' => 'downloading_code', 
+            'Content-Language' => 'downloading_language_code', 
+            'Content-Disposition' => 'downloading_name_in_put', 
+            'Expires' => '2019-09-26' 
+          }
+
+          @bucket.update_object_metas(key, 
+            :metas => {'people' => 'mary', 'year' => '2016'} , 
+            :headers => headers_dict 
+            )
 
           expect(WebMock).to have_requested(:put, object_url(key))
-                         .with(:body => nil,
-                               :headers => {
-                                 'x-oss-copy-source' => resource_path(key),
-                                 'x-oss-metadata-directive' => 'REPLACE',
-                                 'x-oss-meta-year' => '2016',
-                                 'x-oss-meta-people' => 'mary'})
+                         .with( :body => nil,
+                                :headers => {
+                                  'x-oss-copy-source' => resource_path(key),
+                                  'x-oss-metadata-directive' => 'REPLACE',
+                                  'x-oss-meta-year' => '2016',
+                                  'x-oss-meta-people' => 'mary',
+                                  'Cache-Control' => '123456',
+                                  'Content_Type': 'text/html',
+                                  'Content-Encoding' => 'downloading_code', 
+                                  'Content-Language' => 'downloading_language_code', 
+                                  'Content-Disposition' => 'downloading_name_in_put', 
+                                  'Expires' => '2019-09-26',
+                                })
         end
 
-        it "should get object meta" do
+        it "should get object detailed meta" do
           dict = {
             'object_name' => 'ruby', 
             'url' => object_url('ruby'), 
@@ -468,7 +486,7 @@ module Aliyun
           stub_request(:head, dict['url'])
             .to_return(:headers => return_headers, :body => '')
 
-          obj = @bucket.get_object_meta(dict['object_name'])
+          obj = @bucket.get_object_detailed_meta(dict['object_name'])
 
           expect(WebMock).to have_requested(:head, dict['url'])
             .with(:body => nil, :query => {})
@@ -481,7 +499,7 @@ module Aliyun
           expect(obj.metas).to eq({'year' => dict['x-oss-meta-year'], 'people' => dict['x-oss-meta-people']})
         end
 
-        it "should get object meta with condition if_modified_since (Time)" do
+        it "should get object detailed meta with condition if_modified_since (Time)" do
           dict = {
             'object_name' => 'ruby', 
             'url' => object_url('ruby'), 
@@ -507,7 +525,7 @@ module Aliyun
             .to_return(:headers => return_headers, :body => '')
 
           opt = { 'if_modified_since' => dict['time_if_modified_since'] }
-          obj = @bucket.get_object_meta(dict['object_name'], opt)
+          obj = @bucket.get_object_detailed_meta(dict['object_name'], opt)
 
           expect(WebMock).to have_requested(:head, dict['url'])
             .with(:body => nil, :query => {})
@@ -520,7 +538,7 @@ module Aliyun
           expect(obj.metas).to eq({'year' => dict['x-oss-meta-year'], 'people' => dict['x-oss-meta-people']})
         end
 
-        it "should get object meta with condition if_modified_since (Time) failed" do
+        it "should get object detailed meta with condition if_modified_since (Time) failed" do
           dict = {
             'object_name' => 'ruby', 
             'url' => object_url('ruby'), 
@@ -537,7 +555,7 @@ module Aliyun
             .to_return(:headers => {}, :body => '')
 
           opt = { 'if_modified_since' => dict['time_if_modified_since'] }
-          obj = @bucket.get_object_meta(dict['object_name'], opt)
+          obj = @bucket.get_object_detailed_meta(dict['object_name'], opt)
 
           expect(WebMock).to have_requested(:head, dict['url'])
             .with(:body => nil, :query => {})

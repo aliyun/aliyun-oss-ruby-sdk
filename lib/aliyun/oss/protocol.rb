@@ -887,14 +887,15 @@ module Aliyun
         logger.debug("Begin copy object, bucket: #{bucket_name}, "\
                      "source object: #{src_object_name}, dest object: "\
                      "#{dst_object_name}, options: #{opts}")
-
+                     
         src_bucket = opts[:src_bucket] || bucket_name
         headers = {
           'x-oss-copy-source' =>
             @http.get_resource_path(src_bucket, src_object_name),
           'content-type' => opts[:content_type]
         }
-        (opts[:metas] || {})
+
+        to_lower_case(opts[:metas] || {})
           .each { |k, v| headers["x-oss-meta-#{k.to_s}"] = v.to_s }
 
         {
@@ -903,7 +904,8 @@ module Aliyun
         }.each { |k, v| headers[v] = opts[k] if opts[k] }
 
         headers.merge!(get_copy_conditions(opts[:condition])) if opts[:condition]
-
+        headers.merge!(to_lower_case(opts[:headers])) if opts[:headers]
+        
         r = @http.put(
           {:bucket => bucket_name, :object => dst_object_name},
           {:headers => headers})

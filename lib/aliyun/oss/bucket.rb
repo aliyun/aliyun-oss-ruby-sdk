@@ -285,11 +285,11 @@ module Aliyun
       #  * :etag [String] 更新后文件的ETag
       #  * :last_modified [Time] 更新后文件的最后修改时间
       def update_object_metas(key, metas, conditions = {})
-        @protocol.copy_object(
-          name, key, key,
-          :meta_directive => MetaDirective::REPLACE,
-          :metas => metas,
-          :condition => conditions)
+        args = { :meta_directive => MetaDirective::REPLACE }
+        args.merge!(metas)
+        args.merge!(conditions)
+        
+        @protocol.copy_object(name, key, key, args)
       end
 
       # 获取Object的meta
@@ -304,13 +304,13 @@ module Aliyun
       #  * :etag [String]  Object的ETag
       #  * :last_modified [Time] Object的最后修改时间
       #  * :headers [Hash] 以x-oss-meta-开头的Object属性值
-      def get_object_meta(key, opts = {})
+      def get_object_detailed_meta(key, opts = {})
         @protocol.get_object_meta(name, key, opts) 
       end
 
       # 判断一个object是否存在
       # @param key [String] Object的名字
-      # @return [Boolean] 如果Object存在返回true，否则返回false
+      #q @return [Boolean] 如果Object存在返回true，否则返回false
       def object_exists?(key)
         begin
           get_object(key)
