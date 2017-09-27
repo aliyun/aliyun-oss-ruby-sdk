@@ -279,19 +279,18 @@ module Aliyun
       # 更新Object的metas
       # @param key [String] Object的名字
       # @param metas [Hash] Object的meta
-      # @param headers [Hash] Object的HTTP标准属性
       # @param conditions [Hash] 指定更新Object meta需要满足的条件，
       #  同{#get_object}
       # @return [Hash] 更新后文件的信息
       #  * :etag [String] 更新后文件的ETag
       #  * :last_modified [Time] 更新后文件的最后修改时间
       def update_object_metas(key, metas, conditions = {})
-        args = { :meta_directive => MetaDirective::REPLACE }
-        args.merge!(metas)
-        args.merge!(conditions)
-
-        @protocol.copy_object(name, key, key, args)
-      end
+      @protocol.copy_object(
+        name, key, key,
+        :meta_directive => MetaDirective::REPLACE,
+        :metas => metas,
+        :condition => conditions)
+    end
 
       # 获取Object的meta
       # @param key [String] Object的名字
@@ -386,10 +385,8 @@ module Aliyun
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015'
       #  }。如果:meta_directive为{OSS::MetaDirective::COPY}，则:metas
       #  会被忽略。
-      # @option opts [Hash] :headers 设置object的HTTP标准属性（HTTP Headers）
-      #  它们会和object一起存储, 在{#get_object}的时候会返回这些属性。
-      #  属性的key不区分大小写。如果:meta_directive为{OSS::MetaDirective::COPY},
-      #  则:headers会被忽略。
+      # @option opts [Hash] :headers 指定请求的HTTP Header，不区分大小
+      #  写。这里指定的值会覆盖通过`:content_type`和`:metas`设置的值。
       # @option opts [Hash] :condition 指定拷贝object需要满足的条件，
       #  同 {#get_object}
       # @return [Hash] 目标文件的信息

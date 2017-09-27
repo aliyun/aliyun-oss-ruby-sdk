@@ -431,19 +431,7 @@ module Aliyun
 
           stub_request(:put, object_url(key))
 
-          headers_dict = {
-            'Cache-Control' => '123456',
-            'Content-Type' => 'text/html',
-            'Content-Encoding' => 'downloading_code', 
-            'Content-Language' => 'downloading_language_code', 
-            'Content-Disposition' => 'downloading_name_in_put', 
-            'Expires' => '2019-09-26' 
-          }
-
-          @bucket.update_object_metas(key, 
-            :metas => {'people' => 'mary', 'year' => '2016'} , 
-            :headers => headers_dict 
-            )
+          @bucket.update_object_metas(key, {'people' => 'mary', 'year' => '2016'})
 
           expect(WebMock).to have_requested(:put, object_url(key))
                          .with( :body => nil,
@@ -452,12 +440,6 @@ module Aliyun
                                   'x-oss-metadata-directive' => 'REPLACE',
                                   'x-oss-meta-year' => '2016',
                                   'x-oss-meta-people' => 'mary',
-                                  'Cache-Control' => '123456',
-                                  'Content-Type' => 'text/html',
-                                  'Content-Encoding' => 'downloading_code', 
-                                  'Content-Language' => 'downloading_language_code', 
-                                  'Content-Disposition' => 'downloading_name_in_put', 
-                                  'Expires' => '2019-09-26',
                                 })
         end
 
