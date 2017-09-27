@@ -433,7 +433,7 @@ module Aliyun
 
           headers_dict = {
             'Cache-Control' => '123456',
-            'Content_Type': 'text/html',
+            'Content_Type' => 'text/html',
             'Content-Encoding' => 'downloading_code', 
             'Content-Language' => 'downloading_language_code', 
             'Content-Disposition' => 'downloading_name_in_put', 
