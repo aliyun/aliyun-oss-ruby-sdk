@@ -101,9 +101,6 @@ class TestCustomHeaders < Minitest::Test
   end
 
   def test_udpate_object_metas
-    p ""
-    p ""
-    p "===================== test_udpate_object_metas===================================="
     key = get_key('meta')
     object_content = 'hello, test_get_object_meta interface testing.'
 
@@ -114,8 +111,8 @@ class TestCustomHeaders < Minitest::Test
       headers: {'content-type' => 'application/json',
                 'x-oss-meta-hello' => 'hello.x-oss'}) { |s| s << object_content }
     
-    p @bucket.get_object_detailed_meta(key)
-    p "-------------------"
+    @bucket.get_object_detailed_meta(key)
+
     headers_dict = {
       'Cache-Control' => '123456',
       'Content_Type': 'text/html',
@@ -132,10 +129,7 @@ class TestCustomHeaders < Minitest::Test
 
     @bucket.update_object_metas(key, metas: metas_dict, headers: headers_dict)
 
-    p meta = @bucket.get_object_detailed_meta(key)
-
-    puts "meta.headers = #{meta.headers}"
-    puts "meta.metas = #{meta.metas}"
+    meta = @bucket.get_object_detailed_meta(key)
 
     assert_equal meta.class, Aliyun::OSS::Object
     assert_equal meta.key, key

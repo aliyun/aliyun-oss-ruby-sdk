@@ -288,7 +288,7 @@ module Aliyun
         args = { :meta_directive => MetaDirective::REPLACE }
         args.merge!(metas)
         args.merge!(conditions)
-        
+
         @protocol.copy_object(name, key, key, args)
       end
 
@@ -300,10 +300,13 @@ module Aliyun
       #   * :if_match_etag (String) 指定如果object的etag等于这个值，则获取
       #   * :if_unmatch_etag (String) 指定如果object的etag不等于这个值，则获取
       # @return [Aliyun::OSS::Object] 返回Object对象信息
+      #  * :key  [String]  Object的name
       #  * :size [Numeric] Object的size
+      #  * :type [String]  Object的type
       #  * :etag [String]  Object的ETag
       #  * :last_modified [Time] Object的最后修改时间
-      #  * :headers [Hash] 以x-oss-meta-开头的Object属性值
+      #  * :headers [Hash] : 所有HTTP Headers属性 
+      #  * :metas [Hash] : User Meta（用户自定义元信息）
       def get_object_detailed_meta(key, opts = {})
         @protocol.get_object_meta(name, key, opts) 
       end
