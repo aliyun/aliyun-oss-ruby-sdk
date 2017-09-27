@@ -313,7 +313,7 @@ module Aliyun
 
       # 判断一个object是否存在
       # @param key [String] Object的名字
-      #q @return [Boolean] 如果Object存在返回true，否则返回false
+      # @return [Boolean] 如果Object存在返回true，否则返回false
       def object_exists?(key)
         begin
           get_object(key)
