@@ -118,7 +118,7 @@ class TestCustomHeaders < Minitest::Test
       'Content_Type': 'text/html',
       'Content-Encoding' => 'downloading_code', 
       'Content-Language' => 'downloading_language_code', 
-      'Content-Disposition' => 'downloading_name_in_put', 
+      'Content-Disposition' => 'content_disposition_downloading_name', 
       'Expires' => '2019-09-26' 
     }
 
@@ -136,7 +136,7 @@ class TestCustomHeaders < Minitest::Test
     assert_equal meta.size, object_content.size
     assert meta.etag.upcase.include?(OpenSSL::Digest::MD5.hexdigest(object_content).upcase)
     assert_equal meta.headers[:cache_control], '123456'
-    assert_equal meta.headers[:content_disposition], 'downloading_name'
+    assert_equal meta.headers[:content_disposition], 'content_disposition_downloading_name'
     assert_equal meta.headers[:content_encoding], 'downloading_code'
     assert_equal meta.headers[:content_language], 'downloading_language_code'
     assert_equal meta.headers[:expires], '2019-09-26'
