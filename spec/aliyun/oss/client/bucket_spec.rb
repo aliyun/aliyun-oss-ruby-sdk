@@ -433,7 +433,7 @@ module Aliyun
 
           headers_dict = {
             'Cache-Control' => '123456',
-            'Content_Type' => 'text/html',
+            'Content-Type' => 'text/html',
             'Content-Encoding' => 'downloading_code', 
             'Content-Language' => 'downloading_language_code', 
             'Content-Disposition' => 'downloading_name_in_put', 
@@ -453,7 +453,7 @@ module Aliyun
                                   'x-oss-meta-year' => '2016',
                                   'x-oss-meta-people' => 'mary',
                                   'Cache-Control' => '123456',
-                                  'Content_Type' => 'text/html',
+                                  'Content-Type' => 'text/html',
                                   'Content-Encoding' => 'downloading_code', 
                                   'Content-Language' => 'downloading_language_code', 
                                   'Content-Disposition' => 'downloading_name_in_put', 
