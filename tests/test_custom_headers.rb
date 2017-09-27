@@ -100,7 +100,7 @@ class TestCustomHeaders < Minitest::Test
     assert_equal meta.headers[:x_oss_meta_world], 'Ruby.World'
   end
 
-  def test_udpate_object_metas
+  def test_update_object_metas
     key = get_key('meta')
     object_content = 'hello, test_get_object_meta interface testing.'
 
