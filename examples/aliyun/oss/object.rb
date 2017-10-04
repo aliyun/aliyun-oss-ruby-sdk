@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(File.expand_path("../../../../lib", __FILE__))
 require 'yaml'
 require 'aliyun/oss'
 
-# 初始化OSS client
+# Initialize OSS client
 Aliyun::Common::Logging.set_log_level(Logger::DEBUG)
 conf_file = '~/.oss.yml'
 conf = YAML.load(File.read(File.expand_path(conf_file)))
@@ -14,7 +14,7 @@ bucket = Aliyun::OSS::Client.new(
   :access_key_id => conf['access_key_id'],
   :access_key_secret => conf['access_key_secret']).get_bucket(conf['bucket'])
 
-# 辅助打印函数
+# print helper function
 def demo(msg)
   puts "######### #{msg} ########"
   puts
@@ -23,8 +23,8 @@ def demo(msg)
   puts
 end
 
-# 上传一个object
-# 流式上传请参考：examples/streaming.rb
+# upload an object
+# Check out examples/streaming.rb for streaming upload example.
 demo "Put object from input" do
   bucket.put_object('files/hello') do |content|
     content << 'hello world.'
@@ -32,15 +32,15 @@ demo "Put object from input" do
   puts "Put object: files/hello"
 end
 
-# 上传一个文件
-# 断点续传请参考：examples/resumable_upload.rb
+# upload an object
+# Check out examples/resumable_upload.rb for resumable upload example.
 demo "Put object from local file" do
   File.open('/tmp/x', 'w'){ |f| f.write("hello world\n") }
   bucket.put_object('files/world', :file => '/tmp/x')
   puts "Put object: files/world"
 end
 
-# 创建一个Appendable object
+# Create an Appendable object
 demo "Create appendable object" do
 size = bucket.get_object('files/appendable').size rescue 0
   bucket.append_object('files/appendable', size) do |content|
@@ -49,8 +49,8 @@ size = bucket.get_object('files/appendable').size rescue 0
   puts "Append object: files/appendable"
 end
 
-# 向files/appendable中追加内容
-# 首先要获取object当前的长度
+# append content into files/appendable.
+# Get the object's current length.
 demo "Append to object" do
   size = bucket.get_object('files/appendable').size
   bucket.append_object('files/appendable', size) do |content|
@@ -59,7 +59,7 @@ demo "Append to object" do
   puts "Append object: files/appendable"
 end
 
-# 使用错误的position进行追加会失败
+# Append will fail if using wrong position
 demo "Append with wrong pos" do
   begin
     bucket.append_object('files/appendable', 0) do |content|
@@ -70,7 +70,7 @@ demo "Append with wrong pos" do
   end
 end
 
-# 向一个normal object中追加内容会失败
+# Appending to normal object will fail
 demo "Append to normal object(fail)" do
   begin
     bucket.append_object('files/hello', 0) do |content|
@@ -81,13 +81,13 @@ demo "Append to normal object(fail)" do
   end
 end
 
-# 拷贝一个object
+# copy an object
 demo "Copy object" do
   bucket.copy_object('files/hello', 'files/copy')
   puts "Copy object files/hello => files/copy"
 end
 
-# 拷贝一个appendable object会失败
+# copying an appendable object will fail
 demo "Copy appendable object(fail)" do
   begin
     bucket.copy_object('files/appendable', 'files/copy')
@@ -96,8 +96,8 @@ demo "Copy appendable object(fail)" do
   end
 end
 
-# 下载一个object：流式处理
-# 流式下载请参考：examples/streaming.rb
+# download an OSS object into memory
+# Check out examples/streaming.rb for streaming download examples.
 demo "Get object: handle content" do
   total_size = 0
   bucket.get_object('files/hello') do |chunk|
@@ -106,27 +106,27 @@ demo "Get object: handle content" do
   puts "Total size: #{total_size}"
 end
 
-# 下载一个object：下载到文件中
+# download an OSS object into local file
 demo "Get object to local file" do
   bucket.get_object('files/hello', :file => '/tmp/hello')
   puts "Get object: files/hello => /tmp/hello"
 end
 
-# 删除一个object
+# delete an object
 demo "Delete object" do
   bucket.delete_object('files/world')
   puts "Delete object: files/world"
 end
 
-# 删除一个不存在的object返回OK
-# 这意味着delete_object是幂等的，在删除失败的时候可以不断重试，直到成
-# 功，成功意味着object已经不存在
+# Delete an non-existing object and it should return OK.
+# So delete_object is idempotent and you can retry delete_object until success if it fails.
+# It means the object does not exist if delete_object return OK.
 demo "Delete a non-existent object(OK)" do
   bucket.delete_object('non-existent-object')
   puts "Delete object: non-existent-object"
 end
 
-# 设置Object metas
+# Set Object metas
 demo "Put objec with metas" do
   bucket.put_object(
     'files/hello',
@@ -139,7 +139,7 @@ demo "Put objec with metas" do
   puts "Object metas: #{o.metas}"
 end
 
-# 修改Object metas
+# Modify Object metas
 demo "Update object metas" do
   bucket.update_object_metas(
     'files/hello', {'year' => '2016', 'people' => 'jack'})
@@ -147,7 +147,7 @@ demo "Update object metas" do
   puts "Meta changed: #{o.metas}"
 end
 
-# 设置Object的ACL
+# Set Object的ACL
 
 demo "Set object ACL" do
   puts "Object acl before: #{bucket.get_object_acl('files/hello')}"
@@ -155,7 +155,7 @@ demo "Set object ACL" do
   puts "Object acl now: #{bucket.get_object_acl('files/hello')}"
 end
 
-# 指定条件get_object
+# get_object with conditions
 demo "Get object with conditions" do
   o = bucket.get_object('files/hello')
 

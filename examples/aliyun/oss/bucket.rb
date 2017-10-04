@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(File.expand_path("../../../../lib", __FILE__))
 require 'yaml'
 require 'aliyun/oss'
 
-# 初始化OSS client
+# Initialize OSS client
 Aliyun::Common::Logging.set_log_level(Logger::DEBUG)
 conf_file = '~/.oss.yml'
 conf = YAML.load(File.read(File.expand_path(conf_file)))
@@ -15,7 +15,7 @@ client = Aliyun::OSS::Client.new(
   :access_key_secret => conf['access_key_secret'])
 bucket = client.get_bucket(conf['bucket'])
 
-# 辅助打印函数
+# print helper function
 def demo(msg)
   puts "######### #{msg} ########"
   puts
@@ -24,13 +24,13 @@ def demo(msg)
   puts
 end
 
-# 列出当前所有的bucket
+# list all buckets
 demo "List all buckets" do
   buckets = client.list_buckets
   buckets.each{ |b| puts "Bucket: #{b.name}"}
 end
 
-# 创建bucket，如果同名的bucket已经存在，则创建会失败
+# create bucket. If the bucket already exists, the creation will fail
 demo "Create bucket" do
   begin
     bucket_name = 't-foo-bar'
@@ -41,7 +41,7 @@ demo "Create bucket" do
   end
 end
 
-# 向bucket中添加5个空的object:
+# add 5 empty objects into bucket:
 # foo/obj1, foo/bar/obj1, foo/bar/obj2, foo/xxx/obj1
 
 demo "Put objects before list" do
@@ -52,7 +52,7 @@ demo "Put objects before list" do
   bucket.put_object('中国の')
 end
 
-# list bucket下所有objects
+# list bucket's all objects
 demo "List first 10 objects" do
   objects = bucket.list_objects
 
@@ -61,7 +61,7 @@ demo "List first 10 objects" do
   end
 end
 
-# list bucket下所有前缀为foo/bar/的object
+# list bucket's all object whose name has the prefix foo/bar/
 demo "List first 10 objects with prefix 'foo/bar/'" do
   objects = bucket.list_objects(:prefix => 'foo/bar/')
 
@@ -70,18 +70,17 @@ demo "List first 10 objects with prefix 'foo/bar/'" do
   end
 end
 
-# 获取object的common prefix，common prefix是指bucket下所有object（也可
-# 以指定特定的前缀）的公共前缀，这在object数量巨多的时候很有用，例如有
-# 如下的object：
+# get common prefix of the object. Common prefix object is the object whose name is the common prefix of some other objects in the bucket.
+# Essentially it's a 'folder' in the bucket.
+# For example, if we have the following objects:
 #     /foo/bar/obj1
 #     /foo/bar/obj2
 #     ...
 #     /foo/bar/obj9999999
 #     /foo/xx/
-# 指定foo/为prefix，/为delimiter，则返回的common prefix为
-# /foo/bar/, /foo/xxx/
-# 这可以表示/foo/目录下的子目录。如果没有common prefix，你可能要遍历所
-# 有的object来找公共的前缀
+# Specify the prefix as foo/ and delimiter as '/', then the retirned common prefix is 
+# /foo/bar/ and /foo/xxx/
+# They could represent the subfolder of '/foo' folder. It's a efficient way to enumerate all files under a folder by specifying the common prefix.
 
 demo "List first 10 objects/common prefixes" do
   objects = bucket.list_objects(:prefix => 'foo/', :delimiter => '/')
@@ -95,7 +94,7 @@ demo "List first 10 objects/common prefixes" do
   end
 end
 
-# 获取/设置Bucket属性: ACL, Logging, Referer, Website, LifeCycle, CORS
+# get/set Bucket attributes: ACL, Logging, Referer, Website, LifeCycle, CORS
 demo "Get/Set bucket properties: ACL/Logging/Referer/Website/Lifecycle/CORS" do
   puts "Bucket acl before: #{bucket.acl}"
   bucket.acl = Aliyun::OSS::ACL::PUBLIC_READ

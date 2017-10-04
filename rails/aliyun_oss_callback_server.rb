@@ -7,8 +7,8 @@ require 'cgi'
 require 'openssl'
 require 'json'
 
-# 接受OSS上传回调的server示例，利用RSA公钥验证请求来自OSS，而非其
-# 他恶意请求。具体签名/验证过程请参考：
+# Examples of callback server for OSS callback calls. It checks the request signature by using the public key of OSS.
+# Checks out the following link for exact process of signing/verification:
 # https://help.aliyun.com/document_detail/oss/api-reference/object/Callback.html
 
 def get_header(name)

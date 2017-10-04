@@ -4,7 +4,7 @@ module Aliyun
   module OSS
 
     ##
-    # Object表示OSS存储的一个对象
+    # Object represents an object in OSS
     #
     class Object < Common::Struct::Base
 

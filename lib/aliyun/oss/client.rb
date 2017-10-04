@@ -4,9 +4,9 @@ module Aliyun
   module OSS
 
     ##
-    # OSS服务的客户端，用于获取bucket列表，创建/删除bucket。Object相关
-    # 的操作请使用{OSS::Bucket}。
-    # @example 创建Client
+    # OSS service's client class, which is for getting bucket list, creating or deleting bucket. For {OSS:Object} related operations, 
+    # please use {OSS::Bucket}.
+    # @example creates a Client object
     #   endpoint = 'oss-cn-hangzhou.aliyuncs.com'
     #   client = Client.new(
     #     :endpoint => endpoint,
@@ -18,30 +18,24 @@ module Aliyun
     #   bucket = client.get_bucket('my-bucket')
     class Client
 
-      # 构造OSS client，用于操作buckets。
-      # @param opts [Hash] 构造Client时的参数选项
-      # @option opts [String] :endpoint [必填]OSS服务的地址，可以是以
-      #  oss-cn-hangzhou.aliyuncs.com的标准域名，也可以是用户绑定的域名
-      # @option opts [String] :access_key_id [可选]用户的ACCESS KEY ID，
-      #  如果不填则会尝试匿名访问
-      # @option opts [String] :access_key_secret [可选]用户的ACCESS
-      #  KEY SECRET，如果不填则会尝试匿名访问
-      # @option opts [Boolean] :cname [可选] 指定endpoint是否是用户绑
-      #  定的域名
-      # @option opts [Boolean] :upload_crc_enable [可选]指定上传处理
-      #  是否开启CRC校验，默认为开启(true)
-      # @option opts [Boolean] :download_crc_enable [可选]指定下载处理
-      #  是否开启CRC校验，默认为不开启(false)
-      # @option opts [String] :sts_token [可选] 指定STS的
-      #  SecurityToken，如果指定，则使用STS授权访问
-      # @option opts [Fixnum] :open_timeout [可选] 指定建立连接的超时
-      #  时间，默认为10秒
-      # @option opts [Fixnum] :read_timeout [可选] 指定等待响应的超时
-      #  时间，默认为120秒
-      # @example 标准endpoint
+      # creates OSS client for buckets operations.
+      # @param opts [Hash] options for creating the Client object
+      # @option opts [String] :endpoint [required] OSS endpoint. It could be standard endpoint such as
+      #  oss-cn-hangzhou.aliyuncs.com or user domain binded with the bucket
+      # @option opts [String] :access_key_id [optional] user's ACCESS KEY ID，
+      #  if not specified, then the request is anonymous.
+      # @option opts [String] :access_key_secret [optional] user's ACCESS
+      #  KEY SECRET，if not specified, then the request is anonymous.
+      # @option opts [Boolean] :cname [optional] flag indicates if the endpoint is CNamed.
+      # @option opts [Boolean] :upload_crc_enable [optional] specifies if the upload enabled with CRC. Default is true.
+      # @option opts [Boolean] :download_crc_enable [optional] specifies if the download enabled with CRC. Default is false.
+      # @option opts [String] :sts_token [optional] specifies STS's SecurityToken. If it's specified, then use STS for authorization.
+      # @option opts [Fixnum] :open_timeout [optional] the connection timeout in seconds. By default it's 10s.
+      # @option opts [Fixnum] :read_timeout [optional] the response's timeout in seconds. By default it's 120s.
+      # @example standard endpoint
       #   oss-cn-hangzhou.aliyuncs.com
       #   oss-cn-beijing.aliyuncs.com
-      # @example 用户绑定的域名
+      # @example cname binded endpoint
       #   my-domain.com
       #   foo.bar.com
       def initialize(opts)
@@ -51,12 +45,11 @@ module Aliyun
         @protocol = Protocol.new(@config)
       end
 
-      # 列出当前所有的bucket
-      # @param opts [Hash] 查询选项
-      # @option opts [String] :prefix 如果设置，则只返回以它为前缀的bucket
-      # @option opts [String] :marker 如果设置，则只返回名字在它之后
-      #  （字典序，不包含marker）的bucket
-      # @return [Enumerator<Bucket>] Bucket的迭代器
+      # Lists all buckets of the account
+      # @param opts [Hash] options for the list
+      # @option opts [String] :prefix if it's specified, only buckets prefixed with it will be returned
+      # @option opts [String] :marker if it's specified, only buckets whose key is larger than :marker will be returned.
+      # @return [Enumerator<Bucket>] Bucket's iterator
       def list_buckets(opts = {})
         if @config.cname
           fail ClientError, "Cannot list buckets for a CNAME endpoint."
@@ -65,24 +58,24 @@ module Aliyun
         Iterator::Buckets.new(@protocol, opts).to_enum
       end
 
-      # 创建一个bucket
-      # @param name [String] Bucket名字
-      # @param opts [Hash] 创建Bucket的属性（可选）
-      # @option opts [:location] [String] 指定bucket所在的区域，默认为oss-cn-hangzhou
+      # Creates a bucket
+      # @param name [String] Bucket name
+      # @param opts [Hash] options for creating the bucket（optional）
+      # @option opts [:location] [String] the region for the new bucket. By default is oss-cn-hangzhou
       def create_bucket(name, opts = {})
         @protocol.create_bucket(name, opts)
       end
 
-      # 删除一个bucket
-      # @param name [String] Bucket名字
-      # @note 如果要删除的Bucket不为空（包含有object），则删除会失败
+      # Deletes a bucket
+      # @param name [String] Bucket name
+      # @note If the bucket is not empty (has objects), then the deletion will fail.
       def delete_bucket(name)
         @protocol.delete_bucket(name)
       end
 
-      # 判断一个bucket是否存在
-      # @param name [String] Bucket名字
-      # @return [Boolean] 如果Bucket存在则返回true，否则返回false
+      # Checks if the bucket exists
+      # @param name [String] Bucket name
+      # @return [Boolean] If Bucket exists returns true; otherwise returns false.
       def bucket_exists?(name)
         exist = false
 
@@ -98,9 +91,9 @@ module Aliyun
 
       alias :bucket_exist? :bucket_exists?
 
-      # 获取一个Bucket对象，用于操作bucket中的objects。
-      # @param name [String] Bucket名字
-      # @return [Bucket] Bucket对象
+      # Gets the bucket object for objects level operations
+      # @param name [String] Bucket name
+      # @return [Bucket] Bucket object
       def get_bucket(name)
         Bucket.new({:name => name}, @protocol)
       end

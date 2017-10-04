@@ -11,7 +11,7 @@ client = Aliyun::STS::Client.new(
   :access_key_id => conf['access_key_id'],
   :access_key_secret => conf['access_key_secret'])
 
-# 辅助打印函数
+# print helper function
 def demo(msg)
   puts "######### #{msg} ########"
   puts

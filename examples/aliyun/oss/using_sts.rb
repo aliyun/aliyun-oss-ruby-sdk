@@ -5,12 +5,12 @@ require 'yaml'
 require 'aliyun/sts'
 require 'aliyun/oss'
 
-# 初始化OSS client
+# Initialize OSS client
 Aliyun::Common::Logging.set_log_level(Logger::DEBUG)
 conf_file = '~/.sts.yml'
 conf = YAML.load(File.read(File.expand_path(conf_file)))
 
-# 辅助打印函数
+# print helper function
 def demo(msg)
   puts "######### #{msg} ########"
   puts
