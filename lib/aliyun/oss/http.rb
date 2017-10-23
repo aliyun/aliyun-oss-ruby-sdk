@@ -125,7 +125,7 @@ module Aliyun
         url.host = "#{bucket}." + url.host if bucket && !@config.cname && !isIP
         url.path = '/'
         url.path << "#{bucket}/" if bucket && isIP
-        url.path << "#{CGI.escape(object)}" if object
+        url.path << object if object
 
         url.to_s
       end
