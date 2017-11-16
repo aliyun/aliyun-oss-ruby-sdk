@@ -95,15 +95,21 @@ module Aliyun
       #  is located
       # @example
       #   oss-cn-hangzhou
+      # @option opts [String] :storage_class the storage type of the bucket
+      # @example
+      #  Standard/IA/Archive
       def create_bucket(name, opts = {})
         logger.info("Begin create bucket, name: #{name}, opts: #{opts}")
 
         location = opts[:location]
+        storage_class = opts[:storage_class]
         body = nil
-        if location
+
+        if opts.length > 0
           builder = Nokogiri::XML::Builder.new do |xml|
             xml.CreateBucketConfiguration {
-              xml.LocationConstraint location
+              xml.LocationConstraint location if location
+              xml.StorageClass storage_class if storage_class
             }
           end
           body = builder.to_xml
@@ -111,7 +117,38 @@ module Aliyun
 
         @http.put({:bucket => name}, {:body => body})
 
-        logger.info("Done create bucket")
+        logger.info("Done create bucket, body: #{body}")
+      end
+
+      # get bucket info
+      # @param name [String] the bucket name
+      # @return [BucketInfo] the info of this bucket
+      def get_bucket_info(name)
+        logger.info("Begin get bucket info, name: #{name}")
+
+        sub_res = {'bucketInfo' => nil}
+        r = @http.get({:bucket => name, :sub_res => sub_res})
+        doc = parse_xml(r.body)
+        opts = {:name => name}
+
+        bucket_node = doc.at_css('Bucket')
+        opts.update(
+            :creation_date => get_node_text(bucket_node, 'CreationDate'),
+            :extranet_endpoint => get_node_text(bucket_node, 'ExtranetEndpoint'),
+            :intranet_endpoint => get_node_text(bucket_node, 'IntranetEndpoint'),
+            :location => get_node_text(bucket_node, 'Location')
+        )
+
+        owner_node = doc.at_css('Owner')
+        opts.update(
+            :owner_display_name => get_node_text(owner_node, 'DisplayName'),
+            :owner_id => get_node_text(owner_node, 'ID')
+        )
+
+        opts.update(:grant => get_node_text(doc.at_css('AccessControlList'), 'Grant'))
+
+        logger.info("Done get bucket info")
+        BucketInfo.new(opts)
       end
 
       # Put bucket acl

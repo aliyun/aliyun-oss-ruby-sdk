@@ -88,6 +88,12 @@ module Aliyun
       end
     end
 
+    # Bucket Info. See: {https://help.aliyun.com/document_detail/31968.html}
+    class BucketInfo < Common::Struct::Base
+      attrs :name, :creation_date, :extranet_endpoint, :intranet_endpoint,
+            :location, :owner_display_name, :owner_id, :grant
+    end
+
     ##
     # Bucket referer setting. See: {http://help.aliyun.com/document_detail/oss/product-documentation/function/referer-white-list.html OSS Website hosting}
     # Attributes:
