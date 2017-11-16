@@ -47,8 +47,8 @@ module Aliyun
         end
       end
 
-      # 获取Bucket的Info
-      # @return [BucketInfo] Bucket的相关信息
+      # 获取Bucket的meta info
+      # @return [BucketInfo] Bucket的meta info
       def bucket_info
         begin
           r = @protocol.get_bucket_info(name)
@@ -56,6 +56,17 @@ module Aliyun
           raise unless e.http_code == 404
         end
         r || BucketInfo.new
+      end
+
+      # 获取Bucket的storage stat
+      # @return [BucketStat] Bucket的storage stat
+      def bucket_stat
+        begin
+          r = @protocol.get_bucket_stat(name)
+        rescue ServerError => e
+          raise unless e.http_code == 404
+        end
+        r || BucketStat.new
       end
 
       # 获取Bucket的website配置

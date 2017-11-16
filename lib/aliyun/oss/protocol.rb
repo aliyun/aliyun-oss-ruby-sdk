@@ -120,9 +120,9 @@ module Aliyun
         logger.info("Done create bucket, body: #{body}")
       end
 
-      # get bucket info
+      # get bucket meta info
       # @param name [String] the bucket name
-      # @return [BucketInfo] the info of this bucket
+      # @return [BucketInfo] the meta info of this bucket
       def get_bucket_info(name)
         logger.info("Begin get bucket info, name: #{name}")
 
@@ -149,6 +149,28 @@ module Aliyun
 
         logger.info("Done get bucket info")
         BucketInfo.new(opts)
+      end
+
+      # get bucket storage info
+      # @param name [String] the bucket name
+      # @return [BucketStat] the storage info of this bucket
+      def get_bucket_stat(name)
+        logger.info("Begin get bucket stat, name: #{name}")
+
+        sub_res = {'stat' => nil}
+        r = @http.get({:bucket => name, :sub_res => sub_res})
+        doc = parse_xml(r.body)
+        opts = {}
+
+        bucket_stat_node = doc.at_css('BucketStat')
+        opts.update(
+            :storage => get_node_text(bucket_stat_node, 'Storage'),
+            :object_count => get_node_text(bucket_stat_node, 'ObjectCount'),
+            :multipart_upload_count => get_node_text(bucket_stat_node, 'MultipartUploadCount')
+        )
+        logger.info("Done get bucket stat")
+        BucketStat.new(opts)
+
       end
 
       # Put bucket acl

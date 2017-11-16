@@ -94,6 +94,15 @@ module Aliyun
             :location, :owner_display_name, :owner_id, :grant
     end
 
+    # Bucket Stat
+    # Attributes:
+    # * storage [Integer] the total size of this bucket, unit: Byte
+    # * object_count [Integer] the toal num of objects in this bucket
+    # * multipart_upload_count [Integer] the total num of mutilpart_uploaded objects in this bucket
+    class BucketStat < Common::Struct::Base
+      attrs :storage, :object_count, :multipart_upload_count
+    end
+
     ##
     # Bucket referer setting. See: {http://help.aliyun.com/document_detail/oss/product-documentation/function/referer-white-list.html OSS Website hosting}
     # Attributes:
