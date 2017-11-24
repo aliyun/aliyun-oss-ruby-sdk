@@ -89,8 +89,24 @@ module Aliyun
     end
 
     # Bucket Info. See: {https://help.aliyun.com/document_detail/31968.html}
+    # Attributes:
+    # * name [String] the name of the bucket
+    # * creation_date [String] the date when the bucket is created
+    # * storage_class [String] the storage type of the bucket
+    # @example
+    #  Standard/IA/Archive
+    # * extranet_endpoint [String] the extranet endpoint to visit the bucket
+    # * intranet_endpoint [String] the intranet endpoint to visit the bucket
+    # * location [String] the location of the bucket
+    # * owner_display_name [String] the user name of the bucket owner
+    # currently, owner_display name is the same as owner_id
+    # * owner_id [String] the user id of the bucket owner
+    # * grant [String] the ACL privilege of the bucket
+    # @example
+    # private/public-read/public-read-write
     class BucketInfo < Common::Struct::Base
-      attrs :name, :creation_date, :extranet_endpoint, :intranet_endpoint,
+      attrs :name, :creation_date, :storage_class,
+            :extranet_endpoint, :intranet_endpoint,
             :location, :owner_display_name, :owner_id, :grant
     end
 
@@ -122,9 +138,23 @@ module Aliyun
     # * id [String] the unique id of a rule
     # * enabled [Boolean] whether to enable this rule
     # * prefix [String] the prefix objects to apply this rule
+    # * is_created_before_date [Boolean] the date type of expiry when expiry is a Date
+    #   * if is_created_before_date is true,
+    #       the type of expiry is created_before_date type
+    #   * if is_created_before_date is false,
+    #       the type of expiry is date type
+    # * the difference between date type and created_before_date type:
+    #   * if expiry is date type, matched files will be deleted after the date no matter what.
+    #           date type is not suggested to use
+    #   * if expiry is created_before_date type,
+    #        matched files'll be deleted if their last modified time earlier than created_before_date
     # * expiry [Date] or [Fixnum] the expire time of objects
-    #   * if expiry is a Date, it specifies the absolute date to
-    #     expire objects
+    #   * if expiry is a Date,
+    #       if is_created_before_date is false,
+    #            it specifies the absolute date to expire objects
+    #       if is_created_before_date is true,
+    #            it specifies to expire objects whose last modification
+    #            time is earlier than the date
     #   * if expiry is a Fixnum, it specifies the relative date to
     #     expire objects: how many days after the object's last
     #     modification time to expire the object
@@ -134,6 +164,13 @@ module Aliyun
     #     :enabled => true,
     #     :prefix => 'foo/',
     #     :expiry => Date.new(2016, 1, 1))
+    # @example Specify expiry as CreatedBeforeDate
+    #   LifeCycleRule.new(
+    #     :id => 'rule1',
+    #     :enabled => true,
+    #     :prefix => 'foo/',
+    #     :is_created_before_date => true,
+    #     :expiry => Date.new(2016, 1, 1))
     # @example Specify expiry as days
     #   LifeCycleRule.new(
     #     :id => 'rule1',
@@ -141,9 +178,36 @@ module Aliyun
     #     :prefix => 'foo/',
     #     :expiry => 15)
     # @note the expiry date is treated as UTC time
+    # * abort_multipart_upload [Date] or [Fixnum]
+    # the expire time of unfinished multipart-uploaded parts
+    #   * if abort_multipart_upload is a Date,
+    #     it specifies the absolute date to expire parts
+    #   * if abort_multipart_upload is a Fixnum,
+    #     it specifies the relative date to
+    #     expire parts: how many days after the part's last
+    #     modification time to expire the part
+    # @example Specify abort_multipart_upload as Date
+    #   LifeCycleRule.new(
+    #     :id => 'rule1',
+    #     :enabled => true,
+    #     :prefix => 'foo/',
+    #     :abort_multipart_upload => Date.new(2016, 1, 1))
+    # @example Specify abort_multipart_upload as days
+    #   LifeCycleRule.new(
+    #     :id => 'rule1',
+    #     :enabled => true,
+    #     :prefix => 'foo/',
+    #     :abort_multipart_upload => 15)
+    # @note the abort_multipart_upload date is treated as UTC time
     class LifeCycleRule < Common::Struct::Base
 
-      attrs :id, :enable, :prefix, :expiry
+      attrs :id, :enable, :prefix, :expiry,
+            :is_created_before_date,
+            :abort_multipart_upload
+
+      def is_created_before_date?
+        is_created_before_date == true
+      end
 
       def enabled?
         enable == true

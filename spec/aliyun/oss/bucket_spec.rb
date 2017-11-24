@@ -9,11 +9,18 @@ module Aliyun
 
     describe "Bucket" do
 
+      # before :all do
+      #   @endpoint = 'oss.aliyuncs.com'
+      #   @protocol = Protocol.new(
+      #     Config.new(:endpoint => @endpoint,
+      #                :access_key_id => 'xxx', :access_key_secret => 'yyy'))
+      #   @bucket = 'rubysdk-bucket'
+      # end
       before :all do
         @endpoint = 'oss.aliyuncs.com'
         @protocol = Protocol.new(
-          Config.new(:endpoint => @endpoint,
-                     :access_key_id => 'xxx', :access_key_secret => 'yyy'))
+            Config.new(:endpoint => @endpoint,
+                       :access_key_id => 'xxx', :access_key_secret => 'yyy'))
         @bucket = 'rubysdk-bucket'
       end
 
@@ -25,6 +32,14 @@ module Aliyun
         Nokogiri::XML::Builder.new do |xml|
           xml.CreateBucketConfiguration {
             xml.LocationConstraint location
+          }
+        end.to_xml
+      end
+
+      def mock_storage_class(storage_class)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.CreateBucketConfiguration {
+            xml.StorageClass storage_class
           }
         end.to_xml
       end
@@ -132,14 +147,36 @@ module Aliyun
                 xml.ID r.id if r.id
                 xml.Status r.enabled? ? 'Enabled' : 'Disabled'
                 xml.Prefix r.prefix
-                xml.Expiration {
-                  if r.expiry.is_a?(Date)
-                    xml.Date Time.utc(r.expiry.year, r.expiry.month, r.expiry.day)
-                              .iso8601.sub('Z', '.000Z')
-                  else
-                    xml.Days r.expiry.to_i
-                  end
-                }
+                if r.expiry
+                  xml.Expiration {
+                    if r.expiry.is_a?(Date)
+                      if r.is_created_before_date?
+                        xml.CreatedBeforeDate Time.utc(
+                            r.expiry.year, r.expiry.month, r.expiry.day)
+                                                  .iso8601.sub('Z', '.000Z')
+                      else
+                        xml.Date Time.utc(
+                            r.expiry.year, r.expiry.month, r.expiry.day)
+                                     .iso8601.sub('Z', '.000Z')
+                      end
+                    else
+                      xml.Days r.expiry.to_i
+                    end
+                  }
+                end
+                if r.abort_multipart_upload
+                    xml.AbortMultipartUpload {
+                      if r.abort_multipart_upload.is_a?(Date)
+                        xml.CreatedBeforeDate Time.utc(
+                            r.abort_multipart_upload.year, r.abort_multipart_upload.month,
+                            r.abort_multipart_upload.day).iso8601.sub('Z', '.000Z')
+                      elsif r.abort_multipart_upload.is_a?(Fixnum)
+                        xml.Days r.expiry
+                      else
+                        fail ClientError, "Expiry must be a Date or Fixnum."
+                      end
+                    }
+                end
               }
             end
           }
@@ -184,6 +221,38 @@ module Aliyun
         "#{msg} RequestId: #{reqid}"
       end
 
+      def mock_bucket_info()
+        Nokogiri::XML::Builder.new do |xml|
+          xml.BucketInfo {
+            xml.Bucket {
+              xml.CreationDate '2017-11-23T05:59:56.000Z'
+              xml.ExtranetEndpoint 'oss-cn-hangzhou.aliyuncs.com'
+              xml.IntranetEndpoint 'oss-cn-hangzhou-internal.aliyuncs.com'
+              xml.Location 'oss-cn-hangzhou'
+              xml.Name @bucket
+              xml.StorageClass 'Standard'
+              xml.Owner {
+                xml.DisplayName '1999610231449665'
+                xml.ID '1999610231449665'
+              }
+              xml.AccessControlList {
+                xml.Grant 'private'
+              }
+            }
+          }
+        end.to_xml
+      end
+
+      def mock_bucket_stat()
+        Nokogiri::XML::Builder.new do |xml|
+          xml.BucketStat {
+            xml.Storage '33017908'
+            xml.ObjectCount '140'
+            xml.MultipartUploadCount '5'
+          }
+        end.to_xml
+      end
+
       context "Create bucket" do
 
         it "should PUT to create bucket" do
@@ -203,9 +272,62 @@ module Aliyun
           @protocol.create_bucket(@bucket, :location => 'oss-cn-hangzhou')
 
           expect(WebMock).to have_requested(:put, request_path)
-            .with(:body => mock_location(location), :query => {})
+                                 .with(:body => mock_location(location), :query => {})
+        end
+
+        it "should set storage_class when create bucket" do
+          storage_class = 'Archive'
+
+          stub_request(:put, request_path).with(:body => mock_storage_class(storage_class))
+
+          @protocol.create_bucket(@bucket, :storage_class => 'Archive')
+
+          expect(WebMock).to have_requested(:put, request_path)
+                                 .with(:body => mock_storage_class(storage_class), :query => {})
         end
       end # create bucket
+
+      context "Get Bucket Info" do
+        it "should get bucket info" do
+          query = {'bucketInfo' => nil}
+          stub_request(:get, request_path).with(:query => query).
+              to_return(:body => mock_bucket_info())
+
+          bucket_info = @protocol.get_bucket_info(@bucket)
+
+          expect(WebMock).to have_requested(:get, request_path)
+                                 .with(:query => query)
+
+          expect(bucket_info.name).to eq(@bucket)
+          expect(bucket_info.creation_date).to eq('2017-11-23T05:59:56.000Z')
+          expect(bucket_info.extranet_endpoint).to eq('oss-cn-hangzhou.aliyuncs.com')
+          expect(bucket_info.intranet_endpoint).to eq('oss-cn-hangzhou-internal.aliyuncs.com')
+          expect(bucket_info.location).to eq('oss-cn-hangzhou')
+          expect(bucket_info.owner_display_name).to eq('1999610231449665')
+          expect(bucket_info.owner_id).to eq('1999610231449665')
+          expect(bucket_info.grant).to eq('private')
+          expect(bucket_info.storage_class).to eq('Standard')
+
+        end
+      end # get bucket info
+
+      context "Get Bucket Stat" do
+        it "should get bucket stat" do
+          query = {'stat' => nil}
+          stub_request(:get, request_path).with(:query => query).
+              to_return(:body => mock_bucket_stat())
+
+          bucket_stat = @protocol.get_bucket_stat(@bucket)
+
+          expect(WebMock).to have_requested(:get, request_path)
+                                 .with(:query => query)
+
+          expect(bucket_stat.storage).to eq('33017908')
+          expect(bucket_stat.object_count).to eq('140')
+          expect(bucket_stat.multipart_upload_count).to eq('5')
+
+        end
+      end # get bucket stat
 
       context "List objects" do
 
@@ -503,7 +625,8 @@ module Aliyun
           rules = (1..5).map do |i|
             LifeCycleRule.new(
               :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
-              :expiry => (i % 2 == 1 ? Date.today : 10 + i))
+              :expiry => (i % 2 == 1 ? Date.today : 10 + i),
+              :is_created_before_date => (i % 4 ==1 ? true : false))
           end
 
           @protocol.put_bucket_lifecycle(@bucket, rules)
@@ -517,7 +640,8 @@ module Aliyun
           return_rules = (1..5).map do |i|
             LifeCycleRule.new(
               :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
-              :expiry => (i % 2 == 1 ? Date.today : 10 + i))
+              :expiry => (i % 2 == 1 ? Date.today : 10 + i),
+              :is_created_before_date => i % 4 == 1)
           end
 
           stub_request(:get, request_path)
