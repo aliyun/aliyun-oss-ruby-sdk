@@ -95,15 +95,21 @@ module Aliyun
       #  is located
       # @example
       #   oss-cn-hangzhou
+      # @option opts [String] :storage_class the storage type of the bucket
+      # @example
+      #  Standard/IA/Archive
       def create_bucket(name, opts = {})
         logger.info("Begin create bucket, name: #{name}, opts: #{opts}")
 
         location = opts[:location]
+        storage_class = opts[:storage_class]
         body = nil
-        if location
+
+        if opts.length > 0
           builder = Nokogiri::XML::Builder.new do |xml|
             xml.CreateBucketConfiguration {
-              xml.LocationConstraint location
+              xml.LocationConstraint location if location
+              xml.StorageClass storage_class if storage_class
             }
           end
           body = builder.to_xml
@@ -112,6 +118,113 @@ module Aliyun
         @http.put({:bucket => name}, {:body => body})
 
         logger.info("Done create bucket")
+      end
+
+      # get bucket meta info
+      # @param name [String] the bucket name
+      # @return [BucketInfo] the meta info of this bucket
+      def get_bucket_info(name)
+        logger.info("Begin get bucket info, name: #{name}")
+
+        sub_res = {'bucketInfo' => nil}
+        r = @http.get({:bucket => name, :sub_res => sub_res})
+        doc = parse_xml(r.body)
+        opts = {:name => name}
+
+        bucket_node = doc.at_css('Bucket')
+        opts.update(
+            :creation_date => get_node_text(bucket_node, 'CreationDate'),
+            :extranet_endpoint => get_node_text(bucket_node, 'ExtranetEndpoint'),
+            :intranet_endpoint => get_node_text(bucket_node, 'IntranetEndpoint'),
+            :location => get_node_text(bucket_node, 'Location'),
+            :storage_class => get_node_text(bucket_node, 'StorageClass')
+        )
+
+        owner_node = doc.at_css('Owner')
+        opts.update(
+            :owner_display_name => get_node_text(owner_node, 'DisplayName'),
+            :owner_id => get_node_text(owner_node, 'ID')
+        )
+
+        opts.update(:grant => get_node_text(doc.at_css('AccessControlList'), 'Grant'))
+
+        logger.info("Done get bucket info")
+        BucketInfo.new(opts)
+      end
+
+      # get bucket storage info
+      # @param name [String] the bucket name
+      # @return [BucketStat] the storage info of this bucket
+      def get_bucket_stat(name)
+        logger.info("Begin get bucket stat, name: #{name}")
+
+        sub_res = {'stat' => nil}
+        r = @http.get({:bucket => name, :sub_res => sub_res})
+        doc = parse_xml(r.body)
+        opts = {}
+
+        bucket_stat_node = doc.at_css('BucketStat')
+        opts.update(
+            :storage => get_node_text(bucket_stat_node, 'Storage'),
+            :object_count => get_node_text(bucket_stat_node, 'ObjectCount'),
+            :multipart_upload_count => get_node_text(bucket_stat_node, 'MultipartUploadCount')
+        )
+        logger.info("Done get bucket stat")
+        BucketStat.new(opts)
+
+      end
+
+      # 解冻Archive类型的object
+      # @param bucket_name [String] the bucket name
+      # @param object_name [String] the object name
+      def restore_object(bucket_name, object_name)
+        logger.debug("Begin restore object, bucket: #{bucket_name}, "\
+                     "object: #{object_name}")
+
+        sub_res = {'restore' => nil}
+        @http.post(
+            {bucket: bucket_name, object: object_name, sub_res: sub_res})
+
+        logger.debug("Done restore object")
+
+      end
+
+      # Put object symlink
+      # @param bucket_name [String] the bucket name
+      # @param object_name [String] the symlink name
+      # @param target_object_name [String] the target object name
+      def put_symlink(bucket_name, object_name, target_object_name)
+        logger.debug("Begin put symlink, bucket: #{bucket_name}, "\
+                     "object: #{object_name}, "\
+                     "target_object: #{target_object_name}")
+
+        sub_res = {'symlink' => nil}
+        headers = {'x-oss-symlink-target' => target_object_name}
+        @http.put(
+            {bucket: bucket_name, object: object_name, sub_res: sub_res},
+            {:headers => headers, :body => nil})
+
+        logger.debug("Done put symlink")
+      end
+
+      # Get symlink target object name
+      # @param bucket_name [String] the bucket name
+      # @param object_name [String] the symlink object name
+      # @return [String] the target object name
+      def get_symlink(bucket_name, object_name)
+        logger.debug("Begin get symlink, bucket: #{bucket_name}, "\
+                     "object: #{object_name}")
+
+        sub_res = {'symlink' => nil}
+        r = @http.get(
+            {bucket: bucket_name, object: object_name, sub_res: sub_res})
+
+        target_object_name = r.headers[:x_oss_symlink_target]
+        target_object_name = decode_key(target_object_name, KeyEncoding::URL)
+
+        logger.debug("Done get symlink")
+
+        target_object_name
       end
 
       # Put bucket acl
@@ -341,17 +454,38 @@ module Aliyun
                 xml.Status r.enabled? ? 'Enabled' : 'Disabled'
 
                 xml.Prefix r.prefix
-                xml.Expiration {
-                  if r.expiry.is_a?(Date)
-                    xml.Date Time.utc(
-                               r.expiry.year, r.expiry.month, r.expiry.day)
-                              .iso8601.sub('Z', '.000Z')
-                  elsif r.expiry.is_a?(Fixnum)
-                    xml.Days r.expiry
-                  else
-                    fail ClientError, "Expiry must be a Date or Fixnum."
-                  end
-                }
+                if r.expiry
+                  xml.Expiration {
+                    if r.expiry.is_a?(Date)
+                      if r.is_created_before_date?
+                        xml.CreatedBeforeDate Time.utc(
+                            r.expiry.year, r.expiry.month, r.expiry.day)
+                                     .iso8601.sub('Z', '.000Z')
+                      else
+                        xml.Date Time.utc(
+                            r.expiry.year, r.expiry.month, r.expiry.day)
+                                     .iso8601.sub('Z', '.000Z')
+                      end
+                    elsif r.expiry.is_a?(Fixnum)
+                      xml.Days r.expiry
+                    else
+                      fail ClientError, "Expiry must be a Date or Fixnum."
+                    end
+                  }
+                end
+                if r.abort_multipart_upload
+                  xml.AbortMultipartUpload {
+                    if r.abort_multipart_upload.is_a?(Date)
+                      xml.CreatedBeforeDate Time.utc(
+                          r.abort_multipart_upload.year, r.abort_multipart_upload.month,
+                          r.abort_multipart_upload.day).iso8601.sub('Z', '.000Z')
+                    elsif r.abort_multipart_upload.is_a?(Fixnum)
+                      xml.Days r.expiry
+                    else
+                      fail ClientError, "AbortMultipartUpload must be a Date or Fixnum."
+                    end
+                  }
+                end
               }
             end
           }
@@ -376,18 +510,45 @@ module Aliyun
 
         doc = parse_xml(r.body)
         rules = doc.css("Rule").map do |n|
+          expiry = nil
+          is_created_before_date = nil
+          abort_multipart_upload = nil
+
           days = n.at_css("Expiration Days")
           date = n.at_css("Expiration Date")
+          created_before_date = n.at_css("Expiration CreatedBeforeDate")
 
-          if (days && date) || (!days && !date)
-            fail ClientError, "We can only have one of Date and Days for expiry."
+          is_created_before_date = created_before_date ? true : false
+
+          expire_field_num = (days ? 1 : 0) + (date ? 1 : 0) + (created_before_date ? 1 : 0)
+
+          if 1 == expire_field_num
+            if days
+              expiry = days.text.to_i
+            end
+            if date
+              expiry = Date.parse(date.text)
+            end
+            if created_before_date
+              expiry = Date.parse(created_before_date.text)
+            end
+          end
+
+          amu_days = n.at_css("AbortMultipartUpload Days")
+          amu_date = n.at_css("AbortMultipartUpload CreatedBeforeDate")
+          amu_field_num = (amu_days ? 1 : 0) + (amu_date ? 1 : 0)
+
+          if 1 == amu_field_num
+            abort_multipart_upload = amu_days ? amu_days.text.to_i : Date.parse(amu_date.text)
           end
 
           LifeCycleRule.new(
             :id => get_node_text(n, 'ID'),
             :prefix => get_node_text(n, 'Prefix'),
             :enable => get_node_text(n, 'Status') { |x| x == 'Enabled' },
-            :expiry => days ? days.text.to_i : Date.parse(date.text)
+            :expiry => expiry,
+            :is_created_before_date => is_created_before_date,
+            :abort_multipart_upload => abort_multipart_upload
           )
         end
         logger.info("Done get bucket lifecycle")
