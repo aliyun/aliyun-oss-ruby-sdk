@@ -22,6 +22,7 @@ module Aliyun
             Config.new(:endpoint => @endpoint,
                        :access_key_id => 'xxx', :access_key_secret => 'yyy'))
         @bucket = 'rubysdk-bucket'
+        @bucket_inst = Bucket.new({:name => @bucket}, @protocol)
       end
 
       def request_path
@@ -172,8 +173,6 @@ module Aliyun
                             r.abort_multipart_upload.day).iso8601.sub('Z', '.000Z')
                       elsif r.abort_multipart_upload.is_a?(Fixnum)
                         xml.Days r.expiry
-                      else
-                        fail ClientError, "Expiry must be a Date or Fixnum."
                       end
                     }
                 end
@@ -293,7 +292,7 @@ module Aliyun
           stub_request(:get, request_path).with(:query => query).
               to_return(:body => mock_bucket_info())
 
-          bucket_info = @protocol.get_bucket_info(@bucket)
+          bucket_info = @bucket_inst.bucket_info()
 
           expect(WebMock).to have_requested(:get, request_path)
                                  .with(:query => query)
@@ -317,7 +316,7 @@ module Aliyun
           stub_request(:get, request_path).with(:query => query).
               to_return(:body => mock_bucket_stat())
 
-          bucket_stat = @protocol.get_bucket_stat(@bucket)
+          bucket_stat = @bucket_inst.bucket_stat()
 
           expect(WebMock).to have_requested(:get, request_path)
                                  .with(:query => query)
@@ -626,13 +625,48 @@ module Aliyun
             LifeCycleRule.new(
               :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
               :expiry => (i % 2 == 1 ? Date.today : 10 + i),
-              :is_created_before_date => (i % 4 ==1 ? true : false))
+              :is_created_before_date => i % 4 ==1,
+              :abort_multipart_upload => (i % 2 == 1 ? Date.today : 10 + i))
           end
 
-          @protocol.put_bucket_lifecycle(@bucket, rules)
+          @bucket_inst.lifecycle=(rules)
 
           expect(WebMock).to have_requested(:put, request_path)
             .with(:query => query, :body => mock_lifecycle(rules))
+        end
+
+        it "should raise exception on expiry format error" do
+          query = {'lifecycle' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          rules = (1..5).map do |i|
+            LifeCycleRule.new(
+                :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
+                :expiry => "invalid_format",
+                :is_created_before_date => i % 4 ==1,
+                :abort_multipart_upload => (i % 2 == 1 ? Date.today : 10 + i))
+          end
+
+          expect {
+            @bucket_inst.lifecycle=(rules)
+          }.to raise_error(ClientError, "Expiry must be a Date or Fixnum.")
+        end
+
+        it "should raise exception on abort_multipart_upload format error" do
+          query = {'lifecycle' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          rules = (1..5).map do |i|
+            LifeCycleRule.new(
+                :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
+                :expiry => (i % 2 == 1 ? Date.today : 10 + i),
+                :is_created_before_date => i % 4 ==1,
+                :abort_multipart_upload => "invalid_format")
+          end
+
+          expect {
+            @bucket_inst.lifecycle=(rules)
+          }.to raise_error(ClientError, "AbortMultipartUpload must be a Date or Fixnum.")
         end
 
         it "should get lifecycle" do
@@ -641,14 +675,15 @@ module Aliyun
             LifeCycleRule.new(
               :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
               :expiry => (i % 2 == 1 ? Date.today : 10 + i),
-              :is_created_before_date => i % 4 == 1)
+              :is_created_before_date => i % 4 == 1,
+              :abort_multipart_upload => (i % 2 == 1 ? Date.today : 10 + i))
           end
 
           stub_request(:get, request_path)
             .with(:query => query)
             .to_return(:body => mock_lifecycle(return_rules))
 
-          rules = @protocol.get_bucket_lifecycle(@bucket)
+          rules = @bucket_inst.lifecycle
 
           expect(WebMock).to have_requested(:get, request_path)
             .with(:query => query, :body => nil)

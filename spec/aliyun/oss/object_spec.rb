@@ -15,6 +15,7 @@ module Aliyun
           Config.new(:endpoint => @endpoint,
                      :access_key_id => 'xxx', :access_key_secret => 'yyy'))
         @bucket = 'rubysdk-bucket'
+        @bucket_inst = Bucket.new({:name => @bucket}, @protocol)
       end
 
       def crc_protocol
@@ -111,7 +112,7 @@ module Aliyun
           stub_request(:put, url).with(:query => query,
                                        :headers => headers)
 
-          @protocol.put_symlink(@bucket, object_name, target_object_name)
+          @bucket_inst.put_symlink(object_name, target_object_name)
 
           expect(WebMock).to have_requested(:put, url)
                                  .with(:query => query, :headers => headers)
@@ -129,7 +130,7 @@ module Aliyun
               .with(:query => query)
               .to_return(:headers => return_headers)
 
-          return_target_object_name = @protocol.get_symlink(@bucket, object_name)
+          return_target_object_name = @bucket_inst.get_symlink(object_name)
 
           expect(WebMock).to have_requested(:get, url)
                                  .with(:query => query)
@@ -144,7 +145,7 @@ module Aliyun
           query = {'restore' => nil}
           stub_request(:post, url).with(:query => query)
 
-          @protocol.restore_object(@bucket, object_name)
+          @bucket_inst.restore_object(object_name)
 
           expect(WebMock).to have_requested(:post, url)
                                  .with(:query => query)

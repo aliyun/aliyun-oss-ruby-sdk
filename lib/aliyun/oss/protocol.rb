@@ -482,7 +482,7 @@ module Aliyun
                     elsif r.abort_multipart_upload.is_a?(Fixnum)
                       xml.Days r.expiry
                     else
-                      fail ClientError, "Expiry must be a Date or Fixnum."
+                      fail ClientError, "AbortMultipartUpload must be a Date or Fixnum."
                     end
                   }
                 end
@@ -521,9 +521,7 @@ module Aliyun
           is_created_before_date = created_before_date ? true : false
 
           expire_field_num = (days ? 1 : 0) + (date ? 1 : 0) + (created_before_date ? 1 : 0)
-          if expire_field_num > 1
-            fail ClientError, "We can not have more than one of Date, Days and CreatedBeforeDate for expiry."
-          end
+
           if 1 == expire_field_num
             if days
               expiry = days.text.to_i
@@ -539,9 +537,7 @@ module Aliyun
           amu_days = n.at_css("AbortMultipartUpload Days")
           amu_date = n.at_css("AbortMultipartUpload CreatedBeforeDate")
           amu_field_num = (amu_days ? 1 : 0) + (amu_date ? 1 : 0)
-          if amu_field_num > 1
-            fail ClientError, "We can not have more than one of CreatedBeforeDate and Days for AbortMultipartUpload"
-          end
+
           if 1 == amu_field_num
             abort_multipart_upload = amu_days ? amu_days.text.to_i : Date.parse(amu_date.text)
           end
