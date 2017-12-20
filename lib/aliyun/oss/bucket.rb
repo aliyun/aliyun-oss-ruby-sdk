@@ -623,7 +623,8 @@ module Aliyun
           query.merge('Signature' => CGI.escape(signature))
           .map { |k, v| "#{k}=#{v}" }.join('&')
 
-        [url, query_string].join('?')
+        link_char = url.include?('?') ? '&' : '?'
+        [url, query_string].join(link_char)
       end
 
       # 获取用户所设置的ACCESS_KEY_ID
