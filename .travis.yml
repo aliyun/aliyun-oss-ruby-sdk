@@ -6,6 +6,7 @@ rvm:
 - 2.2
 - 2.3
 - 2.4
+- 2.5
 env:
   global:
   - secure: cC3aeKKrNLGuK60zEPKNPmRlE3m/VlzQLAXjD8nYjhbPVL+zjaylY87vq657gSFmDDGY3ISF0aR3rjFpSHeoVr6CiVZDnQIgoaC2FD1oDxkzy6/8tEQBJ0YORLzfCO63NJTKltVMvSsPWck4xE+qIsQLIpDjia9fHc2InLtkn9pTnuhMpHxjBIat6TgFPSiIC9YXXjCveudTy2o+9Is2nCmkdsr7lqEkifLIyXmGzyUp99hmQy0OZ2lF06OMH/RwWSDRBZryqMT+ju1qsv+/LkDRFwaqKfxqDdewhxj6eZdA7Q1YyB7ChT+uFRNaHkrWwPCC+JcZnHq8kt8qykUfN+Saq/txZ65qpQFp0rDUG929iaUUnfreearniqe9+u+7LnrFeseVLa6dJD+fcsTcCQRgfUvuaMARLq3EwqUCvAXPWHFTnY6ynqerTEwlJbxpCXtYktXaO0KugOI+iF4APs/r2iroAM/zkf3AjH78UcSAIBn1AzxQy7+Ah6G+nS69/nvbtPGiiSAmJYgKfBcD1ctDTJXzen78MGz7ImTC64k+2J4kuu8CSi/j8wbdIRHrIIszBUEPKQrGp9RDx08MRffinhnInq1uGEBFvip2Q1qk3tuGXJT+2m/OgbK7KlVmlzRz9M+NGav6ixQpW4qPvu2mf2bdmMeAd/0sg4IIIRc=
