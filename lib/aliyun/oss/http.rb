@@ -125,7 +125,12 @@ module Aliyun
         url.host = "#{bucket}." + url.host if bucket && !@config.cname && !isIP
         url.path = '/'
         url.path << "#{bucket}/" if bucket && isIP
-        url.path << object.split('/').map { |segment| CGI.escape(segment) }.join('/') if object
+
+        if object
+          path, query = object.split('?')
+          url.path << path.split('/').map { |seg| CGI.escape(seg) }.join('/')
+          url.query = query.split('&').map { |kv| k, v = kv.split('='); "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}" }.join('&') if query
+        end
 
         url.to_s
       end

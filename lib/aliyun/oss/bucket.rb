@@ -608,7 +608,7 @@ module Aliyun
 
         resource = "/#{name}/#{key}"
         unless sub_res.empty?
-          resource << "?#{sub_res.join('&')}"
+          resource << (resource.include?('?') ? "&#{sub_res.join('&')}" : "?#{sub_res.join('&')}")
         end
 
         string_to_sign = "" <<
