@@ -431,16 +431,124 @@ module Aliyun
 
           stub_request(:put, object_url(key))
 
-          @bucket.update_object_metas(
-            key, {'people' => 'mary', 'year' => '2016'})
+          @bucket.update_object_metas(key, {'people' => 'mary', 'year' => '2016'})
 
           expect(WebMock).to have_requested(:put, object_url(key))
-                         .with(:body => nil,
-                               :headers => {
-                                 'x-oss-copy-source' => resource_path(key),
-                                 'x-oss-metadata-directive' => 'REPLACE',
-                                 'x-oss-meta-year' => '2016',
-                                 'x-oss-meta-people' => 'mary'})
+                         .with( :body => nil,
+                                :headers => {
+                                  'x-oss-copy-source' => resource_path(key),
+                                  'x-oss-metadata-directive' => 'REPLACE',
+                                  'x-oss-meta-year' => '2016',
+                                  'x-oss-meta-people' => 'mary',
+                                })
+        end
+
+        it "should get object detailed meta" do
+          dict = {
+            'object_name' => 'ruby', 
+            'url' => object_url('ruby'), 
+            'time_if_modified_since' => (Time.now - 100000).rfc822, 
+            'Last-Modified' => Time.now.rfc822,
+            'x-oss-object-type' => 'Normal',
+            'ETag' => 'aaabbbcccdddeeefff11122334455',
+            'Content-Length' => 1024,
+            'x-oss-meta-year' => '2017',
+            'x-oss-meta-people' => 'Jackie'
+          }
+
+          return_headers = {
+            'Last-Modified' => dict['Last-Modified'],
+            'x-oss-object-type' => dict['x-oss-object-type'],
+            'ETag' => dict['ETag'],
+            'Content-Length' => dict['Content-Length'],
+            'x-oss-meta-year' => dict['x-oss-meta-year'],
+            'x-oss-meta-people' => dict['x-oss-meta-people']
+          }
+
+          stub_request(:head, dict['url'])
+            .to_return(:headers => return_headers, :body => '')
+
+          obj = @bucket.get_object_detailed_meta(dict['object_name'])
+
+          expect(WebMock).to have_requested(:head, dict['url'])
+            .with(:body => nil, :query => {})
+
+          expect(obj.key).to eq(dict['object_name'])
+          expect(obj.type).to eq(dict['x-oss-object-type'])
+          expect(obj.etag).to eq(dict['ETag'])
+          expect(obj.size).to eq(dict['Content-Length'])
+          expect(obj.last_modified.rfc822).to eq(dict['Last-Modified'])
+          expect(obj.metas).to eq({'year' => dict['x-oss-meta-year'], 'people' => dict['x-oss-meta-people']})
+        end
+
+        it "should get object detailed meta with condition if_modified_since (Time)" do
+          dict = {
+            'object_name' => 'ruby', 
+            'url' => object_url('ruby'), 
+            'Last-Modified' => (Time.now - 50000).rfc822,
+            'time_if_modified_since' => (Time.now - 100000).rfc822, 
+            'x-oss-object-type' => 'Normal',
+            'ETag' => 'aaabbbcccdddeeefff11122334455',
+            'Content-Length' => 1024,
+            'x-oss-meta-year' => '2017',
+            'x-oss-meta-people' => 'Jackie'
+          }
+
+          return_headers = {
+            'Last-Modified' => dict['Last-Modified'],
+            'x-oss-object-type' => dict['x-oss-object-type'],
+            'ETag' => dict['ETag'],
+            'Content-Length' => dict['Content-Length'],
+            'x-oss-meta-year' => dict['x-oss-meta-year'],
+            'x-oss-meta-people' => dict['x-oss-meta-people']
+          }
+
+          stub_request(:head, dict['url'])
+            .to_return(:headers => return_headers, :body => '')
+
+          opt = { 'if_modified_since' => dict['time_if_modified_since'] }
+          obj = @bucket.get_object_detailed_meta(dict['object_name'], opt)
+
+          expect(WebMock).to have_requested(:head, dict['url'])
+            .with(:body => nil, :query => {})
+
+          expect(obj.key).to eq(dict['object_name'])
+          expect(obj.type).to eq(dict['x-oss-object-type'])
+          expect(obj.etag).to eq(dict['ETag'])
+          expect(obj.size).to eq(dict['Content-Length'])
+          expect(obj.last_modified.rfc822).to eq(dict['Last-Modified'])
+          expect(obj.metas).to eq({'year' => dict['x-oss-meta-year'], 'people' => dict['x-oss-meta-people']})
+        end
+
+        it "should get object detailed meta with condition if_modified_since (Time) failed" do
+          dict = {
+            'object_name' => 'ruby', 
+            'url' => object_url('ruby'), 
+            'Last-Modified' => (Time.now - 500000).rfc822,
+            'time_if_modified_since' => (Time.now - 30000).rfc822, 
+            'x-oss-object-type' => 'Normal',
+            'ETag' => 'aaabbbcccdddeeefff11122334455',
+            'Content-Length' => 1024,
+            'x-oss-meta-year' => '2017',
+            'x-oss-meta-people' => 'Jackie'
+          }
+
+          stub_request(:head, dict['url'])
+            .to_return(:headers => {}, :body => '')
+
+          opt = { 'if_modified_since' => dict['time_if_modified_since'] }
+          obj = @bucket.get_object_detailed_meta(dict['object_name'], opt)
+
+          expect(WebMock).to have_requested(:head, dict['url'])
+            .with(:body => nil, :query => {})
+
+          expect(obj.key).to eq(dict['object_name'])
+          expect(obj.type).to eq(nil)
+          expect(obj.size).to eq(nil)
+          expect(obj.etag).to eq(nil)
+          expect(obj.metas).to eq({})
+          expect(obj.last_modified).to eq(nil)
+          expect(obj.headers).to eq({})
         end
 
         it "should get object url" do

@@ -488,10 +488,10 @@ module Aliyun
 
           stub_request(:put, url)
 
-          @protocol.copy_object(@bucket, src_object, dst_object,
+          metas = @protocol.copy_object(@bucket, src_object, dst_object,
                                :metas => {
                                  'year' => '2015',
-                                 'people' => 'mary'
+                                 'people' => 'mary',
                                })
 
           expect(WebMock).to have_requested(:put, url)
@@ -499,6 +499,38 @@ module Aliyun
                                :headers => {
                                  'x-oss-meta-year' => '2015',
                                  'x-oss-meta-people' => 'mary'})
+        end
+
+        it "should set udpate metas" do
+          src_object = 'ruby'
+          url = get_request_path(src_object)
+
+          stub_request(:put, url)
+
+          headers = { 
+            'Cache-Control' => '123456', 
+            'Content-Disposition' => 'downloading_name', 
+            'Content-Encoding' => 'downloading_code', 
+            'Content-Language' => 'downloading_language_code', 
+            'Expires' => '2019-09-26' 
+          }
+          metas = @protocol.copy_object(@bucket, src_object, src_object, :headers => headers, 
+                               :metas => {
+                                 'year' => '2015',
+                                 'people' => 'mary',
+                               })
+
+          expect(WebMock).to have_requested(:put, url)
+                         .with(:body => nil,
+                               :headers => {
+                                 'x-oss-meta-year' => '2015',
+                                 'x-oss-meta-people' => 'mary',
+                                 'Cache-Control' => '123456',
+                                 'Content-Disposition' => 'downloading_name', 
+                                 'Content-Encoding' => 'downloading_code', 
+                                 'Content-Language' => 'downloading_language_code', 
+                                 'Expires' => '2019-09-26' 
+                                })
         end
 
         it "should raise Exception on error" do

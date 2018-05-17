@@ -285,11 +285,30 @@ module Aliyun
       #  * :etag [String] 更新后文件的ETag
       #  * :last_modified [Time] 更新后文件的最后修改时间
       def update_object_metas(key, metas, conditions = {})
-        @protocol.copy_object(
-          name, key, key,
-          :meta_directive => MetaDirective::REPLACE,
-          :metas => metas,
-          :condition => conditions)
+      @protocol.copy_object(
+        name, key, key,
+        :meta_directive => MetaDirective::REPLACE,
+        :metas => metas,
+        :condition => conditions)
+    end
+
+      # 获取Object的meta
+      # @param key [String] Object的名字
+      # @option opts [Hash] 指定获取Object meta需要满足的条件，同{#get_object}
+      #   * :if_modified_since (Time) 指定如果object的修改时间晚于这个值，则获取
+      #   * :if_unmodified_since (Time) 指定如果object从这个时间后再无修改，则获取
+      #   * :if_match_etag (String) 指定如果object的etag等于这个值，则获取
+      #   * :if_unmatch_etag (String) 指定如果object的etag不等于这个值，则获取
+      # @return [Aliyun::OSS::Object] 返回Object对象信息
+      #  * :key  [String]  Object的name
+      #  * :size [Numeric] Object的size
+      #  * :type [String]  Object的type
+      #  * :etag [String]  Object的ETag
+      #  * :last_modified [Time] Object的最后修改时间
+      #  * :headers [Hash] : 所有HTTP Headers属性 
+      #  * :metas [Hash] : User Meta（用户自定义元信息）
+      def get_object_detailed_meta(key, opts = {})
+        @protocol.get_object_meta(name, key, opts) 
       end
 
       # 判断一个object是否存在
@@ -366,6 +385,8 @@ module Aliyun
       #  返回这些meta。属性的key不区分大小写。例如：{ 'year' => '2015'
       #  }。如果:meta_directive为{OSS::MetaDirective::COPY}，则:metas
       #  会被忽略。
+      # @option opts [Hash] :headers 指定请求的HTTP Header，不区分大小
+      #  写。这里指定的值会覆盖通过`:content_type`和`:metas`设置的值。
       # @option opts [Hash] :condition 指定拷贝object需要满足的条件，
       #  同 {#get_object}
       # @return [Hash] 目标文件的信息
