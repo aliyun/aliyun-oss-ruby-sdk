@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.7.0 / 2018-06-05
+
+- deps: upgrade nokogiri to > 1.6 and ruby version >= 2.0
+
 ### v0.6.0 / 2017-07-23
 
 - deps: upgrade rest-client to 2.x
