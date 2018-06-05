@@ -5,24 +5,20 @@ require 'yaml'
 require 'aliyun/oss'
 
 ##
-# 一般来说用户在上传object和下载object时只需要指定文件名就可以满足需要：
-# - 在上传的时候client会从指定的文件中读取数据上传到OSS
-# - 在下载的时候client会把从OSS下载的数据写入到指定的文件中
+# Generally speaking, when a user uploads or downloads objects with specifying a file:
+# - In upload, client will upload the data of the file to OSS.
+# - In download, client will download the data from OSS to the file locally.
 #
-# 在某些情况下用户可能会需要流式地上传和下载：
-# - 用户要写入到object中的数据不能立即得到全部，而是从网络中流式获取，
-#   然后再一段一段地写入到OSS中
-# - 用户要写入到object的数据是经过运算得出，每次得到一部分，用户不希望
-#   保留所有的数据然后一次性写入到OSS
-# - 用户下载的object很大，用户不希望一次性把它们下载到内存中，而是希望
-#   获取一部分就处理一部分；用户也不希望把它先下载到文件中，然后再从文
-#   件中读出来处理，这样会让数据经历不必要的拷贝
+# However in some scenarios, users may want to download or upload data in streaming:
+# - Users cannot get the whole data for uploading, instead each time they get the partial data from up streaming and write it into OSS.
+# - The data users want to write is computed and each compute just returns partial data. Typically Users dont want to compute all data and then write them as the whole
+#   to OSS. Instead they wantt o compute some data and write the result to OSS immediately.
+# - The object users want to download is too big to hold in memory. They want to download some data and then processs them without saving to local file.
 #
-# 当然，对于流式上传的需求，我们可以使用OSS的appendable object来满足。
-# 但是即使是normal object，利用sdk的streaming功能，也可以实现流式上传
-# 和下载。
+# Of course, for streaming upload scenario, we can leverage appendable object to solve.
+# However, even for normal object, by using SDK's streaming APIs, you can also achieve the streaming upload or download.
 
-# 初始化OSS client
+# Initialize OSS client
 Aliyun::Common::Logging.set_log_level(Logger::DEBUG)
 conf_file = '~/.oss.yml'
 conf = YAML.load(File.read(File.expand_path(conf_file)))
@@ -32,7 +28,7 @@ bucket = Aliyun::OSS::Client.new(
   :access_key_id => conf['access_key_id'],
   :access_key_secret => conf['access_key_secret']).get_bucket(conf['bucket'])
 
-# 辅助打印函数
+# print helper function
 def demo(msg)
   puts "######### #{msg} ########"
   puts
@@ -41,9 +37,9 @@ def demo(msg)
   puts
 end
 
-# 例子1: 归并排序
-# 有两个文件sort.1, sort.2，它们分别存了一些从小到大排列的整数，每个整
-# 数1行，现在要将它们做归并排序的结果上传到OSS中，命名为sort.all
+# Example1: merge sort
+# There're two files sort.1 and sort.2 which have the sorted int. Every int occupies one line.
+# Now you need to merge sort the two files into one file and uploaded it to OSS.
 
 local_1, local_2 = 'sort.1', 'sort.2'
 result_object = 'sort.all'
@@ -83,29 +79,29 @@ demo "Streaming upload" do
 
   puts "Put object: #{result_object}"
 
-  # 将文件下载下来查看
+  # download the file and print the content
   bucket.get_object(result_object, :file => result_object)
   puts "Get object: #{result_object}"
   puts "Content: #{File.read(result_object)}"
 end
 
-# 例子2: 下载进度条
-# 下载一个大文件（10M），在下载的过程中打印下载进度
+# Example 2: download progress bar
+# Download a 10M file and print the download progress
 
 large_file = 'large_file'
 
 demo "Streaming download" do
   puts "Begin put object: #{large_file}"
-  # 利用streaming上传
+  # Leverage streaming upload
   bucket.put_object(large_file) do |stream|
     10.times { stream << "x" * (1024 * 1024) }
   end
 
-  # 查看object大小
+  # check object size
   object_size = bucket.get_object(large_file).size
   puts "Put object: #{large_file}, size: #{object_size}"
 
-  # 流式下载文件，仅打印进度，不保存文件
+  # streaming download file, print the progress, but not save the file
   def to_percentile(v)
     "#{(v * 100.0).round(2)} %"
   end
@@ -114,7 +110,7 @@ demo "Streaming download" do
   last_got, got = 0, 0
   bucket.get_object(large_file) do |chunk|
     got += chunk.size
-    # 仅在下载进度大于10%的时候打印
+    # only print the progress when the progress is more than 10%.
     if (got - last_got).to_f / object_size > 0.1
       puts "Progress: #{to_percentile(got.to_f / object_size)}"
       last_got = got

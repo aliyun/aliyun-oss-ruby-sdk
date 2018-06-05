@@ -24,7 +24,7 @@ module Aliyun
         end
       end
 
-      # 生成list_buckets返回的响应，包含bucket列表和more信息
+      # Generates the response of list_buckets, which contains the bucket list and more information.
       def mock_response(buckets, more)
         builder = Nokogiri::XML::Builder.new do |xml|
           xml.ListAllMyBucketsResult {
@@ -56,7 +56,7 @@ module Aliyun
       end
 
       context "List all buckets" do
-        # 测试list_buckets正确地发送了HTTP请求
+        # tests list_buckets send HTTP request correctly
         it "should send correct request" do
           stub_request(:get, @endpoint)
 
@@ -66,7 +66,7 @@ module Aliyun
                               with(:body => nil, :query => {})
         end
 
-        # 测试list_buckets正确地解析了list_buckets的返回
+        # tests list_buckets parse the response correctly.
         it "should correctly parse response" do
           stub_request(:get, @endpoint).to_return(
             {:body => mock_response(@all_buckets, {})})
@@ -82,7 +82,7 @@ module Aliyun
       end
 
       context "Paging buckets" do
-        # 测试list_buckets的请求中包含prefix/marker/maxkeys等信息
+        # tests list_buckets request has the information like prefix/marker/maskeys 
         it "should set prefix/max-keys param" do
           prefix = 'rubysdk-bucket-00'
           marker = 'rubysdk-bucket-002'
@@ -101,7 +101,7 @@ module Aliyun
                             'max-keys' => limit})
         end
 
-        # 测试list_buckets正确地解析了HTTP响应，包含more信息
+        # test list_buckets parse the response correctly, which has the more information.
         it "should parse next marker" do
           prefix = 'rubysdk-bucket-00'
           marker = 'rubysdk-bucket-002'

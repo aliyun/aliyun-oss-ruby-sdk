@@ -3,8 +3,8 @@
 module Aliyun
   module STS
 
-    # STS服务的客户端，用于向STS申请临时token。
-    # @example 创建Client
+    # The client for STS service, for requesting temporary token.
+    # @example creates Client
     #   client = Client.new(
     #     :access_key_id => 'access_key_id',
     #     :access_key_secret => 'access_key_secret')

@@ -6,7 +6,7 @@ module Aliyun
   module OSS
 
     describe Util do
-      # 测试对body content的md5编码是否正确
+      # test if the MD5 of the body content is correct.
       it "should get correct content md5" do
         content = ""
 
@@ -18,7 +18,7 @@ module Aliyun
         expect(md5).to eq("XrY7u+Ae7tCTyyK7j1rNww==")
       end
 
-      # 测试签名是否正确
+      # test if the signature is correct.
       it "should get correct signature" do
         key = 'helloworld'
         date = 'Fri, 30 Oct 2015 07:21:00 GMT'
@@ -44,7 +44,7 @@ module Aliyun
         expect(signature).to eq("7Oh2wobzeg6dw/cWYbF/2m6s6qc=")
       end
 
-      # 测试CRC计算是否正确
+      # test if the CRC calculation is correct.
       it "should calculate a correct data crc" do
         content = ""
         crc = Util.crc(content)
@@ -59,7 +59,7 @@ module Aliyun
         expect(crc).to eq(6745424696046691431)
       end
 
-      # 测试CRC Combine计算是否正确
+      # Test CRC combine calculation is correct or not.
       it "should calculate a correct crc that crc_a combine with crc_b" do
         content_a = "test\0hello\1world\2!\3"
         crc_a = Util.crc(content_a)
@@ -79,7 +79,7 @@ module Aliyun
         expect(crc_ab).to eq(crc_c)
       end
 
-      # 测试CRC校验和异常处理是否正确
+      # test CRC checksum and exception handler is correct or not.
       it "should check inconsistent crc" do
         expect {
           Util.crc_check(6745424696046691431, 6745424696046691431, 'put')

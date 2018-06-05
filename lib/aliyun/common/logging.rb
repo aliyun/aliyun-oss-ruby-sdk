@@ -20,12 +20,12 @@ module Aliyun
         Logging.logger.level = level
       end
 
-      # 设置日志输出的文件
+      # set logger output file
       def self.set_log_file(file)
         @log_file = file
       end
 
-      # 获取logger
+      # get logger
       def logger
         Logging.logger
       end
