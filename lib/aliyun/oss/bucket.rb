@@ -10,7 +10,8 @@ module Aliyun
     # 3. multipart相关：断点续传、断点续载
     class Bucket < Common::Struct::Base
 
-      attrs :name, :location, :creation_time
+      attrs :name, :location, :creation_time,
+            :storage_class
 
       def initialize(opts = {}, protocol = nil)
         super(opts)
@@ -45,6 +46,32 @@ module Aliyun
         else
           @protocol.delete_bucket_logging(name)
         end
+      end
+
+      def put_symlink(object_name)
+
+      end
+
+      # 获取Bucket的meta info
+      # @return [BucketInfo] Bucket的meta info
+      def bucket_info
+        begin
+          r = @protocol.get_bucket_info(name)
+        rescue ServerError => e
+          raise unless e.http_code == 404
+        end
+        r || BucketInfo.new
+      end
+
+      # 获取Bucket的storage stat
+      # @return [BucketStat] Bucket的storage stat
+      def bucket_stat
+        begin
+          r = @protocol.get_bucket_stat(name)
+        rescue ServerError => e
+          raise unless e.http_code == 404
+        end
+        r || BucketStat.new
       end
 
       # 获取Bucket的website配置
@@ -408,6 +435,25 @@ module Aliyun
       # @return [String] object的{OSS::ACL ACL}
       def get_object_acl(key)
         @protocol.get_object_acl(name, key)
+      end
+
+      # 创建object的符号链接
+      # @param object_name [String] 符号链接的名称
+      # @param target_object_name [String] 符号链接指向的目标文件的名称
+      def put_symlink(object_name, target_object_name)
+        @protocol.put_symlink(name, object_name, target_object_name)
+      end
+
+      # 获取符号链接指向的target object
+      # @return [String] target object name
+      def get_symlink(object_name)
+        @protocol.get_symlink(name, object_name)
+      end
+
+      # 解冻Archive类型的object
+      # @param object_name [String] the name of the object
+      def restore_object(object_name)
+        @protocol.restore_object(name, object_name)
       end
 
       # 获取object的CORS规则

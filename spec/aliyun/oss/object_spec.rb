@@ -15,6 +15,7 @@ module Aliyun
           Config.new(:endpoint => @endpoint,
                      :access_key_id => 'xxx', :access_key_secret => 'yyy'))
         @bucket = 'rubysdk-bucket'
+        @bucket_inst = Bucket.new({:name => @bucket}, @protocol)
       end
 
       def crc_protocol
@@ -99,6 +100,56 @@ module Aliyun
 
       def err(msg, reqid = '0000')
         "#{msg} RequestId: #{reqid}"
+      end
+
+      context "symlink" do
+        it "should put symlink" do
+          object_name = 'link-to-oss.jpg'
+          target_object_name = 'oss.jpg'
+          url = get_request_path(object_name)
+          query = {'symlink' => nil}
+          headers = {'x-oss-symlink-target' => target_object_name}
+          stub_request(:put, url).with(:query => query,
+                                       :headers => headers)
+
+          @bucket_inst.put_symlink(object_name, target_object_name)
+
+          expect(WebMock).to have_requested(:put, url)
+                                 .with(:query => query, :headers => headers)
+        end
+
+        it "should get symlink" do
+          query = {'symlink' => nil}
+          object_name = 'link-to-中文.jpg'
+          target_object_name = '中文.jpg'
+          url = get_request_path(object_name)
+          return_headers = {
+              :x_oss_symlink_target => target_object_name,
+          }
+          stub_request(:get, url)
+              .with(:query => query)
+              .to_return(:headers => return_headers)
+
+          return_target_object_name = @bucket_inst.get_symlink(object_name)
+
+          expect(WebMock).to have_requested(:get, url)
+                                 .with(:query => query)
+          expect(target_object_name).to eq(return_target_object_name)
+        end
+      end
+
+      context "restore" do
+        it "should restore object" do
+          object_name = 'archive_object.jpg'
+          url = get_request_path(object_name)
+          query = {'restore' => nil}
+          stub_request(:post, url).with(:query => query)
+
+          @bucket_inst.restore_object(object_name)
+
+          expect(WebMock).to have_requested(:post, url)
+                                 .with(:query => query)
+        end
       end
 
       context "Put object" do

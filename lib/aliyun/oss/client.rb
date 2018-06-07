@@ -68,7 +68,9 @@ module Aliyun
       # 创建一个bucket
       # @param name [String] Bucket名字
       # @param opts [Hash] 创建Bucket的属性（可选）
-      # @option opts [:location] [String] 指定bucket所在的区域，默认为oss-cn-hangzhou
+      # @option opts [:location] [String] 指定bucket所在的区域，默认为new client时，
+      # 传入endpoint所在的region
+      # @option opts [:storage_class] [String] 指定bucket的存储类型, 默认为Standard
       def create_bucket(name, opts = {})
         @protocol.create_bucket(name, opts)
       end
