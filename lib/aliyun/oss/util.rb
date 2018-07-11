@@ -4,7 +4,7 @@ require 'time'
 require 'base64'
 require 'openssl'
 require 'digest/md5'
-require "crc"
+require 'crc' if RUBY_PLATFORM =~ /java/
 
 module Aliyun
   module OSS
@@ -79,12 +79,20 @@ module Aliyun
 
         # Get a crc value of the data
         def crc(data, init_crc = 0)
-          CRC.crc64(data, init_crc)
+          if RUBY_PLATFORM =~ /java/
+            CRC.crc64(data, init_crc)
+          else
+            CrcX::crc64(init_crc, data, data.size)
+          end
         end
 
         # Calculate a value of the crc1 combine with crc2. 
         def crc_combine(crc1, crc2, len2)
-          CRC.crc64.combine(crc1, crc2, len2)
+          if RUBY_PLATFORM =~ /java/
+            CRC.crc64.combine(crc1, crc2, len2)
+          else
+            CrcX::crc64_combine(crc1, crc2, len2)
+          end
         end
 
         def crc_check(crc_a, crc_b, operation)
