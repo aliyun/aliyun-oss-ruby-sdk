@@ -71,4 +71,4 @@ task :smart_test do
   end
 end
 
-Rake::Task[:smart_test].prerequisites << :compile
+Rake::Task[:smart_test].prerequisites << :compile unless RUBY_PLATFORM =~ /java/
