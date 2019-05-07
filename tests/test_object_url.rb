@@ -38,6 +38,25 @@ class TestObjectUrl < Minitest::Test
     assert_equal 200, r.code
   end
 
+  def test_signed_url_for_put
+    key = get_key('object-for-put')
+
+    @bucket.put_object(key, acl: Aliyun::OSS::ACL::PRIVATE)
+
+    plain_url = @bucket.object_url(key, false, http_method: "PUT")
+    begin
+      r = RestClient.get(plain_url)
+      assert false, 'GET plain object url should receive 403'
+    rescue => e
+      assert_equal 403, e.response.code
+    end
+
+    signed_url = @bucket.object_url(key, http_method: "PUT")
+    r = RestClient.get(signed_url)
+
+    assert_equal 200, r.code
+  end
+
   def test_signed_url_with_sts
     key = get_key('object-with-sts')
 

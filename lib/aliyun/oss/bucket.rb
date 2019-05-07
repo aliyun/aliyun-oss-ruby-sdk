@@ -589,8 +589,10 @@ module Aliyun
       # @param [String] key Object的key
       # @param [Boolean] sign 是否对URL进行签名，默认为是
       # @param [Fixnum] expiry URL的有效时间，单位为秒，默认为60s
+      # @param [String] http_method URL的有效时间，单位为秒，默认为60s
+      # @param [String] content_type URL的有效时间，单位为秒，默认为60s
       # @return [String] 用于直接访问Object的URL
-      def object_url(key, sign = true, expiry = 60)
+      def object_url(key, sign = true, expiry = 60, http_method: "GET", content_type: nil)
         url = @protocol.get_request_url(name, key)
         return url unless sign
 
@@ -612,9 +614,9 @@ module Aliyun
         end
 
         string_to_sign = "" <<
-                         "GET\n" << # method
+                         "#{http_method.upcase}\n" << # method
                          "\n" <<    # Content-MD5
-                         "\n" <<    # Content-Type
+                         "#{content_type.to_s}\n" <<    # Content-Type
                          "#{expires}\n" <<
                          "#{resource}"
 
