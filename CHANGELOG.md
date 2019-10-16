@@ -3,6 +3,8 @@
 ### v0.7.1 / 2019-10-16
 
 - Fix User-Agent headers warning in newer Ruby version.
+- Fix for no longer generate a log file.
+- Fix other warnings.
 
 ### v0.7.0 / 2018-06-05
 

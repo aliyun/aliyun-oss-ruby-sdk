@@ -13,7 +13,7 @@ module Aliyun
     #
     class ServerError < Common::Exception
 
-      attr_reader :http_code, :error_code, :message, :request_id
+      attr_reader :http_code, :error_code, :request_id
 
       def initialize(response)
         @http_code = response.code
@@ -66,7 +66,7 @@ module Aliyun
 
     ##
     # CrcInconsistentError will be raised after a upload operation,
-    # when the local crc is inconsistent with the response crc from server. 
+    # when the local crc is inconsistent with the response crc from server.
     #
     class CrcInconsistentError < Common::Exception; end
 
