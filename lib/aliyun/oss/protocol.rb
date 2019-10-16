@@ -346,7 +346,7 @@ module Aliyun
                     xml.Date Time.utc(
                                r.expiry.year, r.expiry.month, r.expiry.day)
                               .iso8601.sub('Z', '.000Z')
-                  elsif r.expiry.is_a?(Fixnum)
+                  elsif r.expiry.is_a?(Integer)
                     xml.Days r.expiry
                   else
                     fail ClientError, "Expiry must be a Date or Fixnum."

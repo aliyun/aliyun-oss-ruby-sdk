@@ -228,7 +228,7 @@ module Aliyun
         sub_res = resources[:sub_res]
 
         headers = http_options[:headers] || {}
-        headers['user-agent'] = get_user_agent
+        headers['user-agent'] ||= get_user_agent
         headers['date'] = Time.now.httpdate
         headers['content-type'] ||= DEFAULT_CONTENT_TYPE
         headers['accept-encoding'] ||= DEFAULT_ACCEPT_ENCODING
@@ -285,9 +285,7 @@ module Aliyun
         # RestClient::Response ourselves
         unless response.is_a?(RestClient::Response)
           if response.code.to_i >= 300
-            response = RestClient::Response.create(
-              RestClient::Request.decode(response['content-encoding'], response.body),
-              response, request)
+            response = RestClient::Response.create(response.body, response, request)
             e = ServerError.new(response)
             logger.error(e.to_s)
             raise e
