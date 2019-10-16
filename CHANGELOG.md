@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.7.1 / 2019-10-16
+
+- Fix User-Agent headers warning in newer Ruby version.
+
 ### v0.7.0 / 2018-06-05
 
 - deps: upgrade nokogiri to > 1.6 and ruby version >= 2.0

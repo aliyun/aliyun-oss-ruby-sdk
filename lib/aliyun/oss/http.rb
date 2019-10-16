@@ -228,7 +228,7 @@ module Aliyun
         sub_res = resources[:sub_res]
 
         headers = http_options[:headers] || {}
-        headers['user-agent'] = get_user_agent
+        headers['user-agent'] ||= get_user_agent
         headers['date'] = Time.now.httpdate
         headers['content-type'] ||= DEFAULT_CONTENT_TYPE
         headers['accept-encoding'] ||= DEFAULT_ACCEPT_ENCODING
