@@ -11,7 +11,7 @@ module Aliyun
     #   logger.info(xxx)
     module Logging
 
-      DEFAULT_LOG_FILE = "./aliyun_sdk.log"
+      DEFAULT_LOG_FILE = "/dev/null"
       MAX_NUM_LOG = 100
       ROTATE_SIZE = 10 * 1024 * 1024
 
