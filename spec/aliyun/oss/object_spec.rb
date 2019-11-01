@@ -710,6 +710,23 @@ module Aliyun
                     'Range' => 'bytes=0-9'
                   })
         end
+
+        it "should get to get object with special chars" do
+          object_name = 'ruby///adfadfa//!@#%^*//?key=value&aabc#abc=ad'
+          url = get_request_path(object_name)
+
+          return_content = "hello world"
+          stub_request(:get, url).to_return(:body => return_content)
+
+          content = ""
+          @protocol.get_object(@bucket, object_name) {|c| content << c}
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {})
+
+          expect(content).to eq(return_content)
+        end
+
       end # Get object
 
       context "Get object meta" do

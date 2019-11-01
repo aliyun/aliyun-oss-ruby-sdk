@@ -1394,11 +1394,25 @@ module Aliyun
         @http.get_request_url(bucket, object)
       end
 
+      # Get bucket/object resource path
+      # @param [String] bucket the bucket name
+      # @param [String] object the bucket name
+      # @return [String] resource path for the bucket/object
+      def get_resource_path(bucket, object = nil)
+        @http.get_resource_path(bucket, object)
+      end
+
       # Get user's access key id
       # @return [String] the access key id
       def get_access_key_id
         @config.access_key_id
       end
+
+      # Get user's access key secret
+      # @return [String] the access key secret
+      def get_access_key_secret
+        @config.access_key_secret
+      end  
 
       # Get user's STS token
       # @return [String] the STS token

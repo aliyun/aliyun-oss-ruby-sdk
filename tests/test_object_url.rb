@@ -66,4 +66,24 @@ class TestObjectUrl < Minitest::Test
 
     assert_equal 200, r.code
   end
+
+  def test_signed_url_with_parameters
+    key = get_key('example.jpg')
+
+    @bucket.put_object(key, :file => 'tests/example.jpg', acl: Aliyun::OSS::ACL::PRIVATE)
+
+    meta = @bucket.get_object(key)
+    assert_equal 21839, meta.size 
+
+    parameters = {
+      'x-oss-process' => 'image/resize,m_fill,h_100,w_100',
+    }
+    signed_url = @bucket.object_url(key, true, 60, parameters)
+    r = RestClient.get(signed_url)
+    lenth = r.headers[:content_length].to_i
+    assert_equal 200, r.code
+    assert_equal true, lenth < meta.size
+
+  end
+
 end

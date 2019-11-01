@@ -17,6 +17,8 @@ class TestObjectKey < Minitest::Test
       chinese: '杭州・中国',
       space: '是 空格 yeah +-/\\&*#',
       invisible: '' << 1 << 10 << 12 << 7 << 80 << 99,
+      specail1: 'testkey/',
+      specail2: 'testkey/?key=value#abc=def',
       xml: 'a<b&c>d +'
     }
   end
@@ -51,6 +53,22 @@ class TestObjectKey < Minitest::Test
 
   def test_invisible
     key = get_key(:invisible)
+    @bucket.put_object(key)
+    all = @bucket.list_objects(prefix: @prefix).map(&:key)
+    assert_includes all, key
+    assert_equal key, @bucket.get_object(key).key
+  end
+
+  def test_specail1
+    key = get_key(:specail1)
+    @bucket.put_object(key)
+    all = @bucket.list_objects(prefix: @prefix).map(&:key)
+    assert_includes all, key
+    assert_equal key, @bucket.get_object(key).key
+  end
+
+  def test_specail2
+    key = get_key(:specail2)
     @bucket.put_object(key)
     all = @bucket.list_objects(prefix: @prefix).map(&:key)
     assert_includes all, key
