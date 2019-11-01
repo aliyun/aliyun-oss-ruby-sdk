@@ -107,10 +107,10 @@ module Aliyun
     # * id [String] the unique id of a rule
     # * enabled [Boolean] whether to enable this rule
     # * prefix [String] the prefix objects to apply this rule
-    # * expiry [Date] or [Fixnum] the expire time of objects
+    # * expiry [Date] or [Integer] the expire time of objects
     #   * if expiry is a Date, it specifies the absolute date to
     #     expire objects
-    #   * if expiry is a Fixnum, it specifies the relative date to
+    #   * if expiry is a Integer, it specifies the relative date to
     #     expire objects: how many days after the object's last
     #     modification time to expire the object
     # @example Specify expiry as Date

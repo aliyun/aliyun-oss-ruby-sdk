@@ -27,7 +27,7 @@ module Aliyun
       # @param role [String] the role arn
       # @param session [String] the session name
       # @param policy [STS::Policy] the policy
-      # @param duration [Fixnum] the duration seconds for the
+      # @param duration [Integer] the duration seconds for the
       #  requested token
       # @return [STS::Token] the sts token
       def assume_role(role, session, policy = nil, duration = 3600)

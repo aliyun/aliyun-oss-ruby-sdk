@@ -346,10 +346,10 @@ module Aliyun
                     xml.Date Time.utc(
                                r.expiry.year, r.expiry.month, r.expiry.day)
                               .iso8601.sub('Z', '.000Z')
-                  elsif r.expiry.is_a?(Fixnum)
+                  elsif r.expiry.is_a?(Integer)
                     xml.Days r.expiry
                   else
-                    fail ClientError, "Expiry must be a Date or Fixnum."
+                    fail ClientError, "Expiry must be a Date or Integer."
                   end
                 }
               }
@@ -1517,7 +1517,7 @@ module Aliyun
       def get_bytes_range(range)
         if range &&
            (!range.is_a?(Array) || range.size != 2 ||
-            !range.at(0).is_a?(Fixnum) || !range.at(1).is_a?(Fixnum))
+            !range.at(0).is_a?(Integer) || !range.at(1).is_a?(Integer))
           fail ClientError, "Range must be an array containing 2 Integers."
         end
 
