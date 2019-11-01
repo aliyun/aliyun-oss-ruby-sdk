@@ -70,6 +70,7 @@ module Aliyun
       # @param opts [Hash] 创建Bucket的属性（可选）
       # @option opts [:location] [String] 指定bucket所在的区域，默认为oss-cn-hangzhou
       def create_bucket(name, opts = {})
+        Util.ensure_bucket_name_valid(name)
         @protocol.create_bucket(name, opts)
       end
 
@@ -77,6 +78,7 @@ module Aliyun
       # @param name [String] Bucket名字
       # @note 如果要删除的Bucket不为空（包含有object），则删除会失败
       def delete_bucket(name)
+        Util.ensure_bucket_name_valid(name)
         @protocol.delete_bucket(name)
       end
 
@@ -84,6 +86,7 @@ module Aliyun
       # @param name [String] Bucket名字
       # @return [Boolean] 如果Bucket存在则返回true，否则返回false
       def bucket_exists?(name)
+        Util.ensure_bucket_name_valid(name)
         exist = false
 
         begin
@@ -102,6 +105,7 @@ module Aliyun
       # @param name [String] Bucket名字
       # @return [Bucket] Bucket对象
       def get_bucket(name)
+        Util.ensure_bucket_name_valid(name)
         Bucket.new({:name => name}, @protocol)
       end
 

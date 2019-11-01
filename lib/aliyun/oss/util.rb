@@ -93,6 +93,12 @@ module Aliyun
           end
         end
 
+        def ensure_bucket_name_valid(name)
+          unless (name =~ %r|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$|)
+            fail ClientError, "The bucket name is invalid."
+          end
+        end  
+
       end # self
     end # Util
   end # OSS
