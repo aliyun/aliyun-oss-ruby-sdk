@@ -285,9 +285,11 @@ module Aliyun
         # RestClient::Response ourselves
         unless response.is_a?(RestClient::Response)
           if response.code.to_i >= 300
-            response = RestClient::Response.create(
-              RestClient::Request.decode(response['content-encoding'], response.body),
-              response, request)
+            body = response.body
+            if RestClient::version < '2.1.0'
+              body = RestClient::Request.decode(response['content-encoding'], response.body)
+            end
+            response = RestClient::Response.create(body, response, request)
             e = ServerError.new(response)
             logger.error(e.to_s)
             raise e
