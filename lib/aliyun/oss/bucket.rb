@@ -588,7 +588,7 @@ module Aliyun
       # 获取Object的URL
       # @param [String] key Object的key
       # @param [Boolean] sign 是否对URL进行签名，默认为是
-      # @param [Fixnum] expiry URL的有效时间，单位为秒，默认为60s
+      # @param [Integer] expiry URL的有效时间，单位为秒，默认为60s
       # @return [String] 用于直接访问Object的URL
       def object_url(key, sign = true, expiry = 60)
         url = @protocol.get_request_url(name, key)

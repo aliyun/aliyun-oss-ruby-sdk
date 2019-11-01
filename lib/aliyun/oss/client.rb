@@ -34,9 +34,9 @@ module Aliyun
       #  是否开启CRC校验，默认为不开启(false)
       # @option opts [String] :sts_token [可选] 指定STS的
       #  SecurityToken，如果指定，则使用STS授权访问
-      # @option opts [Fixnum] :open_timeout [可选] 指定建立连接的超时
+      # @option opts [Integer] :open_timeout [可选] 指定建立连接的超时
       #  时间，默认为10秒
-      # @option opts [Fixnum] :read_timeout [可选] 指定等待响应的超时
+      # @option opts [Integer] :read_timeout [可选] 指定等待响应的超时
       #  时间，默认为120秒
       # @example 标准endpoint
       #   oss-cn-hangzhou.aliyuncs.com
