@@ -498,7 +498,10 @@ module Aliyun
               :access_key_secret => 'yyy',
               :sts_token => 'zzz').get_bucket(@bucket_name)
 
-            url = sts_bucket.object_url('ico.png?x-oss-process=image/resize,m_fill,h_100,w_100')
+            param = {
+              'x-oss-process' => 'image/resize,m_fill,h_100,w_100',
+            }  
+            url = sts_bucket.object_url('ico.png', true, 60, param)
             path = url[0, url.index('?')]
             expect(path).to eq('http://rubysdk-bucket.oss-cn-hangzhou.aliyuncs.com/ico.png')
 

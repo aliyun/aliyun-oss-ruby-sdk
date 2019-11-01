@@ -589,41 +589,37 @@ module Aliyun
       # @param [String] key Object的key
       # @param [Boolean] sign 是否对URL进行签名，默认为是
       # @param [Integer] expiry URL的有效时间，单位为秒，默认为60s
+      # @param [Hash] parameters 附加的query参数，默认为空
       # @return [String] 用于直接访问Object的URL
-      def object_url(key, sign = true, expiry = 60)
-        url = @protocol.get_request_url(name, key)
-        return url unless sign
+      def object_url(key, sign = true, expiry = 60, parameters = {})
+        url = @protocol.get_request_url(name, key).gsub('%2F', '/')
+        query = parameters.dup
 
-        expires = Time.now.to_i + expiry
-        query = {
-          'Expires' => expires.to_s,
-          'OSSAccessKeyId' => CGI.escape(access_key_id)
-        }
+        if sign
+          #header
+          expires = Time.now.to_i + expiry
+          headers = {
+            'date' => expires.to_s,
+          }
 
-        sub_res = []
-        if @protocol.get_sts_token
-          sub_res << "security-token=#{@protocol.get_sts_token}"
-          query['security-token'] = CGI.escape(@protocol.get_sts_token)
-        end
+          #query 
+          if @protocol.get_sts_token
+            query['security-token'] = @protocol.get_sts_token
+          end
 
-        resource = "/#{name}/#{key}"
-        unless sub_res.empty?
-          resource << (resource.include?('?') ? "&#{sub_res.join('&')}" : "?#{sub_res.join('&')}")
-        end
+          res = {
+            :path => @protocol.get_resource_path(name, key),
+            :sub_res => query,
+          }
+          signature = Util.get_signature(@protocol.get_access_key_secret, 'GET', headers, res)
 
-        string_to_sign = "" <<
-                         "GET\n" << # method
-                         "\n" <<    # Content-MD5
-                         "\n" <<    # Content-Type
-                         "#{expires}\n" <<
-                         "#{resource}"
+          query['Expires'] = expires.to_s
+          query['OSSAccessKeyId'] = @protocol.get_access_key_id
+          query['Signature'] = signature
+        end  
 
-        signature = sign(string_to_sign)
-        query_string =
-          query.merge('Signature' => CGI.escape(signature))
-          .map { |k, v| "#{k}=#{v}" }.join('&')
-
-        link_char = url.include?('?') ? '&' : '?'
+        query_string = query.map { |k, v| v ? [k, CGI.escape(v)].join("=") : k }.join("&")
+        link_char = query_string.empty? ? '' : '?'
         [url, query_string].join(link_char)
       end
 
