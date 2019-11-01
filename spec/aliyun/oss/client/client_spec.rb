@@ -127,6 +127,31 @@ module Aliyun
           expect(WebMock).to have_requested(:get, "#{bucket}.#{ep1}/#{object}")
           expect(WebMock).to have_requested(:put, "#{bucket}.#{ep2}/#{object}")
         end
+
+        it "should fail with invalid bucket name" do
+          bucket = 'INVALID'
+          ep1 = 'oss-cn-hangzhou.aliyuncs.com'
+          client = Client.new(
+            :endpoint => ep1,
+            :access_key_id => 'xxx', :access_key_secret => 'yyy')
+
+          expect {
+            client.create_bucket(bucket)
+          }.to raise_error(ClientError, "The bucket name is invalid.")
+
+          expect {
+            client.delete_bucket(bucket)
+          }.to raise_error(ClientError, "The bucket name is invalid.")
+
+          expect {
+            client.bucket_exists?(bucket)
+          }.to raise_error(ClientError, "The bucket name is invalid.")
+
+          expect {
+            client.get_bucket(bucket)
+          }.to raise_error(ClientError, "The bucket name is invalid.")
+        end
+
       end # construct
 
       def mock_buckets(buckets, more = {})

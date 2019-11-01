@@ -94,6 +94,57 @@ module Aliyun
         }.to raise_error(CrcInconsistentError, "The crc of post between client and oss is not inconsistent.")
       end
 
+      it "should check bucket name valid" do
+        expect {
+          Util.ensure_bucket_name_valid('abc')
+        }.not_to raise_error
+
+        expect {
+          Util.ensure_bucket_name_valid('abc123-321cba')
+        }.not_to raise_error
+
+        expect {
+          Util.ensure_bucket_name_valid('abcdefghijklmnopqrstuvwxyz1234567890-0987654321zyxwuvtsrqponmlk')
+        }.not_to raise_error
+
+        #>63
+        expect {
+          Util.ensure_bucket_name_valid('abcdefghijklmnopqrstuvwxyz1234567890-0987654321zyxwuvtsrqponmlkj')
+        }.to raise_error(ClientError, "The bucket name is invalid.")
+
+        #<3
+        expect {
+          Util.ensure_bucket_name_valid('12')
+        }.to raise_error(ClientError, "The bucket name is invalid.")
+        
+        #not [a-z0-9-]
+        expect {
+          Util.ensure_bucket_name_valid('Aabc')
+        }.to raise_error(ClientError, "The bucket name is invalid.")
+
+        expect {
+          Util.ensure_bucket_name_valid('abc/')
+        }.to raise_error(ClientError, "The bucket name is invalid.")
+
+        expect {
+          Util.ensure_bucket_name_valid('abc#')
+        }.to raise_error(ClientError, "The bucket name is invalid.")
+
+        expect {
+          Util.ensure_bucket_name_valid('abc?')
+        }.to raise_error(ClientError, "The bucket name is invalid.")
+
+        #start & end not -
+        expect {
+          Util.ensure_bucket_name_valid('-abc')
+        }.to raise_error(ClientError, "The bucket name is invalid.")
+
+        expect {
+          Util.ensure_bucket_name_valid('abc-')
+        }.to raise_error(ClientError, "The bucket name is invalid.")
+        
+      end  
+
     end # Util
 
   end # OSS

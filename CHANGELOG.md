@@ -1,5 +1,13 @@
 ## Change Log
 
+### v0.7.1 / 2019-11-16
+
+- add the validity check of bucket name
+- add parameters argument for buclet.object_url api
+- fix http.get_request_url function bug
+- fix warning constant ::Fixnum is deprecated
+- support rest-client 2.1.0
+
 ### v0.7.0 / 2018-06-05
 
 - deps: upgrade nokogiri to > 1.6 and ruby version >= 2.0
