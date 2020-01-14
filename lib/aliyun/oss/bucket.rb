@@ -592,7 +592,7 @@ module Aliyun
       # @param [String] http_method URL的有效时间，单位为秒，默认为60s
       # @param [String] content_type URL的有效时间，单位为秒，默认为60s
       # @return [String] 用于直接访问Object的URL
-      def object_url(key, sign = true, expiry = 60, http_method: "GET", content_type: nil)
+      def object_url(key, sign = true, expiry = 1800, http_method: "GET", content_type: nil)
         url = @protocol.get_request_url(name, key)
         return url unless sign
 
