@@ -611,6 +611,15 @@ module Aliyun
                   })
         end
 
+        it "should raise Exception on error when setting invalid range" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          stub_request(:get, url)
+          expect {
+            @protocol.get_object(@bucket, object_name, {:range => [0, 10, 5]}) {}
+          }.to raise_error(ClientError)
+        end
+
         it "should match modify time and etag" do
           object_name = 'ruby'
           url = get_request_path(object_name)
@@ -662,6 +671,22 @@ module Aliyun
             .with(:body => nil, :query => query)
         end
 
+        it "should get object with headers" do
+          object_name = 'ruby'
+          url = get_request_path(object_name)
+          headers = {
+            'Range' => 'bytes=0-9'
+          }
+          stub_request(:get, url)
+
+          @protocol.get_object(@bucket, object_name, {:headers => headers}) {}
+
+          expect(WebMock).to have_requested(:get, url)
+            .with(:body => nil, :query => {},
+                  :headers => {
+                    'Range' => 'bytes=0-9'
+                  })
+        end
 
         it "should raise crc exception on error" do
           object_name = 'ruby'
@@ -821,7 +846,7 @@ module Aliyun
 
         it "should batch delete objects" do
           url = get_request_path
-          query = {'delete' => nil, 'encoding-type' => KeyEncoding::URL}
+          query = {'delete' => nil}
 
           object_names = (1..5).map do |i|
             "object-#{i}"
@@ -831,7 +856,7 @@ module Aliyun
             .with(:query => query)
             .to_return(:body => mock_delete_result(object_names))
 
-          opts = {:quiet => false, :encoding => KeyEncoding::URL}
+          opts = {:quiet => false}
           deleted = @protocol.batch_delete_objects(@bucket, object_names, opts)
 
           expect(WebMock).to have_requested(:post, url)
@@ -860,6 +885,57 @@ module Aliyun
           expect(WebMock).to have_requested(:post, url)
             .with(:query => query, :body => mock_delete(object_names, opts))
           expect(deleted).to match_array(object_names)
+        end
+
+        it "should batch delete objects in quiet mode" do
+          url = get_request_path
+          query = {'delete' => nil}
+
+          object_names = (1..5).map do |i|
+            "object-#{i}"
+          end
+
+          stub_request(:post, url)
+            .with(:query => query)
+            .to_return(:body => "")
+
+          opts = {:quiet => true}
+          deleted = @protocol.batch_delete_objects(@bucket, object_names, opts)
+
+          expect(WebMock).to have_requested(:post, url)
+            .with(:query => query, :body => mock_delete(object_names, opts))
+          expect(deleted).to match_array([])
+        end
+
+        it "should rasie Exception wiht invalid responsed body" do
+          url = get_request_path
+          query = {'delete' => nil}
+          body = '<DeleteResult>
+                    <EncodingType>invaid<EncodingType>
+                    <Deleted>
+                      <Key>multipart.data</Key>
+                    </Deleted>
+                    <Deleted>
+                      <Key>test.jpg</Key>
+                    </Deleted>
+                    <Deleted>
+                      <Key>demo.jpg</Key>
+                    </Deleted>
+                  </DeleteResult>'
+
+          object_names = (1..5).map do |i|
+            "object-#{i}"
+          end
+
+          stub_request(:post, url)
+            .with(:query => query)
+            .to_return(:body => body)
+
+          opts = {:quiet => false}
+          expect {
+            deleted = @protocol.batch_delete_objects(@bucket, object_names, opts)
+          }.to raise_error(ClientError)
+
         end
       end # delete object
 

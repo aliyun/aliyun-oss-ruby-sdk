@@ -156,6 +156,226 @@ module Aliyun
             .with(:query => query, :body => nil)
         end
 
+        it "should set logging setting" do
+          query = {'logging' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.BucketLoggingStatus {
+              xml.LoggingEnabled {
+                xml.TargetBucket 'target-bucket'
+              }
+            }
+            end.to_xml
+
+          stub_request(:put, bucket_url).with(:query => query)
+
+          @bucket.logging = BucketLogging.new(:enable => true, :target_bucket => 'target-bucket')
+
+          expect(WebMock).to have_requested(:put, bucket_url)
+            .with(:query => query, :body => body)
+        end
+
+        it "should get logging setting" do
+          query = {'logging' => nil}
+
+          retbody = Nokogiri::XML::Builder.new do |xml|
+            xml.BucketLoggingStatus {
+              xml.LoggingEnabled {
+                xml.TargetBucket 'target-bucket'
+                xml.TargetPrefix 'target-prefix'
+              }
+            }
+            end.to_xml
+
+          stub_request(:get, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => retbody)
+
+          logging = @bucket.logging
+
+          expect(WebMock).to have_requested(:get, bucket_url)
+            .with(:query => query, :body => nil)
+          expect(logging.enable).to eq(true)
+          expect(logging.target_bucket).to eq('target-bucket')
+
+        end
+
+        it "should set webseit" do
+          query = {'website' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.WebsiteConfiguration {
+              xml.IndexDocument {
+                xml.Suffix 'index.html'
+              }
+            }
+            end.to_xml
+
+          stub_request(:put, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => nil)
+
+          @bucket.website = BucketWebsite.new(:enable => true, :index => 'index.html')
+
+          expect(WebMock).to have_requested(:put, bucket_url)
+            .with(:query => query, :body => body)
+        end
+
+        it "should delete webseit" do
+          query = {'website' => nil}
+
+          stub_request(:delete, bucket_url)
+            .with(:query => query)
+            .to_return(status: 204, :body => nil)
+
+          @bucket.website = BucketWebsite.new(:enable => false)
+
+          expect(WebMock).to have_requested(:delete, bucket_url)
+            .with(:query => query, :body => nil)
+        end
+
+        it "should get webseit" do
+          query = {'website' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.WebsiteConfiguration {
+              xml.IndexDocument {
+                xml.Suffix 'index.html'
+              }
+              xml.ErrorDocument {
+                xml.Key 'error.html'
+              }
+            }
+            end.to_xml
+
+          stub_request(:get, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => body)
+
+          website = @bucket.website
+
+          expect(WebMock).to have_requested(:get, bucket_url)
+            .with(:query => query, :body => nil)
+
+          expect(website.enable).to eq(true)
+          expect(website.index).to eq('index.html')
+          expect(website.error).to eq('error.html')
+        end
+
+        it "should set referer" do
+          query = {'referer' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.RefererConfiguration {
+              xml.AllowEmptyReferer 'true'
+              xml.RefererList {
+                xml.Referer 'http://www.aliyun.com'
+              }
+            }
+            end.to_xml
+
+          stub_request(:put, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => nil)
+
+          @bucket.referer = BucketReferer.new(:allow_empty => true, :whitelist => ['http://www.aliyun.com'])
+
+          expect(WebMock).to have_requested(:put, bucket_url)
+            .with(:query => query, :body => body)
+        end
+
+        it "should get referer" do
+          query = {'referer' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.RefererConfiguration {
+              xml.AllowEmptyReferer 'true'
+              xml.RefererList {
+                xml.Referer 'http://www.aliyun.com'
+              }
+            }
+            end.to_xml
+
+          stub_request(:get, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => body)
+
+          referer = @bucket.referer
+
+          expect(WebMock).to have_requested(:get, bucket_url)
+            .with(:query => query, :body => nil)
+
+          expect(referer.allow_empty).to eq(true)
+          expect(referer.whitelist).to eq(['http://www.aliyun.com'])
+        end
+
+        it "should set cors" do
+          query = {'cors' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.CORSConfiguration {
+              xml.CORSRule {
+                xml.AllowedOrigin '*'
+                xml.AllowedMethod 'PUT'
+                xml.AllowedHeader 'Authorization'
+              }
+            }
+            end.to_xml
+
+          stub_request(:put, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => nil)
+
+          rules = [
+            CORSRule.new(
+              :allowed_origins => ['*'],
+              :allowed_methods => ['PUT'],
+              :allowed_headers => ['Authorization'],
+              :expose_headers =>[])
+          ]
+
+          @bucket.cors = rules
+
+          expect(WebMock).to have_requested(:put, bucket_url)
+            .with(:query => query, :body => body)
+        end
+
+        it "should delete cors" do
+          query = {'cors' => nil}
+
+          stub_request(:delete, bucket_url)
+            .with(:query => query)
+            .to_return(status: 204, :body => nil)
+
+          @bucket.cors = []
+
+          expect(WebMock).to have_requested(:delete, bucket_url)
+            .with(:query => query, :body => nil)
+        end
+
+        it "should get cors" do
+          query = {'cors' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.CORSConfiguration {
+              xml.CORSRule {
+                xml.AllowedOrigin '*'
+                xml.AllowedMethod 'PUT'
+                xml.AllowedHeader 'Authorization'
+              }
+            }
+            end.to_xml
+
+          stub_request(:get, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => body)
+
+          cors = @bucket.cors
+
+          expect(WebMock).to have_requested(:get, bucket_url)
+            .with(:query => query, :body => nil)
+        end
+
         it "should get bucket url" do
           expect(@bucket.bucket_url)
             .to eq('http://rubysdk-bucket.oss-cn-hangzhou.aliyuncs.com/')

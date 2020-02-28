@@ -89,7 +89,7 @@ module Aliyun
             if opts.enabled?
               xml.LoggingEnabled {
                 xml.TargetBucket opts.target_bucket
-                xml.TargetPrefix opts.target_prefix
+                xml.TargetPrefix opts.target_prefix if opts.target_prefix
               }
             end
           }
@@ -392,6 +392,19 @@ module Aliyun
             .with(:query => query, :body => mock_logging(logging_opts))
         end
 
+        it "should enable logging without target prefix" do
+          query = {'logging' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          logging_opts = BucketLogging.new(
+            :enable => true,
+            :target_bucket => 'target-bucket')
+          @protocol.put_bucket_logging(@bucket, logging_opts)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:query => query, :body => mock_logging(logging_opts))
+        end
+
         it "should disable logging" do
           query = {'logging' => nil}
           stub_request(:put, request_path).with(:query => query)
@@ -420,6 +433,23 @@ module Aliyun
           expect(logging.to_s).to eq(logging_opts.to_s)
         end
 
+        it "should get logging without target-bucket" do
+          query = {'logging' => nil}
+          logging_opts = BucketLogging.new(
+            :enable => false,
+            :target_bucket => nil, :target_prefix => nil)
+
+          stub_request(:get, request_path)
+            .with(:query => query)
+            .to_return(:body => mock_logging(logging_opts))
+
+          logging = @protocol.get_bucket_logging(@bucket)
+
+          expect(WebMock).to have_requested(:get, request_path)
+            .with(:query => query, :body => nil)
+          expect(logging.to_s).to eq(logging_opts.to_s)
+        end
+
         it "should delete logging" do
           query = {'logging' => nil}
           stub_request(:delete, request_path).with(:query => query)
@@ -430,12 +460,36 @@ module Aliyun
             .with(:query => query, :body => nil)
         end
 
+        it "should raise Exception when enable logging" do
+          query = {'logging' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          logging_opts = BucketLogging.new(
+            :enable => true,
+            :target_bucket => nil, :target_prefix => nil)
+          expect {
+            @protocol.put_bucket_logging(@bucket, logging_opts)
+          }.to raise_error(ClientError)
+        end
+
         it "should update website" do
           query = {'website' => nil}
           stub_request(:put, request_path).with(:query => query)
 
           website_opts = BucketWebsite.new(
             :enable => true, :index => 'index.html', :error => 'error.html')
+          @protocol.put_bucket_website(@bucket, website_opts)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:query => query, :body => mock_website(website_opts))
+        end
+
+        it "should update website with index only" do
+          query = {'website' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          website_opts = BucketWebsite.new(
+            :enable => true, :index => 'index.html', :error => nil)
           @protocol.put_bucket_website(@bucket, website_opts)
 
           expect(WebMock).to have_requested(:put, request_path)
@@ -466,6 +520,18 @@ module Aliyun
 
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:query => query, :body => nil)
+        end
+
+        it "should raise Exception when update website" do
+          query = {'website' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          website_opts = BucketWebsite.new(
+            :enable => true, :index => nil)
+
+          expect {
+            @protocol.put_bucket_website(@bucket, website_opts)
+          }.to raise_error(ClientError)
         end
 
         it "should update referer" do
@@ -541,6 +607,44 @@ module Aliyun
             .with(:query => query, :body => nil)
         end
 
+        it "should raise Exception when update lifecycle " do
+          query = {'lifecycle' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          rules = (1..5).map do |i|
+            LifeCycleRule.new(
+              :id => i, :enable => i % 2 == 0, :prefix => "foo#{i}",
+              :expiry => 'invalid')
+          end
+ 
+          expect {
+            @protocol.put_bucket_lifecycle(@bucket, rules)
+          }.to raise_error(ClientError)
+        end        
+
+        it "should raise Exception when get lifecycle " do
+          query = {'lifecycle' => nil}
+          body = '<LifecycleConfiguration>
+                    <Rule>
+                      <ID>delete after one day</ID>
+                      <Prefix>logs/</Prefix>
+                      <Status>Enabled</Status>
+                      <Expiration>
+                        <Days>1</Days>
+                        <Date>2017-01-01T00:00:00.000Z</Date>
+                      </Expiration>
+                  </Rule>
+                </LifecycleConfiguration>'
+
+          stub_request(:get, request_path)
+            .with(:query => query)
+            .to_return(:body => body)
+ 
+          expect {
+            rules = @protocol.get_bucket_lifecycle(@bucket)
+          }.to raise_error(ClientError)
+        end        
+
         it "should set cors" do
           query = {'cors' => nil}
           stub_request(:put, request_path).with(:query => query)
@@ -551,6 +655,24 @@ module Aliyun
               :allowed_methods => ['PUT', 'GET'],
               :allowed_headers => (1..3).map {|x| "header-#{x}"},
               :expose_headers => (1..3).map {|x| "header-#{x}"})
+          end
+          @protocol.set_bucket_cors(@bucket, rules)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:query => query, :body => mock_cors(rules))
+        end
+
+        it "should set cors with MaxAgeSeconds " do
+          query = {'cors' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          rules = (1..5).map do |i|
+            CORSRule.new(
+              :allowed_origins => (1..3).map {|x| "origin-#{x}"},
+              :allowed_methods => ['PUT', 'GET'],
+              :allowed_headers => (1..3).map {|x| "header-#{x}"},
+              :expose_headers => (1..3).map {|x| "header-#{x}"},
+              :max_age_seconds => 5)
           end
           @protocol.set_bucket_cors(@bucket, rules)
 
