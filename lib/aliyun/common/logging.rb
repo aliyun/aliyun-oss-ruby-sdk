@@ -34,8 +34,13 @@ module Aliyun
 
       def self.logger
         unless @logger
+          @log_file = nil
+          # Environment parameter ALIYUN_OSS_SDK_LOG_PATH used to control whether output log to a file
+          if ENV['ALIYUN_OSS_SDK_LOG_PATH']
+            @log_file ||= DEFAULT_LOG_FILE
+          end
           @logger = Logger.new(
-            @log_file ||= DEFAULT_LOG_FILE, MAX_NUM_LOG, ROTATE_SIZE)
+              @log_file, MAX_NUM_LOG, ROTATE_SIZE)
           @logger.level = Logger::INFO
         end
         @logger
