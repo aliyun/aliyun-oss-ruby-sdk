@@ -1,5 +1,9 @@
 ## Change Log
 
+### v0.7.2 / 2020-06-05
+
+- add env parameter to descide whether output log file
+
 ### v0.7.1 / 2019-11-16
 
 - add the validity check of bucket name
