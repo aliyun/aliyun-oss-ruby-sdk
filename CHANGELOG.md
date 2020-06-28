@@ -1,5 +1,10 @@
 ## Change Log
 
+### v0.7.3 / 2020-06-28
+
+- Add variable control log output path
+
+
 ### v0.7.2 / 2020-06-05
 
 - add env parameter to descide whether output log file
