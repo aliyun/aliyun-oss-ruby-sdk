@@ -96,7 +96,11 @@ module Aliyun
     # * sse_algorithm [string] Indicates the default server-side encryption method
     # * kms_master_key_id [string] Indicates the ID of CMK that is currently used.
     class BucketEncryption < Common::Struct::Base
-      attrs :sse_algorithm, :kms_master_key_id
+      attrs :enable, :sse_algorithm, :kms_master_key_id
+
+      def enabled?
+        enable == true
+      end
     end
 
     ##
