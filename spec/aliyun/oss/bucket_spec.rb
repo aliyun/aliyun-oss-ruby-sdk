@@ -99,7 +99,7 @@ module Aliyun
       def mock_versioning(opts)
         Nokogiri::XML::Builder.new do |xml|
           xml.VersioningConfiguration {
-            xml.Status opts.enabled? ? 'Enabled' : 'Disabled'
+            xml.Status opts.enabled? ? 'Enabled' : 'Suspended'
           }
         end.to_xml
       end
@@ -536,16 +536,6 @@ module Aliyun
 
           expect(WebMock).to have_requested(:delete, request_path)
             .with(:query => query, :body => nil)
-        end
-
-        it "should raise Exception when enable versioning" do
-          query = {'versioning' => nil}
-          stub_request(:put, request_path).with(:query => query)
-
-          versioning_opts = BucketVersioning.new(:enable => nil)
-          expect {
-            @protocol.put_bucket_versioning(@bucket, versioning_opts)
-          }.to raise_error(ClientError)
         end
 
         it "should enable encryption" do

@@ -212,6 +212,58 @@ module Aliyun
         logger.info("Done delete bucket logging")
       end
 
+      # Put bucket versioning settings
+      # @param name [String] the bucket name
+      # @param versioning [BucketVersioning] versioning options
+      def put_bucket_versioning(name, versioning)
+        logger.info("Begin put bucket versioning, "\
+                    "name: #{name}, versioning: #{versioning}")
+
+        sub_res = {'versioning' => nil}
+        body = Nokogiri::XML::Builder.new do |xml|
+          xml.VersioningConfiguration {
+            xml.Status versioning.enabled? ? 'Enabled' : 'Suspended'
+          }
+        end.to_xml
+
+        @http.put(
+          {:bucket => name, :sub_res => sub_res},
+          {:body => body})
+
+        logger.info("Done put bucket versioning")
+      end
+
+      # Get bucket versioning settings
+      # @param name [String] the bucket name
+      # @return [BucketVersioning] versioning options of this bucket
+      def get_bucket_versioning(name)
+        logger.info("Begin get bucket versioning, name: #{name}")
+
+        sub_res = {'versioning' => nil}
+        r = @http.get({:bucket => name, :sub_res => sub_res})
+
+        doc = parse_xml(r.body)
+        opts = {:enable => false}
+
+        versioning_node = doc.at_css("VersioningConfiguration")
+        opts[:enable] = get_node_text(versioning_node, 'Status') == 'Enabled'
+
+        logger.info("Done get bucket versioning")
+
+        BucketVersioning.new(opts)
+      end
+
+      # Delete bucket versioning settings, a.k.a. disable bucket versioning
+      # @param name [String] the bucket name
+      def delete_bucket_versioning(name)
+        logger.info("Begin delete bucket versioning, name: #{name}")
+
+        sub_res = {'versioning' => nil}
+        @http.delete({:bucket => name, :sub_res => sub_res})
+
+        logger.info("Done delete bucket versioning")
+      end
+
       # Put bucket website settings
       # @param name [String] the bucket name
       # @param website [BucketWebsite] the bucket website options
