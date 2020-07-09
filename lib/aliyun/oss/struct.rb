@@ -75,6 +75,31 @@ module Aliyun
     end
 
     ##
+    # Bucket Versioning setting. See: {http://help.aliyun.com/document_detail/oss/product-documentation/function/versioning.html OSS Bucket versioning}
+    # Attributes:
+    # * enable [Boolean] whether to enable bucket versioning
+    # @example Enable bucket versioning
+    #  bucket.versioning = BucketVersioning.new(:enable => true)
+    # @example Disable bucket versioning
+    #  bucket.versioning = BucketVersioning.new(:enable => false)
+    class BucketVersioning < Common::Struct::Base
+      attrs :enable
+
+      def enabled?
+        enable == true
+      end
+    end
+    
+    ##
+    # Bucket Encryption setting. See: {http://help.aliyun.com/document_detail/oss/product-documentation/function/encryption.html OSS Bucket encryption}
+    # Attributes:
+    # * sse_algorithm [string] Indicates the default server-side encryption method
+    # * kms_master_key_id [string] Indicates the ID of CMK that is currently used.
+    class BucketEncryption < Common::Struct::Base
+      attrs :sse_algorithm, :kms_master_key_id
+    end
+
+    ##
     # Bucket website setting. See: {http://help.aliyun.com/document_detail/oss/product-documentation/function/host-static-website.html OSS Website hosting}
     # Attributes:
     # * enable [Boolean] whether to enable website hosting for the bucket
