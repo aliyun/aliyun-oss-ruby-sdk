@@ -96,6 +96,25 @@ module Aliyun
         end.to_xml
       end
 
+      def mock_versioning(opts)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.VersioningConfiguration {
+            xml.Status opts.enabled? ? 'Enabled' : 'Disabled'
+          }
+        end.to_xml
+      end
+
+      def mock_encryption(opts)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.ServerSideEncryptionRule {
+            xml.ApplyServerSideEncryptionByDefault {
+              xml.SSEAlgorithm 'KMS'
+              xml.KMSMasterKeyID '9468da86-3509-4f8d-a61e-6eab1eac****'
+            }
+          }
+        end.to_xml
+      end
+
       def mock_website(opts)
         Nokogiri::XML::Builder.new do |xml|
           xml.WebsiteConfiguration {
@@ -354,7 +373,7 @@ module Aliyun
         end
       end # delete bucket
 
-      context "acl, logging, website, referer, lifecycle" do
+      context "acl, logging, versioning, encryption, website, referer, lifecycle" do
         it "should update acl" do
           query = {'acl' => nil}
           stub_request(:put, request_path).with(:query => query)
@@ -469,6 +488,114 @@ module Aliyun
             :target_bucket => nil, :target_prefix => nil)
           expect {
             @protocol.put_bucket_logging(@bucket, logging_opts)
+          }.to raise_error(ClientError)
+        end
+
+        it "should enable versioning" do
+          query = {'versioning' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          versioning_opts = BucketVersioning.new(:enable => true)
+          @protocol.put_bucket_versioning(@bucket, versioning_opts)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:query => query, :body => mock_versioning(versioning_opts))
+        end
+
+        it "should disable versioning" do
+          query = {'versioning' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          versioning_opts = BucketVersioning.new(:enable => false)
+          @protocol.put_bucket_versioning(@bucket, versioning_opts)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:query => query, :body => mock_versioning(versioning_opts))
+        end
+
+        it "should get versioning" do
+          query = {'versioning' => nil}
+          versioning_opts = BucketVersioning.new(:enable => true)
+
+          stub_request(:get, request_path)
+            .with(:query => query)
+            .to_return(:body => mock_versioning(versioning_opts))
+
+          versioning = @protocol.get_bucket_versioning(@bucket)
+
+          expect(WebMock).to have_requested(:get, request_path)
+            .with(:query => query, :body => nil)
+          expect(versioning.to_s).to eq(versioning_opts.to_s)
+        end
+
+        it "should delete versioning" do
+          query = {'versioning' => nil}
+          stub_request(:delete, request_path).with(:query => query)
+
+          @protocol.delete_bucket_versioning(@bucket)
+
+          expect(WebMock).to have_requested(:delete, request_path)
+            .with(:query => query, :body => nil)
+        end
+
+        it "should raise Exception when enable versioning" do
+          query = {'versioning' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          versioning_opts = BucketVersioning.new(:enable => nil)
+          expect {
+            @protocol.put_bucket_versioning(@bucket, versioning_opts)
+          }.to raise_error(ClientError)
+        end
+
+        it "should enable encryption" do
+          query = {'encryption' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          encryption_opts = BucketEncryption.new(
+            :sse_algorithm => 'KMS',
+            :kms_master_key_id => '9468da86-3509-4f8d-a61e-6eab1eac****')
+          @protocol.put_bucket_encryption(@bucket, encryption_opts)
+
+          expect(WebMock).to have_requested(:put, request_path)
+            .with(:query => query, :body => mock_encryption(encryption_opts))
+        end
+
+        it "should get encryption" do
+          query = {'encryption' => nil}
+          encryption_opts = BucketEncryption.new(
+            :sse_algorithm => 'KMS',
+            :kms_master_key_id => '9468da86-3509-4f8d-a61e-6eab1eac****')
+
+          stub_request(:get, request_path)
+            .with(:query => query)
+            .to_return(:body => mock_encryption(encryption_opts))
+
+          encryption = @protocol.get_bucket_encryption(@bucket)
+
+          expect(WebMock).to have_requested(:get, request_path)
+            .with(:query => query, :body => nil)
+          expect(encryption.to_s).to eq(encryption_opts.to_s)
+        end
+
+        it "should delete encryption" do
+          query = {'encryption' => nil}
+          stub_request(:delete, request_path).with(:query => query)
+
+          @protocol.delete_bucket_encryption(@bucket)
+
+          expect(WebMock).to have_requested(:delete, request_path)
+            .with(:query => query, :body => nil)
+        end
+
+        it "should raise Exception when enable encryption" do
+          query = {'encryption' => nil}
+          stub_request(:put, request_path).with(:query => query)
+
+          encryption_opts = BucketEncryption.new(
+            :sse_algorithm => 'KMS')
+          expect {
+            @protocol.put_bucket_encryption(@bucket, encryption_opts)
           }.to raise_error(ClientError)
         end
 
