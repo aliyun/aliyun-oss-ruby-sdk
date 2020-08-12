@@ -376,6 +376,130 @@ module Aliyun
             .with(:query => query, :body => nil)
         end
 
+		it "should set versioning" do
+          query = {'versioning' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.VersioningConfiguration {
+              xml.Status 'Enabled'
+            }
+            end.to_xml
+
+          stub_request(:put, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => nil)
+
+          @bucket.versioning = BucketVersioning.new(:status => 'Enabled')
+
+          expect(WebMock).to have_requested(:put, bucket_url)
+            .with(:query => query, :body => body)
+        end
+
+		it "should get versioning" do
+          query = {'versioning' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.VersioningConfiguration {
+              xml.Status 'Enabled'
+            }
+            end.to_xml
+
+          stub_request(:get, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => body)
+
+          ret = @bucket.versioning
+
+          expect(WebMock).to have_requested(:get, bucket_url)
+            .with(:query => query, :body => nil)
+
+          expect(ret.status).to eq('Enabled')
+        end
+
+		it "should set encryption with aes256" do
+          query = {'encryption' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.ServerSideEncryptionRule {
+              xml.ApplyServerSideEncryptionByDefault {
+                xml.SSEAlgorithm 'AES256'
+              }
+            }
+            end.to_xml
+
+          stub_request(:put, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => nil)
+
+          @bucket.encryption = BucketEncryption.new(:enable => true, :sse_algorithm => 'AES256')
+
+          expect(WebMock).to have_requested(:put, bucket_url)
+            .with(:query => query, :body => body)
+        end
+
+		it "should set encryption with KMS" do
+          query = {'encryption' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.ServerSideEncryptionRule {
+              xml.ApplyServerSideEncryptionByDefault {
+                xml.SSEAlgorithm 'KMS'
+                xml.KMSMasterKeyID 'kms-id'
+              }
+            }
+            end.to_xml
+
+          stub_request(:put, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => nil)
+
+          @bucket.encryption = BucketEncryption.new(
+			:enable => true, 
+			:sse_algorithm => 'KMS', 
+			:kms_master_key_id => 'kms-id')
+
+          expect(WebMock).to have_requested(:put, bucket_url)
+            .with(:query => query, :body => body)
+        end
+
+		it "should get encryption" do
+          query = {'encryption' => nil}
+
+          body = Nokogiri::XML::Builder.new do |xml|
+            xml.ServerSideEncryptionRule {
+              xml.ApplyServerSideEncryptionByDefault {
+                xml.SSEAlgorithm 'KMS'
+                xml.KMSMasterKeyID 'kms-id'
+              }
+            }
+            end.to_xml
+
+          stub_request(:get, bucket_url)
+            .with(:query => query)
+            .to_return(status: 200, :body => body)
+
+          ret = @bucket.encryption
+
+          expect(WebMock).to have_requested(:get, bucket_url)
+            .with(:query => query, :body => nil)
+
+          expect(ret.sse_algorithm).to eq('KMS')
+          expect(ret.kms_master_key_id).to eq('kms-id')
+        end
+
+		it "should delete encryption" do
+          query = {'encryption' => nil}
+
+          stub_request(:delete, bucket_url)
+            .with(:query => query)
+            .to_return(status: 204, :body => nil)
+
+          @bucket.encryption = BucketEncryption.new(:enable => false)
+
+          expect(WebMock).to have_requested(:delete, bucket_url)
+            .with(:query => query, :body => nil)
+        end
+
         it "should get bucket url" do
           expect(@bucket.bucket_url)
             .to eq('http://rubysdk-bucket.oss-cn-hangzhou.aliyuncs.com/')
