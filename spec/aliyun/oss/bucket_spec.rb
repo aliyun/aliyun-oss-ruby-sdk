@@ -96,6 +96,25 @@ module Aliyun
         end.to_xml
       end
 
+      def mock_versioning(opts)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.VersioningConfiguration {
+            xml.Status opts.status
+          }
+        end.to_xml
+      end
+
+      def mock_encryption(opts)
+        Nokogiri::XML::Builder.new do |xml|
+          xml.ServerSideEncryptionRule {
+            xml.ApplyServerSideEncryptionByDefault {
+              xml.SSEAlgorithm opts.sse_algorithm
+              xml.KMSMasterKeyID opts.kms_master_key_id if opts.kms_master_key_id
+            }
+          }
+        end.to_xml
+      end
+
       def mock_website(opts)
         Nokogiri::XML::Builder.new do |xml|
           xml.WebsiteConfiguration {
@@ -354,7 +373,7 @@ module Aliyun
         end
       end # delete bucket
 
-      context "acl, logging, website, referer, lifecycle" do
+      context "acl, logging, versioning, encryption, website, referer, lifecycle" do
         it "should update acl" do
           query = {'acl' => nil}
           stub_request(:put, request_path).with(:query => query)

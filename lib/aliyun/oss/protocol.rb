@@ -212,6 +212,105 @@ module Aliyun
         logger.info("Done delete bucket logging")
       end
 
+      # Put bucket versioning settings
+      # @param name [String] the bucket name
+      # @param versioning [BucketVersioning] versioning options
+      def put_bucket_versioning(name, versioning)
+        logger.info("Begin put bucket versioning, "\
+                    "name: #{name}, versioning: #{versioning}")
+
+        sub_res = {'versioning' => nil}
+        body = Nokogiri::XML::Builder.new do |xml|
+          xml.VersioningConfiguration {
+            xml.Status versioning.status
+          }
+        end.to_xml
+
+        @http.put(
+          {:bucket => name, :sub_res => sub_res},
+          {:body => body})
+
+        logger.info("Done put bucket versioning")
+      end
+
+      # Get bucket versioning settings
+      # @param name [String] the bucket name
+      # @return [BucketVersioning] versioning options of this bucket
+      def get_bucket_versioning(name)
+        logger.info("Begin get bucket versioning, name: #{name}")
+
+        sub_res = {'versioning' => nil}
+        r = @http.get({:bucket => name, :sub_res => sub_res})
+
+        doc = parse_xml(r.body)
+
+        versioning_node = doc.at_css("VersioningConfiguration")
+        opts = {
+          :status => get_node_text(versioning_node, 'Status')
+        }
+
+        logger.info("Done get bucket versioning")
+
+        BucketVersioning.new(opts)
+      end
+
+      # Put bucket encryption settings
+      # @param name [String] the bucket name
+      # @param encryption [BucketEncryption] encryption options
+      def put_bucket_encryption(name, encryption)
+        logger.info("Begin put bucket encryption, "\
+                    "name: #{name}, encryption: #{encryption}")
+
+        sub_res = {'encryption' => nil}
+        body = Nokogiri::XML::Builder.new do |xml|
+          xml.ServerSideEncryptionRule {
+            xml.ApplyServerSideEncryptionByDefault {
+              xml.SSEAlgorithm encryption.sse_algorithm
+              xml.KMSMasterKeyID encryption.kms_master_key_id if encryption.kms_master_key_id
+            }
+          }
+        end.to_xml
+
+        @http.put(
+          {:bucket => name, :sub_res => sub_res},
+          {:body => body})
+
+        logger.info("Done put bucket encryption")
+      end
+
+      # Get bucket encryption settings
+      # @param name [String] the bucket name
+      # @return [BucketEncryption] encryption options of this bucket
+      def get_bucket_encryption(name)
+        logger.info("Begin get bucket encryption, name: #{name}")
+
+        sub_res = {'encryption' => nil}
+        r = @http.get({:bucket => name, :sub_res => sub_res})
+
+        doc = parse_xml(r.body)
+
+        encryption_node = doc.at_css("ApplyServerSideEncryptionByDefault")
+        opts = {
+          :sse_algorithm => get_node_text(encryption_node, 'SSEAlgorithm'),
+          :kms_master_key_id => get_node_text(encryption_node, 'KMSMasterKeyID')
+        }
+
+        logger.info("Done get bucket encryption")
+
+        BucketEncryption.new(opts)
+      end
+
+      # Delete bucket encryption settings, a.k.a. disable bucket encryption
+      # @param name [String] the bucket name
+      def delete_bucket_encryption(name)
+        logger.info("Begin delete bucket encryption, name: #{name}")
+
+        sub_res = {'encryption' => nil}
+        @http.delete({:bucket => name, :sub_res => sub_res})
+
+        logger.info("Done delete bucket encryption")
+      end
+
       # Put bucket website settings
       # @param name [String] the bucket name
       # @param website [BucketWebsite] the bucket website options

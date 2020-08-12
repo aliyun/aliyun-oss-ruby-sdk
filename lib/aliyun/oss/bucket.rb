@@ -47,6 +47,34 @@ module Aliyun
         end
       end
 
+      # 获取Bucket的versioning配置
+      # @return [BucketVersioning] Bucket的versioning配置
+      def versioning
+        @protocol.get_bucket_versioning(name)
+      end
+
+      # 设置Bucket的versioning配置
+      # @param versioning [BucketVersioning] versioning配置
+      def versioning=(versioning)
+          @protocol.put_bucket_versioning(name, versioning)
+      end
+
+      # 获取Bucket的encryption配置
+      # @return [BucketEncryption] Bucket的encryption配置
+      def encryption
+        @protocol.get_bucket_encryption(name)
+      end
+
+      # 设置Bucket的encryption配置
+      # @param encryption [BucketEncryption] encryption配置
+      def encryption=(encryption)
+        if encryption.enabled?
+          @protocol.put_bucket_encryption(name, encryption)
+        else
+          @protocol.delete_bucket_encryption(name)
+        end
+      end
+
       # 获取Bucket的website配置
       # @return [BucketWebsite] Bucket的website配置
       def website
