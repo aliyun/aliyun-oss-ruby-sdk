@@ -1,8 +1,13 @@
 ## Change Log
 
+### v0.8.0 / 2020-08-12
+
+- add bucket encryption
+- add bucket versioning
+
 ### v0.7.3 / 2020-06-28
 
-- Add variable control log output path
+- add variable control log output path
 
 
 ### v0.7.2 / 2020-06-05
