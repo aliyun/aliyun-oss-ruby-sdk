@@ -37,9 +37,25 @@ module Aliyun
           @log_file ||= ENV["ALIYUN_OSS_SDK_LOG_PATH"]
           @logger = Logger.new(
               @log_file, MAX_NUM_LOG, ROTATE_SIZE)
-          @logger.level = Logger::INFO
+          @logger.level = get_env_log_level || Logger::INFO
         end
         @logger
+      end
+
+      def self.get_env_log_level
+        return unless ENV["ALIYUN_OSS_SDK_LOG_LEVEL"]
+        case ENV["ALIYUN_OSS_SDK_LOG_LEVEL"].upcase
+        when "DEBUG"
+          Logger::DEBUG
+        when "WARN"
+          Logger::WARN
+        when "ERROR"
+          Logger::ERROR
+        when "FATAL"
+          Logger::FATAL
+        when "UNKNOWN"
+          Logger::UNKNOWN
+        end
       end
 
     end # logging
