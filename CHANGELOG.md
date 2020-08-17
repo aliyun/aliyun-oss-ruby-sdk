@@ -1,9 +1,10 @@
 ## Change Log
 
-### v0.8.0 / 2020-08-12
+### v0.8.0 / 2020-08-17
 
 - add bucket encryption
 - add bucket versioning
+- add env parameter to set default log level
 
 ### v0.7.3 / 2020-06-28
 
