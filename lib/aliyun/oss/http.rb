@@ -226,6 +226,7 @@ module Aliyun
         headers = http_options[:headers] || {}
         headers['user-agent'] = get_user_agent
         headers['date'] = Time.now.httpdate
+        headers['x-oss-date'] = Time.now.httpdate
         headers['content-type'] ||= DEFAULT_CONTENT_TYPE
         headers['accept-encoding'] ||= DEFAULT_ACCEPT_ENCODING
         headers[STS_HEADER] = @config.sts_token if @config.sts_token
