@@ -1001,7 +1001,10 @@ module Aliyun
           :meta_directive => 'x-oss-metadata-directive'
         }.each { |k, v| headers[v] = opts[k] if opts[k] }
 
+
         headers.merge!(get_copy_conditions(opts[:condition])) if opts[:condition]
+        headers['x-oss-storage-class'] = opts["x-oss-storage-class"] if opts["x-oss-storage-class"]
+
 
         r = @http.put(
           {:bucket => bucket_name, :object => dst_object_name},
@@ -1511,7 +1514,7 @@ module Aliyun
       # @return [String] the access key secret
       def get_access_key_secret
         @config.access_key_secret
-      end  
+      end
 
       # Get user's STS token
       # @return [String] the STS token
