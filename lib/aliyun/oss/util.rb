@@ -97,17 +97,14 @@ module Aliyun
           unless (name =~ %r|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$|)
             fail ClientError, "The bucket name is invalid."
           end
-        end  
+        end
+
+        def to_bool(string)
+          return true if string =~ /^true$/i
+          false
+        end
 
       end # self
     end # Util
   end # OSS
 end # Aliyun
-
-# Monkey patch to support #to_bool
-class String
-  def to_bool
-    return true if self =~ /^true$/i
-    false
-  end
-end

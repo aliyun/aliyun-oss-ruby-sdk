@@ -79,7 +79,7 @@ module Aliyun
         update_if_exists(
           more, {
             :limit => ->(x) { x.to_i },
-            :truncated => ->(x) { x.to_bool }
+            :truncated => ->(x) { Util.to_bool(x) }
           }
         )
 
@@ -413,7 +413,7 @@ module Aliyun
         doc = parse_xml(r.body)
         opts = {
           :allow_empty =>
-            get_node_text(doc.root, 'AllowEmptyReferer', &:to_bool),
+            get_node_text(doc.root, 'AllowEmptyReferer') { |x| Util.to_bool(x) },
           :whitelist => doc.css("RefererList Referer").map(&:text)
         }
 
@@ -790,7 +790,7 @@ module Aliyun
         update_if_exists(
           more, {
             :limit => ->(x) { x.to_i },
-            :truncated => ->(x) { x.to_bool },
+            :truncated => ->(x) { Util.to_bool(x) },
             :delimiter => ->(x) { decode_key(x, encoding) },
             :marker => ->(x) { decode_key(x, encoding) },
             :next_marker => ->(x) { decode_key(x, encoding) }
@@ -1412,7 +1412,7 @@ module Aliyun
         update_if_exists(
           more, {
             :limit => ->(x) { x.to_i },
-            :truncated => ->(x) { x.to_bool },
+            :truncated => ->(x) { Util.to_bool(x) },
             :key_marker => ->(x) { decode_key(x, encoding) },
             :next_key_marker => ->(x) { decode_key(x, encoding) }
           }
@@ -1476,7 +1476,7 @@ module Aliyun
         update_if_exists(
           more, {
             :limit => ->(x) { x.to_i },
-            :truncated => ->(x) { x.to_bool }
+            :truncated => ->(x) { Util.to_bool(x) }
           }
         )
 
