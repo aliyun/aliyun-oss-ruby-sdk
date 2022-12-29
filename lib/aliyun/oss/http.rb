@@ -4,6 +4,18 @@ require 'rest-client'
 require 'resolv'
 require 'fiber'
 
+module RestClientRefinements
+  # Refine rest-client to exclude the 'Content-Length' header when
+  # 'Transfer-Encoding' is set to 'chuncked' exclusively in Aliyun::OSS:HTTP. This may be a problem for
+  # some http servers like tengine.
+  refine RestClient::Payload::Base do
+    def headers
+      ({'content-length' => size.to_s} if size) || {}
+    end
+  end
+end
+
+
 module Aliyun
   module OSS
 
@@ -31,6 +43,7 @@ module Aliyun
     #     stream << "hello world"
     #   end
     class HTTP
+      using RestClientRefinements
 
       DEFAULT_CONTENT_TYPE = 'application/octet-stream'
       DEFAULT_ACCEPT_ENCODING = 'identity'
@@ -307,16 +320,3 @@ module Aliyun
     end # HTTP
   end # OSS
 end # Aliyun
-
-# Monkey patch rest-client to exclude the 'Content-Length' header when
-# 'Transfer-Encoding' is set to 'chuncked'. This may be a problem for
-# some http servers like tengine.
-module RestClient
-  module Payload
-    class Base
-      def headers
-        ({'content-length' => size.to_s} if size) || {}
-      end
-    end
-  end
-end
