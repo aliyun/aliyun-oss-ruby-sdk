@@ -143,7 +143,50 @@ module Aliyun
           Util.ensure_bucket_name_valid('abc-')
         }.to raise_error(ClientError, "The bucket name is invalid.")
         
-      end  
+      end
+
+      it "should check object name valid" do
+        expect {
+          Util.ensure_object_name_valid("123", true)
+        }.not_to raise_error
+
+        expect {
+          Util.ensure_object_name_valid("123?", true)
+        }.not_to raise_error
+
+        expect {
+          Util.ensure_object_name_valid("?", false)
+        }.not_to raise_error
+
+        expect {
+          Util.ensure_object_name_valid("?123", false)
+        }.not_to raise_error
+
+        expect {
+          Util.ensure_object_name_valid("", true)
+        }.to raise_error(ClientError, "The object name is invalid.")
+
+        expect {
+          Util.ensure_object_name_valid("", false)
+        }.to raise_error(ClientError, "The object name is invalid.")
+
+        expect {
+          Util.ensure_object_name_valid(nil, true)
+        }.to raise_error(ClientError, "The object name is invalid.")
+
+        expect {
+          Util.ensure_object_name_valid(nil, false)
+        }.to raise_error(ClientError, "The object name is invalid.")
+
+        expect {
+          Util.ensure_object_name_valid("?", true)
+        }.to raise_error(ClientError, "The object name cannot start with '?'.")
+
+        expect {
+          Util.ensure_object_name_valid("?123", true)
+        }.to raise_error(ClientError, "The object name cannot start with '?'.")
+
+      end
 
     end # Util
 

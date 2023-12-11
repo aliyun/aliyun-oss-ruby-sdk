@@ -86,4 +86,57 @@ class TestObjectUrl < Minitest::Test
 
   end
 
+  def test_signed_url_with_name_check
+    parameters = {
+      'x-oss-process' => 'image/resize,m_fill,h_100,w_100',
+    }
+    key = '?'
+    begin
+      signed_url = @bucket.object_url(key, true, 60, parameters)
+      assert false, 'Shoud not here'
+    rescue => e
+      assert_equal "The object name cannot start with '?'.", e.message
+    end
+
+    key = '?123'
+    begin
+      signed_url = @bucket.object_url(key, true, 60, parameters)
+      assert false, 'Shoud not here'
+    rescue => e
+      assert_equal "The object name cannot start with '?'.", e.message
+    end
+
+    key = ''
+    begin
+      signed_url = @bucket.object_url(key, true, 60, parameters)
+      assert false, 'Shoud not here'
+    rescue => e
+      assert_equal "The object name is invalid.", e.message
+    end
+
+    client1 = Aliyun::OSS::Client.new(
+      endpoint: 'https://oss-cn-hangzhou.aliyuncs.com',
+      access_key_id: 'ak',
+      access_key_secret: 'sk',
+      verify_object_strict: false
+    )
+    @bucket1 = client1.get_bucket(TestConf.bucket)
+
+    key = '?'
+    begin
+      signed_url = @bucket1.object_url(key, true, 60, parameters)
+      assert_equal true, signed_url.include?('/%3F?')
+    rescue => e
+      assert false, 'Shoud not here'
+    end
+
+    key = '?123'
+    begin
+      signed_url = @bucket1.object_url(key, true, 60, parameters)
+      assert_equal true, signed_url.include?('/%3F123?')
+    rescue => e
+      assert false, 'Shoud not here'
+    end
+  end
+
 end

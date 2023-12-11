@@ -1538,6 +1538,12 @@ module Aliyun
         @config.upload_crc_enable
       end
 
+      # Get the the flag of verifying object name strictly.
+      # @return true or false
+      def verify_object_strict
+        @config.verify_object_strict
+      end
+
       private
 
       # Parse body content to xml document
