@@ -620,6 +620,7 @@ module Aliyun
       # @param [Hash] parameters 附加的query参数，默认为空
       # @return [String] 用于直接访问Object的URL
       def object_url(key, sign = true, expiry = 60, parameters = {})
+        Util.ensure_object_name_valid(key, @protocol.verify_object_strict)
         url = @protocol.get_request_url(name, key).gsub('%2F', '/')
         query = parameters.dup
 

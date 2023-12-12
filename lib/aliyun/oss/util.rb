@@ -99,6 +99,15 @@ module Aliyun
           end
         end  
 
+        def ensure_object_name_valid(name, strict)
+          if name.nil? || name.empty?
+            fail ClientError, "The object name is invalid."
+          end
+          if strict && name.start_with?("?")
+            fail ClientError, "The object name cannot start with '?'."
+          end
+        end
+
       end # self
     end # Util
   end # OSS

@@ -12,7 +12,8 @@ module Aliyun
       attrs :endpoint, :cname, :sts_token,
             :access_key_id, :access_key_secret,
             :open_timeout, :read_timeout,
-            :download_crc_enable, :upload_crc_enable
+            :download_crc_enable, :upload_crc_enable,
+            :verify_object_strict
 
       def initialize(opts = {})
         super(opts)
@@ -22,6 +23,7 @@ module Aliyun
         normalize_endpoint if endpoint
         @upload_crc_enable = (@upload_crc_enable == 'false' || @upload_crc_enable == false) ? false : true
         @download_crc_enable = (@download_crc_enable == 'true' || @download_crc_enable == true) ? true : false
+        @verify_object_strict = (@verify_object_strict == 'false' || @verify_object_strict == false) ? false : true
       end
 
       private

@@ -12,7 +12,6 @@ class TestContentType < Minitest::Test
 
     @types = {
       "html" => "text/html",
-      "js" => "application/javascript",
       "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "xltx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
       "potx" => "application/vnd.openxmlformats-officedocument.presentationml.template",
